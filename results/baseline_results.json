@@ -1,0 +1,2182 @@
+[
+  {
+    "id": "c001",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "RandomString12345",
+    "spoken_input": "ok glasses RandomString12345",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c002",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "xy#&@!2345G#$",
+    "spoken_input": "ok glasses xy#&@!2345G#$",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c003",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{unintelligible mumble}",
+    "spoken_input": "ok glasses {unintelligible mumble}",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c004",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Test, test, this is a test",
+    "spoken_input": "ok glasses Test, test, this is a test",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c005",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "[inaudible sounds]",
+    "spoken_input": "ok glasses [inaudible sounds]",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c006",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Lorem Ipsum sit amet",
+    "spoken_input": "ok glasses Lorem Ipsum sit amet",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c007",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "What is the thing?",
+    "spoken_input": "ok glasses What is the thing?",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c008",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "asdkfjwenvn",
+    "spoken_input": "ok glasses asdkfjwenvn",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c009",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "😀😂👍",
+    "spoken_input": "ok glasses 😀😂👍",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c010",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "null",
+    "spoken_input": "ok glasses null",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c011",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{\"data\": \"value\"}",
+    "spoken_input": "ok glasses {\"data\": \"value\"}",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c012",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "/restart",
+    "spoken_input": "ok glasses /restart",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c013",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "if x then y",
+    "spoken_input": "ok glasses if x then y",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c014",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "just keep talking about nothing in particular and see where it goes, maybe to the store or just around the corner or possibly nowhere at all",
+    "spoken_input": "ok glasses just keep talking about nothing in particular and see where it goes, maybe to the store or just around the corner or possibly nowhere at all",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c015",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "12345abcdef",
+    "spoken_input": "ok glasses 12345abcdef",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c016",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "!@#$%^&*()_",
+    "spoken_input": "ok glasses !@#$%^&*()_",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c017",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "murmuring under breath",
+    "spoken_input": "ok glasses murmuring under breath",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c018",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Is this thing on?",
+    "spoken_input": "ok glasses Is this thing on?",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c019",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "noise noise noise",
+    "spoken_input": "ok glasses noise noise noise",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c020",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "dolor sit amet consectetur",
+    "spoken_input": "ok glasses dolor sit amet consectetur",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c021",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Who said that?",
+    "spoken_input": "ok glasses Who said that?",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c022",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "qwertyuiop",
+    "spoken_input": "ok glasses qwertyuiop",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c023",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "🚀🌟🎉",
+    "spoken_input": "ok glasses 🚀🌟🎉",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c024",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "undefined",
+    "spoken_input": "ok glasses undefined",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c025",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{\"error\": \"not found\"}",
+    "spoken_input": "ok glasses {\"error\": \"not found\"}",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c026",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "/help",
+    "spoken_input": "ok glasses /help",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c027",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "while true do nothing",
+    "spoken_input": "ok glasses while true do nothing",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c028",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "wandering through thoughts without a clear destination",
+    "spoken_input": "ok glasses wandering through thoughts without a clear destination",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c029",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Blue over green",
+    "spoken_input": "ok glasses Blue over green",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c030",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Fish swims south",
+    "spoken_input": "ok glasses Fish swims south",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c031",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Shiny object on the horizon",
+    "spoken_input": "ok glasses Shiny object on the horizon",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c032",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Never there when you call",
+    "spoken_input": "ok glasses Never there when you call",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c033",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "zero division error",
+    "spoken_input": "ok glasses zero division error",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c034",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "redirect output",
+    "spoken_input": "ok glasses redirect output",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c035",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "?",
+    "spoken_input": "ok glasses ?",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c036",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{user: 'anonymous'}",
+    "spoken_input": "ok glasses {user: 'anonymous'}",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c037",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "execute order 66",
+    "spoken_input": "ok glasses execute order 66",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c038",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "recursive loop initiated",
+    "spoken_input": "ok glasses recursive loop initiated",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c039",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "A quick brown fox",
+    "spoken_input": "ok glasses A quick brown fox",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c040",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "none",
+    "spoken_input": "ok glasses none",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c041",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Work on it, you know what I mean",
+    "spoken_input": "ok glasses Work on it, you know what I mean",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c042",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Get the stuff for patient",
+    "spoken_input": "ok glasses Get the stuff for patient",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c043",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Help with the, uh, problem",
+    "spoken_input": "ok glasses Help with the, uh, problem",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c044",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the usual for subject",
+    "spoken_input": "ok glasses Do the usual for subject",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c045",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Get that thing",
+    "spoken_input": "ok glasses Get that thing",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c046",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check the thing, we need the stuff",
+    "spoken_input": "ok glasses Check the thing, we need the stuff",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c047",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the needful and proceed with the medical thing for patient Victor Stone",
+    "spoken_input": "ok glasses Do the needful and proceed with the medical thing for patient Victor Stone",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c048",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check the medical thing",
+    "spoken_input": "ok glasses Check the medical thing",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c049",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Proceed with the thing and do the usual check",
+    "spoken_input": "ok glasses Proceed with the thing and do the usual check",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c050",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Proceed with the medical",
+    "spoken_input": "ok glasses Proceed with the medical",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c051",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Continue with the thing for patient Bruce Wayne",
+    "spoken_input": "ok glasses Continue with the thing for patient Bruce Wayne",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c052",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the needful for patient Peter Parker",
+    "spoken_input": "ok glasses Do the needful for patient Peter Parker",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c053",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Patient Stephen Strange needs the thing done",
+    "spoken_input": "ok glasses Patient Stephen Strange needs the thing done",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c054",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check that there",
+    "spoken_input": "ok glasses Check that there",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c055",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle the usual stuff for the case",
+    "spoken_input": "ok glasses Handle the usual stuff for the case",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c056",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Sort that usual thing out",
+    "spoken_input": "ok glasses Sort that usual thing out",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c057",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Deal with that thing for patient",
+    "spoken_input": "ok glasses Deal with that thing for patient",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c058",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle what’s required",
+    "spoken_input": "ok glasses Handle what’s required",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c059",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do something about it",
+    "spoken_input": "ok glasses Do something about it",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c060",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do what's necessary, you know",
+    "spoken_input": "ok glasses Do what's necessary, you know",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c061",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Deal with whatever comes up",
+    "spoken_input": "ok glasses Deal with whatever comes up",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c062",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Figure out the stuff for him",
+    "spoken_input": "ok glasses Figure out the stuff for him",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c063",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle the thing you know",
+    "spoken_input": "ok glasses Handle the thing you know",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c064",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Look into whatever that is",
+    "spoken_input": "ok glasses Look into whatever that is",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c065",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Address whatever you think it is",
+    "spoken_input": "ok glasses Address whatever you think it is",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c066",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "I don't know what to do",
+    "spoken_input": "ok glasses I don't know what to do",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c067",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Organize the usual, you know",
+    "spoken_input": "ok glasses Organize the usual, you know",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c068",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Evaluate that certain thing",
+    "spoken_input": "ok glasses Evaluate that certain thing",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c069",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Adjust what needs fixing",
+    "spoken_input": "ok glasses Adjust what needs fixing",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c070",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Finish up with the usual, maybe",
+    "spoken_input": "ok glasses Finish up with the usual, maybe",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c071",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Adjust the thermostat to 22 degrees",
+    "spoken_input": "ok glasses Adjust the thermostat to 22 degrees",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c072",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Water the plants in the office",
+    "spoken_input": "ok glasses Water the plants in the office",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c073",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Update the website banner",
+    "spoken_input": "ok glasses Update the website banner",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c074",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Check the stock market trends",
+    "spoken_input": "ok glasses Check the stock market trends",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c075",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Book a flight to Tokyo",
+    "spoken_input": "ok glasses Book a flight to Tokyo",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c076",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Organize the quarterly sales data",
+    "spoken_input": "ok glasses Organize the quarterly sales data",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c077",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Send the monthly newsletter",
+    "spoken_input": "ok glasses Send the monthly newsletter",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c078",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Review the new software update",
+    "spoken_input": "ok glasses Review the new software update",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c079",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Configure the network settings",
+    "spoken_input": "ok glasses Configure the network settings",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c080",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Archive old project files",
+    "spoken_input": "ok glasses Archive old project files",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c081",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Evaluate the efficiency of solar panels in low-light conditions",
+    "spoken_input": "ok glasses Evaluate the efficiency of solar panels in low-light conditions",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c082",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Plan a corporate retreat for next summer",
+    "spoken_input": "ok glasses Plan a corporate retreat for next summer",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c083",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Launch a social media campaign for the new clothing line",
+    "spoken_input": "ok glasses Launch a social media campaign for the new clothing line",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c084",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Compile a list of potential investors for the new venture",
+    "spoken_input": "ok glasses Compile a list of potential investors for the new venture",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c085",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Update the privacy policy on the website",
+    "spoken_input": "ok glasses Update the privacy policy on the website",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c086",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Organize a workshop on digital photography techniques",
+    "spoken_input": "ok glasses Organize a workshop on digital photography techniques",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c087",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Optimize the supply chain for faster delivery times",
+    "spoken_input": "ok glasses Optimize the supply chain for faster delivery times",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c088",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Negotiate a new lease agreement for the office space",
+    "spoken_input": "ok glasses Negotiate a new lease agreement for the office space",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c089",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Lock the front door",
+    "spoken_input": "ok glasses Lock the front door",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c090",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Conduct a survey on consumer preferences for electronic goods",
+    "spoken_input": "ok glasses Conduct a survey on consumer preferences for electronic goods",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c091",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Restore the vintage car collection",
+    "spoken_input": "ok glasses Restore the vintage car collection",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c092",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Draft a proposal for urban green spaces",
+    "spoken_input": "ok glasses Draft a proposal for urban green spaces",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c093",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Turn on the coffee machine",
+    "spoken_input": "ok glasses Turn on the coffee machine",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c094",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Increase the volume",
+    "spoken_input": "ok glasses Increase the volume",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c095",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Start the dishwasher",
+    "spoken_input": "ok glasses Start the dishwasher",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c096",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Open the garage door",
+    "spoken_input": "ok glasses Open the garage door",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c097",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Dim the lights",
+    "spoken_input": "ok glasses Dim the lights",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c098",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Reset the router",
+    "spoken_input": "ok glasses Reset the router",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c099",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Print the document",
+    "spoken_input": "ok glasses Print the document",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c100",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Start engine",
+    "spoken_input": "ok glasses Start engine",
+    "grammar_output": {},
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c101",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "stop",
+    "spoken_input": "ok glasses stop",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "STOP_FRAME"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c102",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "stop frame",
+    "spoken_input": "ok glasses stop frame",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "STOP_FRAME"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c103",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Freeze frame",
+    "spoken_input": "ok glasses Freeze frame",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c104",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Halt animation",
+    "spoken_input": "ok glasses Halt animation",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c105",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Stop now frame",
+    "spoken_input": "ok glasses Stop now frame",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c106",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Stop frame",
+    "spoken_input": "ok glasses Stop frame",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "STOP_FRAME"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c107",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue",
+    "spoken_input": "ok glasses continue",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "CONTINUE_FRAME"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c108",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue frame",
+    "spoken_input": "ok glasses continue frame",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "CONTINUE_FRAME"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c109",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Continue frame, start now",
+    "spoken_input": "ok glasses Continue frame, start now",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c110",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue",
+    "spoken_input": "ok glasses continue",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "CONTINUE_FRAME"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c111",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn on",
+    "spoken_input": "ok glasses turn on",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "TURN_ON"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c112",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Activate display",
+    "spoken_input": "ok glasses Activate display",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c113",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Display on",
+    "spoken_input": "ok glasses Display on",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c114",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Turn on the display",
+    "spoken_input": "ok glasses Turn on the display",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "TURN_ON"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c115",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn the display on",
+    "spoken_input": "ok glasses turn the display on",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c116",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Turn off display",
+    "spoken_input": "ok glasses Turn off display",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "TURN_OFF"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c117",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "disable the screen",
+    "spoken_input": "ok glasses disable the screen",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c118",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn it off",
+    "spoken_input": "ok glasses turn it off",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c119",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn off",
+    "spoken_input": "ok glasses turn off",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "TURN_OFF"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c120",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "please turn on",
+    "spoken_input": "ok glasses please turn on",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "TURN_ON"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c121",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "start emergency",
+    "spoken_input": "ok glasses start emergency",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "START_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c122",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "finish emergency",
+    "spoken_input": "ok glasses finish emergency",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "END_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c123",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept emergency",
+    "spoken_input": "ok glasses accept emergency",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "ACCEPT_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c124",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave emergency mode",
+    "spoken_input": "ok glasses leave emergency mode",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "LEAVE_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c125",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "start the emergency",
+    "spoken_input": "ok glasses start the emergency",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "START_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c126",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "I need help! Start emergency",
+    "spoken_input": "ok glasses I need help! Start emergency",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c127",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Emergency in the kitchen! Start emergency",
+    "spoken_input": "ok glasses Emergency in the kitchen! Start emergency",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c128",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Code red, initiate immediately",
+    "spoken_input": "ok glasses Code red, initiate immediately",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c129",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Begin emergency",
+    "spoken_input": "ok glasses Begin emergency",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c130",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Trigger emergency situation",
+    "spoken_input": "ok glasses Trigger emergency situation",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c131",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Deactivate emergency mode",
+    "spoken_input": "ok glasses Deactivate emergency mode",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c132",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Disable emergency mode",
+    "spoken_input": "ok glasses Disable emergency mode",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c133",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Stop emergency",
+    "spoken_input": "ok glasses Stop emergency",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c134",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Terminate the emergency",
+    "spoken_input": "ok glasses Terminate the emergency",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c135",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept emergency mode",
+    "spoken_input": "ok glasses accept emergency mode",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "ACCEPT_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c136",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave the emergency mode now",
+    "spoken_input": "ok glasses leave the emergency mode now",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c137",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave emergency",
+    "spoken_input": "ok glasses leave emergency",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "LEAVE_EMERGENCY"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c138",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Cancel emergency mode",
+    "spoken_input": "ok glasses Cancel emergency mode",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c139",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Leave crisis mode",
+    "spoken_input": "ok glasses Leave crisis mode",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c140",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept catastrophe accident mode",
+    "spoken_input": "ok glasses accept catastrophe accident mode",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c141",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show age",
+    "spoken_input": "ok glasses show age",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "age"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c142",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Display blood pressure",
+    "spoken_input": "ok glasses Display blood pressure",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c143",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show patient records",
+    "spoken_input": "ok glasses show patient records",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "patient records"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c144",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show medical charts",
+    "spoken_input": "ok glasses show medical charts",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "medical charts"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c145",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show vital signs",
+    "spoken_input": "ok glasses Show vital signs",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "vital signs"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c146",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Display diagnostic information",
+    "spoken_input": "ok glasses Display diagnostic information",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c147",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show medication history",
+    "spoken_input": "ok glasses Show medication history",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "medication history"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c148",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Illustrate the insights",
+    "spoken_input": "ok glasses Illustrate the insights",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c149",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Illustrate the patient's medical history",
+    "spoken_input": "ok glasses Illustrate the patient's medical history",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c150",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the MRI scan results",
+    "spoken_input": "ok glasses Show the MRI scan results",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "mri scan results"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c151",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Present the blood test findings for the last month",
+    "spoken_input": "ok glasses Present the blood test findings for the last month",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "blood test findings for last month"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c152",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Bring up the medication history of the past week",
+    "spoken_input": "ok glasses Bring up the medication history of the past week",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c153",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Exhibit the surgical procedure details from the last three days",
+    "spoken_input": "ok glasses Exhibit the surgical procedure details from the last three days",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c154",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Demonstrate the pathology reports for the last 24 hours",
+    "spoken_input": "ok glasses Demonstrate the pathology reports for the last 24 hours",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c155",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the vaccination records of last 2 months",
+    "spoken_input": "ok glasses Show the vaccination records of last 2 months",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "vaccination records of last 2 months"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c156",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Bring up the chemotherapy regimen recorded in the past six hours",
+    "spoken_input": "ok glasses Bring up the chemotherapy regimen recorded in the past six hours",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c157",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the genetic testing results over the past 48 hours",
+    "spoken_input": "ok glasses Show the genetic testing results over the past 48 hours",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "genetic testing results over past 48 hours"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c158",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Reveal the immunization history of the last 10 days",
+    "spoken_input": "ok glasses Reveal the immunization history of the last 10 days",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c159",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note: Patient presented with persistent cough and fever for the past week, finish note",
+    "spoken_input": "ok glasses Set note: Patient presented with persistent cough and fever for the past week, finish note",
+    "grammar_output": {
+      "type": "PROTOCOL",
+      "content": "patient presented with persistent cough and fever for past week"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c160",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Note: Upon examination, there was tenderness in the lower abdomen and a palpable mass",
+    "spoken_input": "ok glasses Note: Upon examination, there was tenderness in the lower abdomen and a palpable mass",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c161",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Record note: Patient's blood pressure was elevated at 160/90 mmHg during today's visit",
+    "spoken_input": "ok glasses Record note: Patient's blood pressure was elevated at 160/90 mmHg during today's visit",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c162",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Add note: Patient reports experiencing shortness of breath and chest pain upon exertion",
+    "spoken_input": "ok glasses Add note: Patient reports experiencing shortness of breath and chest pain upon exertion",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c163",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Log note: Radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis, finish note",
+    "spoken_input": "ok glasses Log note: Radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis, finish note",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c164",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Start documentation: Chief complaint is abdominal pain, rated 7 out of 10, located in the lower right quadrant. Vital signs stable, temperature 37.2 degrees Celsius. Finish documentation",
+    "spoken_input": "ok glasses Start documentation: Chief complaint is abdominal pain, rated 7 out of 10, located in the lower right quadrant. Vital signs stable, temperature 37.2 degrees Celsius. Finish documentation",
+    "grammar_output": {
+      "type": "PROTOCOL",
+      "content": "chief complaint is abdominal pain rated 7 out of 10 located in lower right quadrant vital signs stable temperature 372 degrees celsius"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c165",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Patient presented with acute chest pain, vital signs stable, ECG shows sinus rhythm. Finish note",
+    "spoken_input": "ok glasses Set note Patient presented with acute chest pain, vital signs stable, ECG shows sinus rhythm. Finish note",
+    "grammar_output": {
+      "type": "PROTOCOL",
+      "content": "patient presented with acute chest pain vital signs stable ecg shows sinus rhythm"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c166",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Admitted for suspected appendicitis, abdominal pain started 12 hours ago, rebound tenderness present. Finish note",
+    "spoken_input": "ok glasses Set note Admitted for suspected appendicitis, abdominal pain started 12 hours ago, rebound tenderness present. Finish note",
+    "grammar_output": {
+      "type": "PROTOCOL",
+      "content": "admitted for suspected appendicitis abdominal pain started 12 hours ago rebound tenderness present"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c167",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Consulted for diabetic foot ulcer, wound size 2x2 cm, no signs of infection noted. Finish note",
+    "spoken_input": "ok glasses Set note Consulted for diabetic foot ulcer, wound size 2x2 cm, no signs of infection noted. Finish note",
+    "grammar_output": {
+      "type": "PROTOCOL",
+      "content": "consulted for diabetic foot ulcer wound size 2 x 2 cm no signs of infection noted"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c168",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Follow-up for hypertension, blood pressure readings consistently elevated despite medication adherence. Finish note",
+    "spoken_input": "ok glasses Set note Follow-up for hypertension, blood pressure readings consistently elevated despite medication adherence. Finish note",
+    "grammar_output": {
+      "type": "PROTOCOL",
+      "content": "followup for hypertension blood pressure readings consistently elevated despite medication adherence"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c169",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication regimen for patient John Doe: Begin with 10 milligrams of Lisinopril once daily, finish medication",
+    "spoken_input": "ok glasses Set medication regimen for patient John Doe: Begin with 10 milligrams of Lisinopril once daily, finish medication",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c170",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication protocol: Commence treatment with 500 milligrams of Metformin twice a day, finish medication",
+    "spoken_input": "ok glasses Set medication protocol: Commence treatment with 500 milligrams of Metformin twice a day, finish medication",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c171",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Start medication plan for Mrs. Smith: Begin with 20 milligrams of Atorvastatin every evening, finish medication",
+    "spoken_input": "ok glasses Start medication plan for Mrs. Smith: Begin with 20 milligrams of Atorvastatin every evening, finish medication",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c172",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Activate drug regimen for Mr. Johnson: Start with 50 micrograms of Levothyroxine in the morning",
+    "spoken_input": "ok glasses Activate drug regimen for Mr. Johnson: Start with 50 micrograms of Levothyroxine in the morning",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c173",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Start medication aspirin 100 milligrams and clopidogrel 75 milligrams, finish medication",
+    "spoken_input": "ok glasses Start medication aspirin 100 milligrams and clopidogrel 75 milligrams, finish medication",
+    "grammar_output": {
+      "type": "MEDICATION",
+      "content": [
+        {
+          "medicine": "aspirin",
+          "quantity": "100",
+          "unit": "milligrams"
+        },
+        {
+          "medicine": "clopidogrel",
+          "quantity": "75",
+          "unit": "milligrams"
+        }
+      ]
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c174",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication metformin 500 milligrams at 10 am, finish medication",
+    "spoken_input": "ok glasses Set medication metformin 500 milligrams at 10 am, finish medication",
+    "grammar_output": {
+      "type": "MEDICATION",
+      "time": "10 am",
+      "content": [
+        {
+          "medicine": "metformin",
+          "quantity": "500",
+          "unit": "milligrams"
+        }
+      ]
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c175",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication lisinopril 10 milligrams at 4 pm, finish medication",
+    "spoken_input": "ok glasses Set medication lisinopril 10 milligrams at 4 pm, finish medication",
+    "grammar_output": {
+      "type": "MEDICATION",
+      "time": "4 pm",
+      "content": [
+        {
+          "medicine": "lisinopril",
+          "quantity": "10",
+          "unit": "milligrams"
+        }
+      ]
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c176",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily, finish medication",
+    "spoken_input": "ok glasses Set medication levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily, finish medication",
+    "grammar_output": {
+      "type": "MEDICATION",
+      "content": [
+        {
+          "medicine": "levothyroxine",
+          "quantity": "50",
+          "unit": "micrograms once daily"
+        },
+        {
+          "medicine": "omeprazole",
+          "quantity": "20",
+          "unit": "milligrams once daily"
+        }
+      ]
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c177",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication albuterol inhaler 2 puffs every 4 hours as needed, finish medication",
+    "spoken_input": "ok glasses Set medication albuterol inhaler 2 puffs every 4 hours as needed, finish medication",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c178",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o'clock, finish medication",
+    "spoken_input": "ok glasses Set medication lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o'clock, finish medication",
+    "grammar_output": {
+      "type": "MEDICATION",
+      "time": "11:00",
+      "content": [
+        {
+          "medicine": "lisinopril",
+          "quantity": "10",
+          "unit": "milligrams"
+        },
+        {
+          "medicine": "atorvastatin",
+          "quantity": "20",
+          "unit": "milligrams"
+        }
+      ]
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c179",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Change patient to John Smith",
+    "spoken_input": "ok glasses Change patient to John Smith",
+    "grammar_output": {
+      "type": "REQUEST_PATIENT",
+      "content": "John Smith"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c180",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch patient to Mary Johnson",
+    "spoken_input": "ok glasses Switch patient to Mary Johnson",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c181",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Update patient to Sarah Davis",
+    "spoken_input": "ok glasses Update patient to Sarah Davis",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c182",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Change patient to John Doe",
+    "spoken_input": "ok glasses Change patient to John Doe",
+    "grammar_output": {
+      "type": "REQUEST_PATIENT",
+      "content": "John Doe"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c183",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch patient to Mary Smith",
+    "spoken_input": "ok glasses Switch patient to Mary Smith",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c184",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch to messages",
+    "spoken_input": "ok glasses Switch to messages",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "SHOW_MESSAGES"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c185",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show messages view",
+    "spoken_input": "ok glasses Show messages view",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "messages view"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c186",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show messages",
+    "spoken_input": "ok glasses Show messages",
+    "grammar_output": {
+      "type": "GLASSES_COMMAND",
+      "content": "SHOW_MESSAGES"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c187",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Display messages",
+    "spoken_input": "ok glasses Display messages",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c188",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show me the messages",
+    "spoken_input": "ok glasses Show me the messages",
+    "grammar_output": {
+      "type": "REQUEST_DATA",
+      "content": "me messages"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c189",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Inform Mrs. Smith about her upcoming appointment. Finish the message and send it to Mrs. Smith",
+    "spoken_input": "ok glasses Start a new message: Inform Mrs. Smith about her upcoming appointment. Finish the message and send it to Mrs. Smith",
+    "grammar_output": {
+      "type": "MESSAGE",
+      "to": "Mrs Smith",
+      "content": "inform mrs smith about her upcoming appointment"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c190",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Remind Mr. Johnson to take his medication as prescribed. Finish and send it to Mr. Johnson",
+    "spoken_input": "ok glasses Start message: Remind Mr. Johnson to take his medication as prescribed. Finish and send it to Mr. Johnson",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c191",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start new message: Note that Ms. Rodriguez's test results are ready for review. Finish message and send it to Ms. Rodriguez",
+    "spoken_input": "ok glasses Start new message: Note that Ms. Rodriguez's test results are ready for review. Finish message and send it to Ms. Rodriguez",
+    "grammar_output": {
+      "type": "MESSAGE",
+      "to": "Ms Rodriguez",
+      "content": "note that ms rodriguezs test results are ready for review"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c192",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Begin message: Advise Mr. Patel to schedule a follow-up consultation. Complete the message and send it to Mr. Patel",
+    "spoken_input": "ok glasses Begin message: Advise Mr. Patel to schedule a follow-up consultation. Complete the message and send it to Mr. Patel",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c193",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start new message: Notify Dr. Lee about the patient's allergic reaction. Finish message and send it to Dr. Lee",
+    "spoken_input": "ok glasses Start new message: Notify Dr. Lee about the patient's allergic reaction. Finish message and send it to Dr. Lee",
+    "grammar_output": {
+      "type": "MESSAGE",
+      "to": "Dr Lee",
+      "content": "notify dr lee about patients allergic reaction"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c194",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Document the change in Mrs. Thompson's medication dosage. Finish the message and send it to Mrs. Thompson",
+    "spoken_input": "ok glasses Start a new message: Document the change in Mrs. Thompson's medication dosage. Finish the message and send it to Mrs. Thompson",
+    "grammar_output": {
+      "type": "MESSAGE",
+      "to": "Mrs Thompson",
+      "content": "document change in mrs thompsons medication dosage"
+    },
+    "error": null,
+    "correct": true
+  },
+  {
+    "id": "c195",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Update Mr. Nguyen on his upcoming surgery details. Finish and send it to Mr. Nguyen",
+    "spoken_input": "ok glasses Start message: Update Mr. Nguyen on his upcoming surgery details. Finish and send it to Mr. Nguyen",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c196",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Begin new message: Record Ms. Garcia's recent symptoms for review. Complete the message and send it to Ms. Garcia",
+    "spoken_input": "ok glasses Begin new message: Record Ms. Garcia's recent symptoms for review. Complete the message and send it to Ms. Garcia",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c197",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Inform Dr. Patel about the patient's discharge instructions. Finish and send it to Dr. Patel",
+    "spoken_input": "ok glasses Start message: Inform Dr. Patel about the patient's discharge instructions. Finish and send it to Dr. Patel",
+    "grammar_output": {},
+    "error": null,
+    "correct": false
+  },
+  {
+    "id": "c198",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Notify Mrs. Kim about her laboratory test scheduling. Finish the message and send it to Mrs. Kim",
+    "spoken_input": "ok glasses Start a new message: Notify Mrs. Kim about her laboratory test scheduling. Finish the message and send it to Mrs. Kim",
+    "grammar_output": {
+      "type": "MESSAGE",
+      "to": "Mrs Kim",
+      "content": "notify mrs kim about her laboratory test scheduling"
+    },
+    "error": null,
+    "correct": true
+  }
+]

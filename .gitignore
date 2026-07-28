@@ -1,0 +1,39 @@
+# Environment & secrets
+.env
+.env.*
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Large ontology files (download separately — see ontologies/ONTOLOGY_SOURCES.md)
+ontologies/RXNCONSO.RRF
+ontologies/Thesaurus.txt
+ontologies/Thesaurus.FLAT.zip
+ontologies/doid.obo
+ontologies/hp.obo
+
+# Baseline — Ludyga's original code (not our contribution)
+baseline_ludyga/
+baseline_ludyga_wiki/
+
+# Thesis PDFs (not source code)
+*.pdf
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Audio data
+data/audio/
+
+# Model selection cache
+.selected_model

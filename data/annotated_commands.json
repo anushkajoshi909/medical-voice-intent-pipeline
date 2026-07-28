@@ -1,0 +1,1990 @@
+[
+  {
+    "id": "c001",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "RandomString12345",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c002",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "xy#&@!2345G#$",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c003",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{unintelligible mumble}",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c004",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Test, test, this is a test",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c005",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "[inaudible sounds]",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c006",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Lorem Ipsum sit amet",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c007",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "What is the thing?",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c008",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "asdkfjwenvn",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c009",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "😀😂👍",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c010",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "null",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c011",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{\"data\": \"value\"}",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c012",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "/restart",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c013",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "if x then y",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c014",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "just keep talking about nothing in particular and see where it goes, maybe to the store or just around the corner or possibly nowhere at all",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c015",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "12345abcdef",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c016",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "!@#$%^&*()_",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c017",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "murmuring under breath",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c018",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Is this thing on?",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c019",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "noise noise noise",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c020",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "dolor sit amet consectetur",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c021",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Who said that?",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c022",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "qwertyuiop",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c023",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "🚀🌟🎉",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c024",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "undefined",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c025",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{\"error\": \"not found\"}",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c026",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "/help",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c027",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "while true do nothing",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c028",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "wandering through thoughts without a clear destination",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c029",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Blue over green",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c030",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Fish swims south",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c031",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Shiny object on the horizon",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c032",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Never there when you call",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c033",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "zero division error",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c034",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "redirect output",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c035",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "?",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c036",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{user: 'anonymous'}",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c037",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "execute order 66",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c038",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "recursive loop initiated",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c039",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "A quick brown fox",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c040",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "none",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c041",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Work on it, you know what I mean",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c042",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Get the stuff for patient",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c043",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Help with the, uh, problem",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c044",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the usual for subject",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c045",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Get that thing",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c046",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check the thing, we need the stuff",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c047",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the needful and proceed with the medical thing for patient Victor Stone",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c048",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check the medical thing",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c049",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Proceed with the thing and do the usual check",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c050",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Proceed with the medical",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c051",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Continue with the thing for patient Bruce Wayne",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c052",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the needful for patient Peter Parker",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c053",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Patient Stephen Strange needs the thing done",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c054",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check that there",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c055",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle the usual stuff for the case",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c056",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Sort that usual thing out",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c057",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Deal with that thing for patient",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c058",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle what’s required",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c059",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do something about it",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c060",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do what's necessary, you know",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c061",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Deal with whatever comes up",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c062",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Figure out the stuff for him",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c063",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle the thing you know",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c064",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Look into whatever that is",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c065",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Address whatever you think it is",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c066",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "I don't know what to do",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c067",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Organize the usual, you know",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c068",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Evaluate that certain thing",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c069",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Adjust what needs fixing",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c070",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Finish up with the usual, maybe",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c071",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Adjust the thermostat to 22 degrees",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c072",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Water the plants in the office",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c073",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Update the website banner",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c074",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Check the stock market trends",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c075",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Book a flight to Tokyo",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c076",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Organize the quarterly sales data",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c077",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Send the monthly newsletter",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c078",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Review the new software update",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c079",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Configure the network settings",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c080",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Archive old project files",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c081",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Evaluate the efficiency of solar panels in low-light conditions",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c082",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Plan a corporate retreat for next summer",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c083",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Launch a social media campaign for the new clothing line",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c084",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Compile a list of potential investors for the new venture",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c085",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Update the privacy policy on the website",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c086",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Organize a workshop on digital photography techniques",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c087",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Optimize the supply chain for faster delivery times",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c088",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Negotiate a new lease agreement for the office space",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c089",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Lock the front door",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c090",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Conduct a survey on consumer preferences for electronic goods",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c091",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Restore the vintage car collection",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c092",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Draft a proposal for urban green spaces",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c093",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Turn on the coffee machine",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c094",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Increase the volume",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c095",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Start the dishwasher",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c096",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Open the garage door",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c097",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Dim the lights",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c098",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Reset the router",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c099",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Print the document",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c100",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Start engine",
+    "expected_action": null,
+    "action_source": "invalid"
+  },
+  {
+    "id": "c101",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "stop",
+    "expected_action": "stop",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c102",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "stop frame",
+    "expected_action": "stop",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c103",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Freeze frame",
+    "expected_action": "stop",
+    "action_source": "manual"
+  },
+  {
+    "id": "c104",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Halt animation",
+    "expected_action": "stop",
+    "action_source": "manual"
+  },
+  {
+    "id": "c105",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Stop now frame",
+    "expected_action": "stop",
+    "action_source": "manual"
+  },
+  {
+    "id": "c106",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Stop frame",
+    "expected_action": "stop",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c107",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue",
+    "expected_action": "continue",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c108",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue frame",
+    "expected_action": "continue",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c109",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Continue frame, start now",
+    "expected_action": "continue",
+    "action_source": "manual"
+  },
+  {
+    "id": "c110",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue",
+    "expected_action": "continue",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c111",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn on",
+    "expected_action": "turn_on",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c112",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Activate display",
+    "expected_action": "turn_on",
+    "action_source": "manual"
+  },
+  {
+    "id": "c113",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Display on",
+    "expected_action": "turn_on",
+    "action_source": "manual"
+  },
+  {
+    "id": "c114",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Turn on the display",
+    "expected_action": "turn_on",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c115",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn the display on",
+    "expected_action": "turn_on",
+    "action_source": "manual"
+  },
+  {
+    "id": "c116",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Turn off display",
+    "expected_action": "turn_off",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c117",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "disable the screen",
+    "expected_action": "turn_off",
+    "action_source": "manual"
+  },
+  {
+    "id": "c118",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn it off",
+    "expected_action": "turn_off",
+    "action_source": "manual"
+  },
+  {
+    "id": "c119",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn off",
+    "expected_action": "turn_off",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c120",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "please turn on",
+    "expected_action": "turn_on",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c121",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "start emergency",
+    "expected_action": "emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c122",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "finish emergency",
+    "expected_action": "leave_emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c123",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept emergency",
+    "expected_action": "accept_emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c124",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave emergency mode",
+    "expected_action": "leave_emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c125",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "start the emergency",
+    "expected_action": "emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c126",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "I need help! Start emergency",
+    "expected_action": "emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c127",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Emergency in the kitchen! Start emergency",
+    "expected_action": "emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c128",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Code red, initiate immediately",
+    "expected_action": "emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c129",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Begin emergency",
+    "expected_action": "emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c130",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Trigger emergency situation",
+    "expected_action": "emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c131",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Deactivate emergency mode",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c132",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Disable emergency mode",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c133",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Stop emergency",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c134",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Terminate the emergency",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c135",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept emergency mode",
+    "expected_action": "accept_emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c136",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave the emergency mode now",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c137",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave emergency",
+    "expected_action": "leave_emergency",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c138",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Cancel emergency mode",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c139",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Leave crisis mode",
+    "expected_action": "leave_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c140",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept catastrophe accident mode",
+    "expected_action": "accept_emergency",
+    "action_source": "manual"
+  },
+  {
+    "id": "c141",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show age",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c142",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Display blood pressure",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c143",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show patient records",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c144",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show medical charts",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c145",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show vital signs",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c146",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Display diagnostic information",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c147",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show medication history",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c148",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Illustrate the insights",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c149",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Illustrate the patient's medical history",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c150",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the MRI scan results",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c151",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Present the blood test findings for the last month",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c152",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Bring up the medication history of the past week",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c153",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Exhibit the surgical procedure details from the last three days",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c154",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Demonstrate the pathology reports for the last 24 hours",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c155",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the vaccination records of last 2 months",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c156",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Bring up the chemotherapy regimen recorded in the past six hours",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c157",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the genetic testing results over the past 48 hours",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c158",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Reveal the immunization history of the last 10 days",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c159",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note: Patient presented with persistent cough and fever for the past week, finish note",
+    "expected_action": "set_note",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c160",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Note: Upon examination, there was tenderness in the lower abdomen and a palpable mass",
+    "expected_action": "set_note",
+    "action_source": "manual"
+  },
+  {
+    "id": "c161",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Record note: Patient's blood pressure was elevated at 160/90 mmHg during today's visit",
+    "expected_action": "set_note",
+    "action_source": "manual"
+  },
+  {
+    "id": "c162",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Add note: Patient reports experiencing shortness of breath and chest pain upon exertion",
+    "expected_action": "set_note",
+    "action_source": "manual"
+  },
+  {
+    "id": "c163",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Log note: Radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis, finish note",
+    "expected_action": "set_note",
+    "action_source": "manual"
+  },
+  {
+    "id": "c164",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Start documentation: Chief complaint is abdominal pain, rated 7 out of 10, located in the lower right quadrant. Vital signs stable, temperature 37.2 degrees Celsius. Finish documentation",
+    "expected_action": "set_note",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c165",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Patient presented with acute chest pain, vital signs stable, ECG shows sinus rhythm. Finish note",
+    "expected_action": "set_note",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c166",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Admitted for suspected appendicitis, abdominal pain started 12 hours ago, rebound tenderness present. Finish note",
+    "expected_action": "set_note",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c167",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Consulted for diabetic foot ulcer, wound size 2x2 cm, no signs of infection noted. Finish note",
+    "expected_action": "set_note",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c168",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Follow-up for hypertension, blood pressure readings consistently elevated despite medication adherence. Finish note",
+    "expected_action": "set_note",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c169",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication regimen for patient John Doe: Begin with 10 milligrams of Lisinopril once daily, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c170",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication protocol: Commence treatment with 500 milligrams of Metformin twice a day, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c171",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Start medication plan for Mrs. Smith: Begin with 20 milligrams of Atorvastatin every evening, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c172",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Activate drug regimen for Mr. Johnson: Start with 50 micrograms of Levothyroxine in the morning",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c173",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Start medication aspirin 100 milligrams and clopidogrel 75 milligrams, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c174",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication metformin 500 milligrams at 10 am, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c175",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication lisinopril 10 milligrams at 4 pm, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c176",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c177",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication albuterol inhaler 2 puffs every 4 hours as needed, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c178",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o'clock, finish medication",
+    "expected_action": "set_medication",
+    "action_source": "manual"
+  },
+  {
+    "id": "c179",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Change patient to John Smith",
+    "expected_action": "change_patient",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c180",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch patient to Mary Johnson",
+    "expected_action": "change_patient",
+    "action_source": "manual"
+  },
+  {
+    "id": "c181",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Update patient to Sarah Davis",
+    "expected_action": "change_patient",
+    "action_source": "manual"
+  },
+  {
+    "id": "c182",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Change patient to John Doe",
+    "expected_action": "change_patient",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c183",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch patient to Mary Smith",
+    "expected_action": "change_patient",
+    "action_source": "manual"
+  },
+  {
+    "id": "c184",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch to messages",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c185",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show messages view",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c186",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show messages",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c187",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Display messages",
+    "expected_action": "show",
+    "action_source": "manual"
+  },
+  {
+    "id": "c188",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show me the messages",
+    "expected_action": "show",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c189",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Inform Mrs. Smith about her upcoming appointment. Finish the message and send it to Mrs. Smith",
+    "expected_action": "send_message",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c190",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Remind Mr. Johnson to take his medication as prescribed. Finish and send it to Mr. Johnson",
+    "expected_action": "send_message",
+    "action_source": "manual"
+  },
+  {
+    "id": "c191",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start new message: Note that Ms. Rodriguez's test results are ready for review. Finish message and send it to Ms. Rodriguez",
+    "expected_action": "send_message",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c192",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Begin message: Advise Mr. Patel to schedule a follow-up consultation. Complete the message and send it to Mr. Patel",
+    "expected_action": "send_message",
+    "action_source": "manual"
+  },
+  {
+    "id": "c193",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start new message: Notify Dr. Lee about the patient's allergic reaction. Finish message and send it to Dr. Lee",
+    "expected_action": "send_message",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c194",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Document the change in Mrs. Thompson's medication dosage. Finish the message and send it to Mrs. Thompson",
+    "expected_action": "send_message",
+    "action_source": "grammar"
+  },
+  {
+    "id": "c195",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Update Mr. Nguyen on his upcoming surgery details. Finish and send it to Mr. Nguyen",
+    "expected_action": "send_message",
+    "action_source": "manual"
+  },
+  {
+    "id": "c196",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Begin new message: Record Ms. Garcia's recent symptoms for review. Complete the message and send it to Ms. Garcia",
+    "expected_action": "send_message",
+    "action_source": "manual"
+  },
+  {
+    "id": "c197",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Inform Dr. Patel about the patient's discharge instructions. Finish and send it to Dr. Patel",
+    "expected_action": "send_message",
+    "action_source": "manual"
+  },
+  {
+    "id": "c198",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Notify Mrs. Kim about her laboratory test scheduling. Finish the message and send it to Mrs. Kim",
+    "expected_action": "send_message",
+    "action_source": "grammar"
+  },
+  {
+    "id": "ext_abbr_01",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show BP",
+    "expected_action": "show",
+    "expected_entity_expanded": "blood pressure",
+    "note": "Abbreviation: BP → blood pressure. Ludyga grammar has no abbreviation expansion; expects full token.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_02",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show SpO2",
+    "expected_action": "show",
+    "expected_entity_expanded": "oxygen saturation",
+    "note": "Abbreviation: SpO2 → oxygen saturation.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_03",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show ECG results",
+    "expected_action": "show",
+    "expected_entity_expanded": "electrocardiogram results",
+    "note": "Abbreviation: ECG → electrocardiogram.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_04",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show CBC",
+    "expected_action": "show",
+    "expected_entity_expanded": "complete blood count",
+    "note": "Abbreviation: CBC → complete blood count.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_05",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "start HD",
+    "expected_action": "start",
+    "expected_entity_expanded": "hemodialysis",
+    "note": "Abbreviation: HD → hemodialysis. Critical abbreviation given the hemodialysis/hemolysis thesis use case.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_06",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show MRI results",
+    "expected_action": "show",
+    "expected_entity_expanded": "magnetic resonance imaging results",
+    "note": "Abbreviation: MRI → magnetic resonance imaging.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_07",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "diagnosis HTN",
+    "expected_action": "diagnosis",
+    "expected_entity_expanded": "hypertension",
+    "note": "Abbreviation: HTN → hypertension. Common clinical shorthand for a diagnosis.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_08",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "diagnosis MI",
+    "expected_action": "diagnosis",
+    "expected_entity_expanded": "myocardial infarction",
+    "note": "Abbreviation: MI → myocardial infarction.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_09",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show INR",
+    "expected_action": "show",
+    "expected_entity_expanded": "international normalised ratio",
+    "note": "Abbreviation: INR → international normalised ratio. Common lab value.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_10",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show HR",
+    "expected_action": "show",
+    "expected_entity_expanded": "heart rate",
+    "note": "Abbreviation: HR → heart rate.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_type_01",
+    "category": "type_mismatch",
+    "valid": false,
+    "stage2_valid": true,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis hemodialysis",
+    "expected_action": "diagnosis",
+    "expected_entity": "hemodialysis",
+    "note": "THE central thesis use case. 'diagnosis' expects [disease, symptom, condition, finding]. 'hemodialysis' is a procedure/treatment. Should trigger NEEDS_CLARIFICATION with suggestion of 'hemolysis'.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_type_02",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "start hemolysis",
+    "expected_action": "start",
+    "expected_entity": "hemolysis",
+    "note": "'start' expects [treatment, procedure, medication]. 'hemolysis' is a disease/condition, not a treatment. Should trigger NEEDS_CLARIFICATION.",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_type_03",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis aspirin",
+    "expected_action": "diagnosis",
+    "expected_entity": "aspirin",
+    "note": "'diagnosis' expects a disease; 'aspirin' is a medication. Clear semantic type mismatch.",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_type_04",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "set medication hypertension",
+    "expected_action": "set_medication",
+    "expected_entity": "hypertension",
+    "note": "'set_medication' expects [medication]; 'hypertension' is a disease. Doctor likely confused action — should clarify.",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_type_05",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "stop hemolysis",
+    "expected_action": "stop",
+    "expected_entity": "hemolysis",
+    "note": "'stop' expects [treatment, procedure, medication]; 'hemolysis' is a disease. ASR might confuse hemolysis/hemodialysis in context of a stop command too.",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_type_06",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis peritoneal dialysis",
+    "expected_action": "diagnosis",
+    "expected_entity": "peritoneal dialysis",
+    "note": "'peritoneal dialysis' is a procedure, not a diagnosis. Mirrors the hemodialysis/hemolysis use case.",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_type_01",
+    "category": "abbreviation_gap+type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis HD",
+    "expected_action": "diagnosis",
+    "expected_entity_expanded": "hemodialysis",
+    "note": "Combined: abbreviation (HD → hemodialysis) + type mismatch (procedure used as diagnosis). Two-stage failure: expand abbreviation first, then detect type mismatch.",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_abbr_type_02",
+    "category": "abbreviation_gap+type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "set medication HTN",
+    "expected_action": "set_medication",
+    "expected_entity_expanded": "hypertension",
+    "note": "Combined: abbreviation (HTN → hypertension) + type mismatch (disease used as medication slot).",
+    "stage2_valid": true,
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_show_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Pull up the lab results",
+    "expected_action": "show",
+    "note": "Synonym: 'pull up' → show. Not in Ludyga grammar tokens.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_show_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Let me see the patient's vitals",
+    "expected_action": "show",
+    "note": "Synonym: 'let me see' → show. Filler phrase + possessive.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_show_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Access the imaging from last week",
+    "expected_action": "show",
+    "note": "Synonym: 'access' → show. Temporal qualifier present.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_show_04",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Fetch the latest blood work",
+    "expected_action": "show",
+    "note": "Synonym: 'fetch' → show. Informal clinical phrasing.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_diag_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "I'm diagnosing this as pneumonia",
+    "expected_action": "diagnosis",
+    "note": "First-person active phrasing for diagnosis. Entity embedded mid-sentence.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_diag_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Record a diagnosis of type 2 diabetes",
+    "expected_action": "diagnosis",
+    "note": "Verbose phrasing with 'record a diagnosis of'. Multi-word entity.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_diag_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "The patient has atrial fibrillation, document it",
+    "expected_action": "diagnosis",
+    "note": "Indirect phrasing: entity stated first, action ('document it') implied. Tests LLM intent extraction.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_start_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Begin the IV infusion",
+    "expected_action": "start",
+    "note": "Synonym: 'begin' → start. 'IV infusion' is a treatment entity.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_start_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Commence dialysis",
+    "expected_action": "start",
+    "note": "Synonym: 'commence' → start. Single-word entity.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_stop_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Discontinue the antibiotics",
+    "expected_action": "stop",
+    "note": "Synonym: 'discontinue' → stop. Common clinical phrasing for stopping medication.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_stop_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Take the patient off the ventilator",
+    "expected_action": "stop",
+    "note": "Idiomatic phrasing for stopping a treatment. Filler words around entity.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_emrg_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Initiate emergency response",
+    "expected_action": "emergency",
+    "note": "Synonym: 'initiate' → emergency action. Different from 'start emergency' pattern.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_emrg_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "We have an emergency",
+    "expected_action": "emergency",
+    "note": "Declarative phrasing — no explicit action verb, context implies emergency trigger.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_emrg_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Stand down from emergency",
+    "expected_action": "leave_emergency",
+    "note": "Military/medical idiom for leaving emergency state. Tests leave_emergency synonyms.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_emrg_04",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "All clear, end emergency protocol",
+    "expected_action": "leave_emergency",
+    "note": "Composite phrase: 'all clear' + 'end emergency'. Tests multi-cue leave_emergency.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_pt_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Next patient is Emma Wilson",
+    "expected_action": "change_patient",
+    "note": "Declarative patient switch — no 'change' verb, entity is the patient name.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_pt_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Move to patient Robert Chen",
+    "expected_action": "change_patient",
+    "note": "Synonym: 'move to patient' → change_patient.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_pt_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "New patient: James Murphy",
+    "expected_action": "change_patient",
+    "note": "Minimal phrasing: label + name. No explicit action verb.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_inv_01",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "Order more supplies from the pharmacy",
+    "expected_action": null,
+    "note": "Medical context but system-level logistics command — no matching action in domain.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_inv_02",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "Call Dr. Patel",
+    "expected_action": null,
+    "note": "Medical but no matching action (no 'call' action). Tests LLM domain boundary.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_inv_03",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "What time is it",
+    "expected_action": null,
+    "note": "Completely off-domain query. Should return UNKNOWN.",
+    "action_source": "manual"
+  },
+  {
+    "id": "ext_new_inv_04",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "Do something for this patient",
+    "expected_action": null,
+    "note": "Vague command with patient mention — similar failure mode to c047-c053 false accepts.",
+    "action_source": "manual"
+  }
+]

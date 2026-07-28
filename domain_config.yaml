@@ -1,0 +1,78 @@
+domain: healthcare
+trigger_phrase: "ok glasses"
+
+# SHORT action list — sent to LLM prompt at inference time
+# Keep descriptions brief to minimise token usage
+actions:
+  start:
+    description: "Initiate a treatment, procedure, or medication"
+    allowed_slot_types: [treatment, procedure, medication, shared_session, emergency]
+    entity_required: true
+
+  show:
+    description: "Display patient data, test results, vital signs, records, or messages"
+    allowed_slot_types: [vital_sign, lab_result, patient_info, medication, document, imaging, messaging]
+    entity_required: true
+
+  diagnosis:
+    description: "Record a clinical diagnosis"
+    allowed_slot_types: [disease, symptom, condition, finding]
+    entity_required: true
+
+  set_medication:
+    description: "Prescribe or record a medication with dose"
+    allowed_slot_types: [medication]
+    entity_required: true
+    uses_end_signal: true
+
+  set_note:
+    description: "Dictate a free-text clinical note"
+    allowed_slot_types: [free_text]
+    entity_required: true
+    uses_end_signal: true
+
+  stop:
+    description: "Discontinue a treatment, medication, or session"
+    allowed_slot_types: [treatment, procedure, medication, shared_session, emergency, system]
+    entity_required: true
+
+  turn_on:
+    description: "Activate a display or system feature"
+    allowed_slot_types: [system]
+    entity_required: false
+
+  turn_off:
+    description: "Deactivate a display or system feature"
+    allowed_slot_types: [system]
+    entity_required: false
+
+  continue:
+    description: "Resume a paused display or operation"
+    allowed_slot_types: [system]
+    entity_required: false
+
+  change_patient:
+    description: "Switch the active patient context"
+    allowed_slot_types: [patient_identifier]
+    entity_required: true
+
+  send_message:
+    description: "Compose and send a message to a team member"
+    allowed_slot_types: [free_text]
+    entity_required: true
+    uses_end_signal: true
+
+  emergency:
+    description: "Trigger emergency protocol immediately"
+    allowed_slot_types: []
+    entity_required: false
+
+  accept_emergency:
+    description: "Accept or acknowledge an incoming emergency alert"
+    allowed_slot_types: []
+    entity_required: false
+
+  leave_emergency:
+    description: "Exit emergency mode"
+    allowed_slot_types: []
+    entity_required: false

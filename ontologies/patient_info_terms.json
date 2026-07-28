@@ -1,0 +1,21 @@
+[
+  {"label": "Medical History",    "synonyms": ["patient history", "past medical history", "PMH", "clinical history", "history"],                 "semantic_type": "patient_info"},
+  {"label": "Medication List",    "synonyms": ["current medications", "drug list", "medication record", "prescriptions", "drug chart"],          "semantic_type": "patient_info"},
+  {"label": "Allergy List",       "synonyms": ["allergies", "drug allergies", "known allergies", "allergy record"],                              "semantic_type": "patient_info"},
+  {"label": "Problem List",       "synonyms": ["active problems", "diagnoses list", "current diagnoses", "conditions"],                          "semantic_type": "patient_info"},
+  {"label": "Vital Signs Record", "synonyms": ["vitals", "vital signs", "vitals summary", "vital signs history"],                                "semantic_type": "patient_info"},
+  {"label": "Patient Demographics","synonyms": ["patient information", "patient details", "personal information", "patient data"],               "semantic_type": "patient_info"},
+  {"label": "Discharge Summary",  "synonyms": ["discharge letter", "discharge notes", "discharge report", "hospital summary"],                   "semantic_type": "document"},
+  {"label": "Progress Notes",     "synonyms": ["daily notes", "clinical notes", "ward notes", "SOAP notes", "physician notes"],                  "semantic_type": "document"},
+  {"label": "Referral Letter",    "synonyms": ["referral", "specialist referral", "referral note", "transfer note"],                             "semantic_type": "document"},
+  {"label": "Consultation Note",  "synonyms": ["consult note", "specialist note", "consultation report", "specialist opinion"],                  "semantic_type": "document"},
+  {"label": "Operative Note",     "synonyms": ["surgical note", "procedure note", "operation report", "surgery report"],                         "semantic_type": "document"},
+  {"label": "Lab Report",         "synonyms": ["laboratory report", "lab results", "test results", "pathology report"],                          "semantic_type": "document"},
+  {"label": "MRI Scan",           "synonyms": ["magnetic resonance imaging", "MRI results", "MRI images", "brain MRI", "cardiac MRI", "MRI"],   "semantic_type": "imaging"},
+  {"label": "CT Scan",            "synonyms": ["computed tomography", "CT results", "CT images", "CAT scan", "CT"],                              "semantic_type": "imaging"},
+  {"label": "X-Ray",              "synonyms": ["chest X-ray", "radiograph", "plain film", "chest film", "X ray", "XR"],                         "semantic_type": "imaging"},
+  {"label": "Ultrasound",         "synonyms": ["sonography", "ultrasound results", "abdominal ultrasound", "vascular ultrasound"],               "semantic_type": "imaging"},
+  {"label": "Echocardiogram",     "synonyms": ["echo", "cardiac ultrasound", "ECHO", "cardiac echo", "heart ultrasound"],                        "semantic_type": "imaging"},
+  {"label": "PET Scan",           "synonyms": ["positron emission tomography", "nuclear scan", "PET CT"],                                        "semantic_type": "imaging"},
+  {"label": "Messages",           "synonyms": ["inbox", "message view", "team messages", "communications", "message history"],                   "semantic_type": "messaging"}
+]
