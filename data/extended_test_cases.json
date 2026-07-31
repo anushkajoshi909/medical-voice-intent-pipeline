@@ -362,5 +362,45 @@
     "text": "Do something for this patient",
     "expected_action": null,
     "note": "Vague command with patient mention — similar failure mode to c047-c053 false accepts."
+  },
+  {
+    "id": "ext_ont_01",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show blood pressure",
+    "expected_action": "show",
+    "note": "Stage 4 exact match: vital_signs.json. Full term, no abbreviation — tests direct vital_sign lookup."
+  },
+  {
+    "id": "ext_ont_02",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show patient history",
+    "expected_action": "show",
+    "note": "Stage 4 synonym match: patient_info_terms.json. 'patient history' is a synonym of 'Medical History' → semantic_type=patient_info."
+  },
+  {
+    "id": "ext_ont_03",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show discharge summary",
+    "expected_action": "show",
+    "note": "Stage 4 exact match: patient_info_terms.json → semantic_type=document. Tests document-type entity lookup."
+  },
+  {
+    "id": "ext_ont_04",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show messages",
+    "expected_action": "show",
+    "note": "Stage 4 exact match: patient_info_terms.json → semantic_type=messaging. Tests messaging slot type."
+  },
+  {
+    "id": "ext_ont_05",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "show movie",
+    "expected_action": null,
+    "note": "Stage 4 returns ENTITY_NOT_FOUND — 'movie' not in any medical ontology. Tests out-of-domain entity rejection via ontology coverage."
   }
 ]

@@ -25,6 +25,12 @@ baseline_ludyga_wiki/
 # Thesis PDFs (not source code)
 *.pdf
 
+# Personal notes (local only)
+GIT_NOTES.md
+
+# Claude Code internal settings
+.claude/
+
 # macOS
 .DS_Store
 

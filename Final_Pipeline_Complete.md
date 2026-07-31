@@ -80,13 +80,9 @@ Speech text (from ASR — Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 3: ANTLR Frame Validation                            │
+│  STAGE 3: Frame Validation (ANTLR-equivalent)               │
 │                                                             │
-│  ANTLR's role: validate that the LLM's extracted            │
-│  {action, entity} fits a structurally valid command frame.  │
-│  Guards against LLM hallucination.                          │
-│                                                             │
-│  Checks:                                                    │
+│  Checks performed:                                          │
 │  • action is a known grammar rule                           │
 │  • entity is non-empty for actions that require it          │
 │  • entity is empty for entity-free actions (emergency)      │
@@ -402,6 +398,33 @@ entity : (WORD | NUMBER)+ ;
 
 ---
 
+### Design Decision: Why Python and Not the ANTLR Runtime
+
+In Ludyga's baseline system, ANTLR does all the heavy lifting: it tokenises the raw speech input, matches synonyms against an exhaustive token list, and enforces the grammar rules — all in one pass. ANTLR is necessary there because the grammar is the *only* intelligence in the system.
+
+In our pipeline the roles are fundamentally different. The LLM (Stage 2) runs *before* Stage 3 and handles everything ANTLR was doing in the baseline:
+
+| Task | Ludyga baseline | Our pipeline |
+|---|---|---|
+| Synonym normalisation | ANTLR lexer tokens | LLM (Stage 2) |
+| Filler word removal | Not handled | LLM (Stage 2) |
+| Action identification | Grammar rule matching | LLM (Stage 2) |
+| Structural validation | ANTLR parser rules | Stage 3 |
+
+By the time Stage 3 runs, the LLM has already produced a canonical `{action, entity}` pair — e.g. `{action: "start", entity: "hemodialysis"}`. The only remaining job is to check whether this pair is structurally valid: does the action require an entity, forbid one, or make it optional? This reduces the grammar to exactly three checks:
+
+```
+ENTITY_REQUIRED  → {start, show, diagnosis, set_note, set_medication, change_patient, send_message}
+ENTITY_OPTIONAL  → {turn_on, turn_off, continue, stop}
+ENTITY_FORBIDDEN → {emergency, accept_emergency, leave_emergency}
+```
+
+These three checks are trivially implementable as a Python dictionary lookup in `src/stage3_antlr_validate.py`. Deploying the ANTLR Java runtime to perform three dictionary lookups would add a Java dependency, a process startup cost, and interprocess communication overhead — with zero additional correctness benefit.
+
+The `.g4` grammar files (`MedicalSmartGlassesLexer.g4`, `MedicalSmartGlassesParser.g4`) are retained as formal thesis documentation. They express the same structural rules in ANTLR notation and serve as the grammar specification that the Python implementation faithfully realises.
+
+---
+
 ### `ontology_sources.yaml`
 
 ```yaml
@@ -409,32 +432,68 @@ sources:
   disease_ontology:
     format: obo
     path: ./ontologies/doid.obo
-    provides_semantic_types: [disease, condition, finding, symptom]
-    notes: "Human Disease Ontology — free, no license"
+    provides_semantic_types: [disease, condition, finding]
+    semantic_type_assignment: hardcoded  # every term in DOID = disease by definition
+    notes: "Human Disease Ontology — CC0, no license required"
+
+  phenotype_ontology:
+    format: obo
+    path: ./ontologies/hp.obo
+    provides_semantic_types: [symptom, clinical_finding]
+    semantic_type_assignment: hardcoded  # every term in HPO = symptom/phenotype
+    notes: "Human Phenotype Ontology — free for academic use"
 
   rxnorm:
-    format: sqlite
-    path: ./ontologies/rxnorm.db
+    format: rrf
+    path: ./ontologies/RXNCONSO.RRF
     provides_semantic_types: [medication]
-    notes: "Free NLM download — full drug names, synonyms, brand names"
+    semantic_type_assignment: hardcoded  # every term in RxNorm = medication
+    notes: "NLM Prescribable Content — no UMLS license required"
 
-  snomed_procedures:
-    format: tsv
-    path: ./ontologies/snomed_procedures.tsv
+  ncit_procedures:
+    format: flat
+    path: ./ontologies/Thesaurus.txt
     provides_semantic_types: [treatment, procedure]
-    notes: "Curated SNOMED CT subset — ~500 clinical procedures"
-
-  vital_signs:
-    format: json
-    path: ./ontologies/vital_signs.json
-    provides_semantic_types: [vital_sign, lab_result]
-    notes: "Custom taxonomy for measurements and observations"
+    semantic_type_assignment: column     # filter rows where semantic_type contains "Therapeutic or Preventive Procedure" or "Diagnostic Procedure"
+    notes: "NCI Thesaurus flat file — free, NCI Terms of Use. Replaces SNOMED CT (license rejected). Vital signs NOT sourced from NCIt — blood pressure appears as Finding not vital_sign in NCIt."
 
   patient_info:
     format: json
     path: ./ontologies/patient_info_terms.json
-    provides_semantic_types: [patient_info, document, imaging]
-    notes: "Terms for patient records, charts, scans, history"
+    provides_semantic_types: [patient_info, document, messaging]
+    semantic_type_assignment: field      # each JSON entry has explicit semantic_type field
+    notes: "Curated controlled vocabulary — no standard ontology covers administrative record types"
+```
+
+---
+
+### Ontology Parsing and Semantic Type Assignment
+
+OBO files (DOID, HPO) do **not** contain a semantic type field. The type is assigned based on which file the term comes from — every term in DOID is a disease by definition, every term in HPO is a symptom. NCIt is the exception: it covers all concept types in one file, so we use its `semantic_type` column to filter only procedure/vital sign rows at load time.
+
+**Parsing happens once at startup** — all files are read and merged into a single in-memory index:
+
+```
+"hemolysis"      → {semantic_type: "disease",   concept_id: "DOID:3680",   source: "doid"}
+"hemodialysis"   → {semantic_type: "procedure", concept_id: "NCIt:C15248", source: "ncit"}
+"aspirin"        → {semantic_type: "medication", concept_id: "RxCUI:1191", source: "rxnorm"}
+"medical history"→ {semantic_type: "patient_info",                         source: "patient_info_terms"}
+```
+
+Synonyms are indexed as separate keys pointing to the same concept. Every Stage 4 query is then an O(1) dict lookup — no file I/O at query time. This keeps per-command latency at < 1ms for the ontology step, acceptable for real-time AR glasses use.
+
+**Why a separate `patient_info_terms.json`?**
+No standard medical ontology (DOID, HPO, NCIt, RxNorm) covers administrative record categories such as "discharge summary", "medication list", or "progress notes". These are not clinical entities — they are document types that exist in the glasses UI. A small curated controlled vocabulary (13 entries) covers all record types present in the evaluation command set. The value of this file is demonstrated by commands like `"show patient history"`:
+
+```
+entity = "patient medical history"
+Step 4a — exact match: NOT FOUND (label is "Medical History", not the full phrase)
+Step 4b — synonym match: "patient history" → synonym of "Medical History"
+          → semantic_type = "patient_info"
+Step 5  — show allows patient_info → ACCEPTED
+
+Without patient_info_terms.json: Stage 4 returns ENTITY_NOT_FOUND
+→ valid command incorrectly rejected
 ```
 
 ---
@@ -810,12 +869,12 @@ Result: "start hemodialysis"
 raw_entity = "hemodialysis"
 allowed_slot_types for "start" = [treatment, procedure, medication, shared_session, emergency]
 
-Step 4a — Exact match in SNOMED procedures TSV:
-  "hemodialysis" → SNOMED:34910008, "Hemodialysis", semantic_type = "procedure"
+Step 4a — Exact match in NCIt (Thesaurus.txt):
+  "hemodialysis" → NCIt:C15248, "Hemodialysis", semantic_type = "procedure"
   → maps to our slot type: "treatment"
 
 matched_label  = "Hemodialysis"
-concept_id     = "SNOMED:34910008"
+concept_id     = "NCIt:C15248"
 semantic_type  = "treatment"
 match_type     = "exact"
 confidence     = 1.0
@@ -836,7 +895,7 @@ start + treatment → allowed ✓
     "treatment": {
       "raw_entity":    "hemodialysis",
       "matched_label": "Hemodialysis",
-      "concept_id":    "SNOMED:34910008",
+      "concept_id":    "NCIt:C15248",
       "semantic_type": "treatment",
       "match_type":    "exact",
       "confidence":    1.0
@@ -845,7 +904,7 @@ start + treatment → allowed ✓
   "explanation": {
     "llm_extraction":      "Action 'start', entity 'hemodialysis' extracted with high confidence.",
     "grammar_validation":  "START entity frame valid.",
-    "ontology_evidence":   "'Hemodialysis' matched SNOMED concept 34910008 as a clinical procedure.",
+    "ontology_evidence":   "'Hemodialysis' matched NCIt concept C15248 as a clinical procedure.",
     "semantic_validation": "Action 'start' permits slot type 'treatment'. Accepted."
   }
 }
@@ -853,7 +912,7 @@ start + treatment → allowed ✓
 
 **Stage 7 — User Confirmation**
 ```
-Glasses display: "Start treatment: Hemodialysis (SNOMED:34910008). Correct?"
+Glasses display: "Start treatment: Hemodialysis (NCIt:C15248). Correct?"
 
 User says: "ok glasses, correct"
 → CONFIRMED
@@ -955,7 +1014,7 @@ Reason: semantic_type_mismatch
   "raw_entity": "hemodialysis",
   "resolved_entity": {
     "matched_label":  "Hemodialysis",
-    "concept_id":     "SNOMED:34910008",
+    "concept_id":     "NCIt:C15248",
     "semantic_type":  "treatment",
     "match_type":     "exact",
     "found_in":       "procedure ontology"
@@ -1017,7 +1076,7 @@ Output: ACCEPTED, DIAGNOSIS_DISEASE with SNOMED/ICD-10 code for documentation.
 
 | Scenario | Ludyga Baseline | Our Pipeline |
 |---|---|---|
-| `"start hemodialysis"` | ❌ Returns "undefined" — not in grammar tokens | ✅ ACCEPTED via SNOMED exact match + Stage 7 confirmation |
+| `"start hemodialysis"` | ❌ Returns "undefined" — not in grammar tokens | ✅ ACCEPTED via NCIt exact match + Stage 7 confirmation |
 | `"illustrate medical history"` | ❌ Fails — "illustrate" not a token | ✅ ACCEPTED via LLM semantic mapping + Stage 7 confirmation |
 | `"diagnosis hemodialysis"` (ASR error for hemolysis) | ❌ Returns "undefined" or wrong result | ✅ NEEDS_CLARIFICATION with explanation + Stage 7 re-prompt loop |
 | `"note: on examination... I'm done"` | ❌ Fails — "I'm done" not a FINISH token | ✅ ACCEPTED via LLM end_signal detection |

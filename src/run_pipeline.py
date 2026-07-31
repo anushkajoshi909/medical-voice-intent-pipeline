@@ -4,7 +4,7 @@
 Stages implemented:
   1  Normalisation + abbreviation expansion  (stage1_preprocess.py)
   2  LLM structured extraction               (stage2_llm_extract.py)
-  3  ANTLR frame validation                  (stage3_antlr_validate.py)
+  3  Frame validation (ANTLR-equivalent)     (stage3_frame_validate.py)
   [4-5 to be added as implemented]
 
 Data source: data/annotated_commands.json (216 entries = 198 commands + 18 extended)
@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from stage1_preprocess import preprocess
 from stage2_llm_extract import extract, get_client, _select_model_interactive, DEFAULT_MODEL
-from stage3_antlr_validate import validate as frame_validate
+from stage3_frame_validate import validate as frame_validate
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────

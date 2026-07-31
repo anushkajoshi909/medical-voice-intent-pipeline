@@ -11,7 +11,7 @@ actions:
 
   show:
     description: "Display patient data, test results, vital signs, records, or messages"
-    allowed_slot_types: [vital_sign, lab_result, patient_info, medication, document, imaging, messaging]
+    allowed_slot_types: [vital_sign, lab_result, patient_info, medication, document, imaging, messaging, procedure]
     entity_required: true
 
   diagnosis:

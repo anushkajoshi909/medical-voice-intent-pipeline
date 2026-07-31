@@ -90,20 +90,26 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
 - **Provides semantic types:** `vital_sign`, `lab_result`
 - **Entries:** 44 terms (12 vital signs, 32 lab results)
 - **Structure:** `{label, synonyms[], semantic_type}`
-- **Why curated:**
-  - LOINC covers this domain but requires registration (rejected — see below)
-  - The set of clinical vital signs and common lab results is finite and universally standardised — "blood pressure", "heart rate", "INR" are standard medical English, not proprietary terms
-  - Scope is fully covered by 44 entries; a 95,000-concept ontology (LOINC) is not needed
-  - In the thesis: described as "curated controlled vocabulary", not an ontology
+- **Why curated:** NCIt was investigated but does not provide a usable `vital_sign` semantic type — blood pressure is classified as `Finding`, not as a vital sign measurement. LOINC covers this domain but requires registration (rejected). A curated vocabulary of 44 entries covers all vital sign and lab result entities in the evaluation set.
+- **Example resolutions:**
+  - `"show blood pressure"` → entity=`"blood pressure"` → exact match → `semantic_type=vital_sign` → `show` allows `vital_sign` → **ACCEPTED**
+  - `"show BP"` → Stage 1 expands BP → `"blood pressure"` → exact match → `semantic_type=vital_sign` → **ACCEPTED**
+  - `"show INR"` → Stage 1 expands INR → `"international normalised ratio"` → exact match → `semantic_type=lab_result` → `show` allows `lab_result` → **ACCEPTED**
+  - `"show CBC"` → Stage 1 expands CBC → `"complete blood count"` → exact match → `semantic_type=lab_result` → **ACCEPTED**
 
 ### 6. `patient_info_terms.json`
-- **Provides semantic types:** `patient_info`, `document`, `imaging`, `messaging`
-- **Entries:** 19 terms
+- **Provides semantic types:** `patient_info`, `document`, `messaging`
+- **Entries:** 13 terms
 - **Structure:** `{label, synonyms[], semantic_type}`
 - **Why curated:**
   - No standard ontology covers administrative/record-level terms at this scope
-  - "Discharge summary", "MRI scan", "medication list" are system-level document categories, not clinical concepts owned by any standards body
-  - Scope is small and well-defined — 19 entries cover all entity types present in the evaluation command set
+  - "Discharge summary", "medication list", "progress notes" are system-level document categories, not clinical concepts owned by any standards body
+  - Scope is small and well-defined — 13 entries cover all record types present in the evaluation command set
+- **Example resolutions:**
+  - `"show patient history"` → entity=`"patient history"` → synonym match → `"Medical History"` → `semantic_type=patient_info` → `show` allows `patient_info` → **ACCEPTED**
+  - `"show discharge summary"` → exact match → `semantic_type=document` → `show` allows `document` → **ACCEPTED**
+  - `"show messages"` → exact match → `semantic_type=messaging` → `show` allows `messaging` → **ACCEPTED**
+  - `"show movie"` → no match in any ontology → **ENTITY_NOT_FOUND** (Stage 4 rejects non-medical entities)
 
 ---
 
@@ -127,10 +133,10 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
 
 ### LOINC
 - **Rejected — access friction + scope mismatch**
-- Free download requires registration at loinc.org.
-- 95,000+ observation codes — far larger than needed.
-- LOINC names are observation-centric and verbose ("2160-0: Creatinine [Mass/volume] in Serum or Plasma") — not matchable against short speech entities like "creatinine".
-- **What we use instead:** Curated `vital_signs.json` with 44 entries.
+- Download requires mandatory user registration at loinc.org — not freely downloadable without an account, making automated or reproducible pipeline setup impractical.
+- 95,000+ observation codes — far larger than needed for this use case.
+- LOINC names are observation-centric and verbose ("2160-0: Creatinine [Mass/volume] in Serum or Plasma") — not matchable against short speech entities like "creatinine" or "INR".
+- **What we use instead:** Curated `vital_signs.json` — 44 entries covering all vital sign and lab result entities in the evaluation set. NCIt was also investigated but does not provide a usable vital_sign semantic type (blood pressure appears as "Finding" in NCIt, not as a vital sign measurement).
 
 ### Full RxNorm Monthly Release
 - **Not used — license and size**
