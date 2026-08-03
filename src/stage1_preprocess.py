@@ -10,7 +10,7 @@ Output: PreprocessResult dataclass with:
 
 Pipeline spec (Final_Pipeline_Complete.md):
   • Lowercase
-  • Strip punctuation (, . : ! ? — keep hyphens in hyphenated terms)
+  • Strip punctuation including hyphens (, . : ! ? - → space)
   • Normalise trigger variants: "ok" / "okie" / "okay" → canonical "ok glasses"
   • Remove trigger from string, keep remainder
   • Expand medical abbreviations (abbreviations.json) BEFORE passing to LLM
@@ -37,7 +37,7 @@ TRIGGER_PATTERN = re.compile(
 # Stage 2 to receive "begin" / "start" / "finish" with no context → UNKNOWN.
 URGENCY_WORDS = {"stat", "urgent", "urgently", "immediately"}
 
-PUNCTUATION_STRIP = re.compile(r"[,.:!?;\"'(){}\[\]]")
+PUNCTUATION_STRIP = re.compile(r"[-,.:!?;\"'(){}\[\]]")
 MULTI_SPACE       = re.compile(r"\s{2,}")
 
 # Inputs containing JSON/code structure: { } [ ] are never natural speech
@@ -96,7 +96,7 @@ def preprocess(raw: str) -> PreprocessResult:
             clean_text="", format_invalid=True,
         )
 
-    # 1. Strip punctuation first (keep hyphens inside words)
+    # 1. Strip punctuation (hyphens become spaces: "non-invasive" → "non invasive")
     text = _strip_punctuation(text)
 
     # 2. Expand abbreviations BEFORE lowercasing — abbrevs are case-sensitive

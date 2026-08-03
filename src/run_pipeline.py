@@ -4,8 +4,9 @@
 Stages implemented:
   1  Normalisation + abbreviation expansion  (stage1_preprocess.py)
   2  LLM structured extraction               (stage2_llm_extract.py)
-  3  Frame validation (ANTLR-equivalent)     (stage3_frame_validate.py)
-  [4-5 to be added as implemented]
+  3  ANTLR frame validation                  (stage3_antlr_validate.py)
+  4  Ontology entity lookup                  (stage4_ontology_lookup.py)
+  [5 to be added as implemented]
 
 Data source: data/annotated_commands.json (216 entries = 198 commands + 18 extended)
   Each entry has expected_action for action-level accuracy scoring.
@@ -28,7 +29,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from stage1_preprocess import preprocess
 from stage2_llm_extract import extract, get_client, _select_model_interactive, DEFAULT_MODEL
-from stage3_frame_validate import validate as frame_validate
+from stage3_antlr_validate import validate as frame_validate
+from stage4_ontology_lookup import lookup as ontology_lookup
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
@@ -62,6 +64,13 @@ def run_command(client, cmd: dict, model: str) -> dict:
     else:
         stage2 = extract(client, clean, model=model)
     stage3 = frame_validate(stage2.action, stage2.entity)
+
+    # Stage 4: ontology lookup — only when stage 3 passed and action is known
+    if stage3.valid and stage2.action not in ("UNKNOWN", ""):
+        stage4 = ontology_lookup(stage2.action, stage2.entity)
+    else:
+        from stage4_ontology_lookup import OntologyResult
+        stage4 = OntologyResult(False, stage2.entity, None, None, None, "none", 0.0, None)
 
     expected     = cmd.get("expected_action")
     got          = stage2.action
@@ -100,6 +109,14 @@ def run_command(client, cmd: dict, model: str) -> dict:
         "frame_valid":      stage3.valid,
         "frame_reason":     stage3.reason,
         "canonical_form":   stage3.canonical_form,
+        "command_type":     stage3.command_type,
+        "ont_found":        stage4.found,
+        "ont_canonical":    stage4.canonical,
+        "ont_semantic_type":stage4.semantic_type,
+        "ont_ontology_id":  stage4.ontology_id,
+        "ont_match_method": stage4.match_method,
+        "ont_score":        stage4.score,
+        "ont_source":       stage4.source,
         "binary_correct":   binary_correct,
         "action_correct":   action_correct,
         "llm_error":        stage2.error,
@@ -206,13 +223,59 @@ def print_results(results: list[dict], stats: dict, model: str):
 
 # ── main ─────────────────────────────────────────────────────────────────────
 
+def _print_stages(r: dict):
+    """Print step-by-step output for every pipeline stage."""
+    W = 68
+    print(f"\n  {'─'*W}")
+    print(f"  ID     : {r['id']}")
+    print(f"  Input  : {r['text']!r}")
+    print(f"  ── Stage 1: Preprocessing")
+    print(f"     clean_text : {r['clean_text']!r}")
+    print(f"     trigger    : {'found' if r['trigger_found'] else 'not found'}")
+    if r['abbrevs_expanded']:
+        print(f"     abbrevs    : {r['abbrevs_expanded']}")
+    if r['urgency']:
+        print(f"     urgency    : {r['urgency']}")
+    if r['format_invalid']:
+        print(f"     format     : REJECTED (non-speech input)")
+        return
+    print(f"  ── Stage 2: LLM Extraction")
+    print(f"     action     : {r['action']!r}")
+    print(f"     entity     : {r['entity']!r}")
+    print(f"     end_signal : {r['end_signal']}")
+    print(f"     confidence : {r['confidence']}")
+    if r['llm_error']:
+        print(f"     error      : {r['llm_error']}")
+    print(f"  ── Stage 3: ANTLR Frame Validation")
+    print(f"     canonical  : {r['canonical_form']!r}")
+    frame_sym = "✓" if r['frame_valid'] else "✗"
+    print(f"     valid      : [{frame_sym}] {r['frame_reason']}")
+    if r['frame_valid']:
+        print(f"     cmd_type   : {r['command_type']}")
+    if r['frame_valid'] and r['action'] not in ("UNKNOWN", ""):
+        print(f"  ── Stage 4: Ontology Lookup")
+        ont_sym = "✓" if r['ont_found'] else "✗"
+        matched_str = f"  matched={r['ont_canonical']!r}" if r['ont_found'] and r['ont_match_method'] not in ("passthrough",) else ""
+        print(f"     found      : [{ont_sym}] method={r['ont_match_method']}  score={r['ont_score']:.2f}{matched_str}")
+        if r['ont_found']:
+            print(f"     sem_type   : {r['ont_semantic_type']}")
+            if r['ont_ontology_id']:
+                print(f"     ont_id     : {r['ont_ontology_id']}")
+            print(f"     source     : {r['ont_source']}")
+    exp = r['expected_action']
+    correct = "✓ CORRECT" if r['binary_correct'] else "✗ WRONG"
+    print(f"  ── Result: {correct}"
+          + (f"  (expected {exp!r})" if exp else ""))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--select",   action="store_true", help="Pick model interactively")
     parser.add_argument("--extended", action="store_true", help="Run extended test cases only")
     parser.add_argument("--failures", action="store_true", help="Run baseline grammar-rejected valid commands")
     parser.add_argument("--save",     action="store_true", help="Save results JSON to results/")
-    parser.add_argument("--verbose",  action="store_true", help="Print action/entity/frame per command")
+    parser.add_argument("--verbose",  action="store_true", help="Print step-by-step stage output per command")
+    parser.add_argument("--sample",   type=int,            help="Run N randomly selected commands")
     args = parser.parse_args()
 
     client = get_client()
@@ -221,7 +284,14 @@ def main():
 
     commands = load_commands(extended=args.extended, failures_only=args.failures)
     label    = "extended" if args.extended else ("failures" if args.failures else "full")
-    print(f"Running {len(commands)} commands ({label} set)...\n")
+
+    if args.sample:
+        import random
+        commands = random.sample(commands, min(args.sample, len(commands)))
+        label += f"-sample{args.sample}"
+        print(f"Running {len(commands)} randomly sampled commands ({label})...\n")
+    else:
+        print(f"Running {len(commands)} commands ({label} set)...\n")
 
     results = []
     t0 = time.time()
@@ -235,9 +305,9 @@ def main():
             if not r["binary_correct"]:
                 sym = "✗"
             elif not r["frame_valid"]:
-                sym = "F"   # Stage 3 frame failure
+                sym = "F"
             elif r["expected_action"] and not r["action_correct"]:
-                sym = "~"   # accepted but wrong action
+                sym = "~"
             else:
                 sym = "✓"
 
@@ -245,9 +315,7 @@ def main():
         print(f"  [{i:3d}/{len(commands)}] {sym} {r['id']}  {r['text'][:38]!r:40s}"
               f"  → {r['action']:18s} {exp}")
         if args.verbose:
-            frame_sym = "✓" if r["frame_valid"] else "✗"
-            print(f"          S2: action={r['action']!r}  entity={r['entity']!r}"
-                  f"  S3: [{frame_sym}] {r['frame_reason']}")
+            _print_stages(r)
 
     elapsed = time.time() - t0
     print(f"\nDone in {elapsed:.1f}s ({elapsed/len(commands):.1f}s/cmd)")

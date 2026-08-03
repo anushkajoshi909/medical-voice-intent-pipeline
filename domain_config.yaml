@@ -1,78 +1,149 @@
 domain: healthcare
+domain_description: "medical voice interface running on smart glasses worn by clinicians"
 trigger_phrase: "ok glasses"
 
-# SHORT action list — sent to LLM prompt at inference time
-# Keep descriptions brief to minimise token usage
+# ── Actions ────────────────────────────────────────────────────────────────────
+# Structure (entity_required / entity_optional / entity_forbidden) lives in the
+# ANTLR grammar (MedicalSmartGlassesParser.g4). This file holds only:
+#   description       — injected into LLM prompt
+#   allowed_slot_types — semantic constraints checked in Stage 5
+#   canonical_entities — closed-set entities the LLM should normalise to
+#                        (open-set entities go to Stage 4 ontology lookup)
+
 actions:
   start:
+    grammar_command_type: treatment
     description: "Initiate a treatment, procedure, or medication"
     allowed_slot_types: [treatment, procedure, medication, shared_session, emergency]
-    entity_required: true
 
   show:
+    grammar_command_type: request_data
     description: "Display patient data, test results, vital signs, records, or messages"
     allowed_slot_types: [vital_sign, lab_result, patient_info, medication, document, imaging, messaging, procedure]
-    entity_required: true
+    canonical_entities:
+      patient_info:
+        - Medical History
+        - Medication List
+        - Allergy List
+        - Problem List
+        - Vital Signs Record
+        - Patient Demographics
+      document:
+        - Discharge Summary
+        - Progress Notes
+        - Referral Letter
+        - Consultation Note
+        - Operative Note
+        - Lab Report
+      messaging:
+        - Messages
 
   diagnosis:
+    grammar_command_type: diagnosis
     description: "Record a clinical diagnosis"
     allowed_slot_types: [disease, symptom, condition, finding]
-    entity_required: true
 
   set_medication:
-    description: "Prescribe or record a medication with dose"
+    grammar_command_type: set_medication
+    description: "Prescribe or record a medication — entity MUST include drug name, dose, and unit (e.g. 'paracetamol 100 mg')"
     allowed_slot_types: [medication]
-    entity_required: true
-    uses_end_signal: true
 
   set_note:
+    grammar_command_type: protocol
     description: "Dictate a free-text clinical note"
     allowed_slot_types: [free_text]
-    entity_required: true
-    uses_end_signal: true
 
   stop:
+    grammar_command_type: stop_cmd
     description: "Discontinue a treatment, medication, or session"
     allowed_slot_types: [treatment, procedure, medication, shared_session, emergency, system]
-    entity_required: true
 
   turn_on:
+    grammar_command_type: glasses_command
     description: "Activate a display or system feature"
     allowed_slot_types: [system]
-    entity_required: false
 
   turn_off:
+    grammar_command_type: glasses_command
     description: "Deactivate a display or system feature"
     allowed_slot_types: [system]
-    entity_required: false
 
   continue:
+    grammar_command_type: glasses_command
     description: "Resume a paused display or operation"
     allowed_slot_types: [system]
-    entity_required: false
 
   change_patient:
-    description: "Switch the active patient context"
+    grammar_command_type: request_patient
+    description: "Switch the active patient context — requires explicit patient name"
     allowed_slot_types: [patient_identifier]
-    entity_required: true
 
   send_message:
+    grammar_command_type: message
     description: "Compose and send a message to a team member"
     allowed_slot_types: [free_text]
-    entity_required: true
-    uses_end_signal: true
 
   emergency:
+    grammar_command_type: glasses_command
     description: "Trigger emergency protocol immediately"
     allowed_slot_types: []
-    entity_required: false
 
   accept_emergency:
+    grammar_command_type: glasses_command
     description: "Accept or acknowledge an incoming emergency alert"
     allowed_slot_types: []
-    entity_required: false
 
   leave_emergency:
+    grammar_command_type: glasses_command
     description: "Exit emergency mode"
     allowed_slot_types: []
-    entity_required: false
+
+# ── Domain-specific LLM rules (healthcare only) ────────────────────────────────
+# Generic rules (don't judge entity type, raw JSON only, etc.) live in the
+# prompt template (llm_system_prompt.txt).
+
+domain_rules:
+  - "This is a MEDICAL clinical interface. If the command is clearly unrelated to clinical work (e.g. home appliances, vehicles, vague commands with no medical content), return action=UNKNOWN."
+  - "change_patient requires both an explicit patient name AND a clear intent to switch patient context (e.g. 'change patient', 'switch to', 'new patient', 'transfer to'). A command that merely mentions a patient name but has a vague or unrelated verb (e.g. 'do the needful for patient X', 'help patient X') should return UNKNOWN."
+  - "If 'start', 'begin', 'trigger', or 'initiate' appears before or near 'emergency', the action is ALWAYS 'emergency' — NOT 'start'. The action 'start' is only for treatments, procedures, or medications."
+  - "If 'stop', 'finish', 'terminate', 'end', or 'cancel' appears with 'emergency', the action is 'leave_emergency' — NOT 'stop'."
+  - "For set_medication, the entity MUST contain the drug name, dose number, and unit (e.g. 'paracetamol 100 mg'). If dose or unit is missing, still extract what was said but mark confidence low."
+  - "For show commands, map the requested data type to the closest canonical EHR record name from this closed list: Medical History, Medication List, Allergy List, Problem List, Vital Signs Record, Patient Demographics, Discharge Summary, Progress Notes, Referral Letter, Consultation Note, Operative Note, Lab Report, Messages. If the entity refers to a vital sign, lab result, or clinical measurement (e.g. 'blood pressure', 'CBC', 'hemoglobin'), extract it as spoken — those are looked up in a separate ontology at Stage 4. If the entity does not match any known EHR record type or clinical measurement, extract it as spoken."
+
+# ── Healthcare few-shot examples ───────────────────────────────────────────────
+few_shot_examples:
+  - input: "start emergency"
+    output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
+
+  - input: "begin emergency"
+    output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
+
+  - input: "trigger emergency situation"
+    output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
+
+  - input: "finish emergency"
+    output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "stop emergency"
+    output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "cancel emergency mode"
+    output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "halt animation"
+    output: '{"action":"stop","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "diagnosis hemodialysis"
+    output: '{"action":"diagnosis","entity":"hemodialysis","end_signal":false,"confidence":0.97}'
+
+  - input: "set medication hypertension"
+    output: '{"action":"set_medication","entity":"hypertension","end_signal":false,"confidence":0.95}'
+
+  - input: "show patient history"
+    output: '{"action":"show","entity":"Medical History","end_signal":false,"confidence":0.97}'
+
+  - input: "pull up the discharge letter"
+    output: '{"action":"show","entity":"Discharge Summary","end_signal":false,"confidence":0.96}'
+
+  - input: "get the stuff for patient"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'

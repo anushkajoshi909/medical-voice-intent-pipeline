@@ -28,16 +28,16 @@ Speech input (ASR / typed)
     │  {action, entity, end_signal, confidence}
     │  Handles synonyms, fillers, informal phrasing
     │
-    ▼  Stage 3 — Frame Validation
-    │  Checks structural validity of {action, entity} pair:
-    │  ENTITY_REQUIRED / ENTITY_OPTIONAL / ENTITY_FORBIDDEN
-    │  Python-equivalent of ANTLR grammar (see design decision in
-    │  Final_Pipeline_Complete.md)
+    ▼  Stage 3 — ANTLR Frame Validation
+    │  Reconstructs canonical string from LLM {action, entity},
+    │  feeds to real ANTLR4 Python runtime (generated from .g4 files).
+    │  Catches structural errors: missing dose/unit for set_medication,
+    │  entity present where forbidden, etc. Returns command_type.
     │
     ▼  Stage 4 — Ontology Lookup        [in progress]
     │  Resolves entity to a known medical concept + semantic type
-    │  Sources: DOID, HPO, RxNorm, NCIt, vital_signs.json,
-    │           patient_info_terms.json
+    │  Sources: DOID, HPO, RxNorm, NCIt, vital_signs.json.
+    │  Closed-set entities (show action) resolved from domain_config.yaml
     │
     ▼  Stage 5 — Semantic Validation    [in progress]
     │  Checks: does this action allow this semantic type?
@@ -114,7 +114,12 @@ python src/run_pipeline.py
 python src/run_pipeline.py --extended
 ```
 
-### Verbose output (shows Stage 2 + 3 detail per command)
+### Random sample of N commands
+```bash
+python src/run_pipeline.py --sample 20
+```
+
+### Verbose output (step-by-step output per command across all stages)
 ```bash
 python src/run_pipeline.py --verbose
 ```
@@ -135,28 +140,34 @@ python src/run_pipeline.py --save
 
 ```
 ├── src/
-│   ├── stage1_preprocess.py        # Normalisation, abbreviation expansion
-│   ├── stage2_llm_extract.py       # LLM structured extraction
-│   ├── stage3_frame_validate.py    # Frame validation (ANTLR-equivalent)
+│   ├── stage1_preprocess.py        # Normalisation, abbreviation expansion, urgency
+│   ├── stage2_llm_extract.py       # LLM structured extraction (loaded via domain_loader)
+│   ├── stage3_antlr_validate.py    # Real ANTLR4 frame validation
+│   ├── domain_loader.py            # Wires grammar + config + prompt at startup
+│   ├── grammar/                    # Generated Python parser (from .g4 files, committed)
+│   │   ├── MedicalSmartGlassesLexer.py
+│   │   ├── MedicalSmartGlassesParser.py
+│   │   └── MedicalSmartGlassesParserListener.py
 │   ├── run_pipeline.py             # Full pipeline runner + evaluation
 │   ├── build_annotated_dataset.py  # Rebuilds data/annotated_commands.json
 │   └── run_baseline.py             # Ludyga baseline evaluation
 │
 ├── data/
 │   ├── commands_200.json           # 200 base evaluation commands
-│   ├── extended_test_cases.json    # 43 extended commands (abbreviations,
-│   │                               #   type mismatches, ontology, new synonyms)
+│   ├── extended_test_cases.json    # Extended commands (abbreviations, type mismatches)
 │   └── annotated_commands.json     # Combined + annotated (auto-generated)
 │
 ├── ontologies/
 │   ├── vital_signs.json            # 44 vital sign + lab result terms (curated)
-│   ├── patient_info_terms.json     # 13 patient record category terms (curated)
 │   └── ONTOLOGY_SOURCES.md        # Rationale for every ontology choice
 │
-├── MedicalSmartGlassesLexer.g4    # ANTLR grammar spec (thesis documentation)
-├── MedicalSmartGlassesParser.g4   # ANTLR grammar spec (thesis documentation)
-├── domain_config.yaml             # Action list + allowed slot types
-├── llm_system_prompt.txt          # System prompt sent to LLM
+├── MedicalSmartGlassesLexer.g4    # ANTLR lexer — grammar authority for structure
+├── MedicalSmartGlassesParser.g4   # ANTLR parser — command type hierarchy
+├── grammar_extend.md              # Documents changes from Ludyga's baseline grammar
+├── domain_config.yaml             # Semantic layer: descriptions, slot types,
+│                                  #   grammar_command_type, canonical_entities,
+│                                  #   domain rules, few-shot examples
+├── llm_system_prompt.txt          # Domain-agnostic prompt template ({placeholders})
 ├── abbreviations.json             # Medical abbreviation expansion table
 └── Final_Pipeline_Complete.md     # Full pipeline design + worked examples
 ```

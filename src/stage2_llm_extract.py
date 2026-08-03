@@ -19,38 +19,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from openai import OpenAI
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from domain_loader import load as _load_domain
 
 ROOT = Path(__file__).resolve().parent.parent
 
-import yaml
-DOMAIN_CONFIG  = yaml.safe_load((ROOT / "domain_config.yaml").read_text())
-VALID_ACTIONS  = set(DOMAIN_CONFIG["actions"].keys())
-
-
-def _build_action_list() -> str:
-    """Build the action list section from domain_config.yaml.
-    Single source of truth — adding an action to the YAML updates the prompt automatically.
-    NOTE: allowed_slot_types are intentionally NOT included here — entity type validation
-    is Stage 5's responsibility. Stage 2 extracts action + entity faithfully; downstream
-    stages validate semantic correctness.
-    """
-    lines = []
-    for name, cfg in DOMAIN_CONFIG["actions"].items():
-        desc       = cfg.get("description", "")
-        entity_req = cfg.get("entity_required", True)
-        end_sig    = cfg.get("uses_end_signal", False)
-
-        line = f"- {name}: {desc}"
-        if not entity_req:
-            line += " Entity must be empty string."
-        if end_sig:
-            line += " Watch for end-of-dictation signals."
-        lines.append(line)
-    return "\n".join(lines)
-
-
-_PROMPT_TEMPLATE = (ROOT / "llm_system_prompt.txt").read_text()
-SYSTEM_PROMPT   = _PROMPT_TEMPLATE.replace("{ACTION_LIST}", _build_action_list())
+_domain       = _load_domain()
+SYSTEM_PROMPT = _domain["system_prompt"]
+VALID_ACTIONS = _domain["valid_actions"]
 _model_file = ROOT / ".selected_model"
 DEFAULT_MODEL = _model_file.read_text().strip() if _model_file.exists() else "alias-ha"
 

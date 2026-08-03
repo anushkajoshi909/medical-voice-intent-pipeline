@@ -109,7 +109,8 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
   - `"show patient history"` → entity=`"patient history"` → synonym match → `"Medical History"` → `semantic_type=patient_info` → `show` allows `patient_info` → **ACCEPTED**
   - `"show discharge summary"` → exact match → `semantic_type=document` → `show` allows `document` → **ACCEPTED**
   - `"show messages"` → exact match → `semantic_type=messaging` → `show` allows `messaging` → **ACCEPTED**
-  - `"show movie"` → no match in any ontology → **ENTITY_NOT_FOUND** (Stage 4 rejects non-medical entities)
+  - `"Let me see the patient's vitals"` → Stage 2 strips fillers → entity=`"vitals"` → synonym match → `"Vital Signs Record"` → `semantic_type=patient_info` → `show` allows `patient_info` → **ACCEPTED**
+  - `"Pull up the lab results"` → Stage 2 strips fillers → entity=`"lab results"` → synonym match → `"Lab Report"` → `semantic_type=document` → `show` allows `document` → **ACCEPTED**
 
 ---
 
