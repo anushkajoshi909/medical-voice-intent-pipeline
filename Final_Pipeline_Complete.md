@@ -3,20 +3,41 @@
 
 ---
 
-## Architecture: Single Source of Truth
+## Architecture: Single Source of Truth + Design Patterns
 
-The pipeline is designed so that **adding a new action requires editing exactly two files**:
+The pipeline is designed so that **adding a new action requires editing exactly two artefacts**:
 
 1. **`MedicalSmartGlassesParser.g4` (+ Lexer)** — defines the structural rule (entity required? optional? what structure must the entity have?). This is the grammar authority. After editing, regenerate the Python parser with the ANTLR jar.
 
-2. **`domain_config.yaml`** — defines the semantic layer: action description (injected into LLM prompt), `allowed_slot_types` (checked in Stage 5), `grammar_command_type` (validated against grammar at startup), and `canonical_entities` for closed-set actions like `show`.
+2. **`domain_config.yaml`** — the single source of truth for the entire semantic layer. Each action declares:
+   - `description` — injected into LLM prompt
+   - `grammar_command_type` — validated against grammar at startup
+   - `allowed_slot_types` — checked at Stage 5
+   - `ontology_index` — which ontology cache to search at Stage 4 (`null` = passthrough)
+   - `entity_extractor` — extraction strategy before lookup (`default` or `medication`)
+   - `fallback_index` — secondary index if primary misses
+   - `passthrough_type` — semantic type assigned without lookup (for free-text / patient-identifier slots)
+   - `canonical_entities` *(show only)* — closed-set EHR record types for exact-match resolution
+
+   Additionally, `ontology_sources` in the same file declares which data files feed each Stage 4 index, along with format type, file path, filter parameters, and fuzzy cutoff — so no file paths or filter values are hardcoded in Stage 4.
 
 Everything else is derived automatically:
 - `src/domain_loader.py` reads grammar + config at startup and validates they are consistent
 - `llm_system_prompt.txt` is a **domain-agnostic template** with `{placeholders}` — healthcare rules and few-shot examples are injected from `domain_config.yaml` at runtime
 - Stage 3 runs the real ANTLR4 Python runtime on the grammar — no Python reimplementation of grammar rules
+- Stage 4 routing is entirely driven from `domain_config.yaml` — no action names or index names are hardcoded in code
 
 **If grammar and config diverge, the pipeline refuses to start** — the loader raises a clear error naming which action is missing from which file.
+
+### Design Patterns in Stage 4
+
+Two structural patterns make Stage 4 domain-independent:
+
+**Registry Pattern** (`_FORMAT_LOADERS`) — maps source type names to loader functions. `_ensure_loaded()` is a generic loop that reads `ontology_sources` from config and dispatches to the right loader by type name. New file format = write `_load_X(src)` and register it — the loading loop never changes.
+
+**Strategy Pattern** (`_STRATEGIES`) — maps extraction strategy names to functions. `lookup()` reads `entity_extractor` from the action's config and dispatches to the right strategy. New entity format (e.g. stripping qualifiers before lookup) = write `_strategy_X()` and register it — the routing logic never changes.
+
+Both patterns together mean: **adding a new action or a new ontology source requires only YAML edits, with no changes to routing or loading code.**
 
 ---
 
@@ -27,13 +48,12 @@ Everything else is derived automatically:
 | `MedicalSmartGlassesLexer.g4` | ANTLR lexer — canonical tokens. **Grammar authority — edit here to add actions** |
 | `MedicalSmartGlassesParser.g4` | ANTLR parser — command type hierarchy + structural rules (e.g. medication must have INT unit) |
 | `src/grammar/` | Generated Python parser from `.g4` files — committed, regenerated when grammar changes |
-| `domain_config.yaml` | Semantic layer: descriptions, `allowed_slot_types`, `grammar_command_type`, `canonical_entities`, domain rules, few-shot examples |
+| `domain_config.yaml` | **Single source of truth** — semantic layer AND ontology routing. Per-action: `grammar_command_type`, `description`, `allowed_slot_types`, `ontology_index`, `entity_extractor`, `fallback_index`, `passthrough_type`, `canonical_entities`. Plus `ontology_sources` block: which files feed each Stage 4 index, format type, filter params, fuzzy cutoffs. |
 | `llm_system_prompt.txt` | Domain-agnostic prompt template with `{placeholders}` — no healthcare content |
 | `src/domain_loader.py` | Wires grammar + config + template at startup; validates consistency; builds LLM prompt |
-| `abbreviations.json` | Abbreviation expansion (Stage 1) |
-| `action_synonyms.json` | ❌ Dropped — LLM handles synonym mapping |
-| Terminator list | ❌ Dropped — LLM `end_signal` field handles terminator detection |
-| `patient_info_terms.json` synonym lookup | ❌ Dropped — LLM maps to canonical entities defined in `domain_config.yaml` |
+| `src/stage4_ontology_lookup.py` | Ontology lookup — Registry + Strategy patterns; routing, loaders, and cutoffs all read from `domain_config.yaml` |
+| `abbreviations.json` | Abbreviation expansion (Stage 1); sourced from Wikipedia — not manually extended |
+| `docs/uml_diagrams.md` | UML diagrams (pipeline flow, Stage 4 patterns, domain independence boundary) — rendered in GitHub/GitLab |
 
 ---
 
@@ -112,25 +132,33 @@ Speech text (from ASR — Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 4: Ontology / Taxonomy Lookup                        │
+│  STAGE 4: Ontology / Canonical Lookup                       │
 │                                                             │
-│  For entity-bearing commands (start, show, diagnosis, stop) │
-│  Ordered resolution:                                        │
-│    4a. Exact label match (local ontology files)             │
-│    4b. Synonym match (synonymous descriptions)              │
-│    4c. Abbreviation expansion → re-run 4a + 4b             │
-│    4d. Fuzzy match — ONLY within semantic types that        │
-│        the action ALLOWS (from domain_config). Edit         │
-│        distance ≤ 2 only.                                   │
+│  Routing is fully config-driven from domain_config.yaml:    │
+│    • action → ontology_index, fallback_index, extractor     │
+│    • ontology_index: null + passthrough_type → skip lookup, │
+│      return entity as canonical with semantic_type assigned  │
+│      (free-text: set_note, send_message; change_patient)    │
+│    • ontology_index: null, no passthrough → system command  │
+│      (emergency, turn_on/off) → no canonical                │
 │                                                             │
-│  For free-text commands (set_note, send_message):           │
-│    → Skip ontology. Store entity as raw text.               │
+│  For entity-bearing commands (start, show, diagnosis,       │
+│  set_medication, stop):                                     │
+│    Strategy (entity_extractor field) prepares query:        │
+│      "default"    → normalise + look up entity as-is        │
+│      "medication" → strip dose/unit, look up drug name only  │
+│    Resolution order per index:                              │
+│      1. Exact normalised label match                        │
+│      2. Synonym match (OBO synonym entries; RxNorm aliases) │
+│      3. Fuzzy match via difflib SequenceMatcher             │
+│         — cutoff per index from domain_config.yaml          │
+│         — 0.72 (show) to 0.90 (diagnosis)                  │
+│    If primary index misses, retry on fallback_index         │
 │                                                             │
-│  For set_medication:                                        │
-│    → Run drug name through RxNorm lookup. Dosage/timing     │
-│       stored as structured free text.                       │
-│                                                             │
-│  Output: resolved concept + semantic_type + match_type      │
+│  Output (OntologyResult):                                   │
+│    raw_entity, canonical, semantic_type, ontology_id,       │
+│    match_method (exact/synonym/fuzzy/passthrough/none),     │
+│    score (0.0–1.0), source (doid/ncit/rxnorm/…)            │
 └─────────────────────────────────────────────────────────────┘
     │
     │ Entity not found ────────────────────────→ ENTITY_NOT_FOUND + clarification
@@ -186,12 +214,18 @@ Speech text (from ASR — Whisper / VOSK)
 
 ### `domain_config.yaml`
 
-Holds the **semantic layer only** — structure lives in the grammar. Key fields per action:
+The **single source of truth** for the semantic layer AND Stage 4 ontology routing. Key fields per action:
 
 - `grammar_command_type`: links this action to a parser rule. Validated at startup.
 - `description`: injected into the LLM prompt.
 - `allowed_slot_types`: checked in Stage 5 semantic validation.
-- `canonical_entities` *(show only)*: closed-set record categories matched at Stage 4. The LLM preserves the entity as spoken ("patient history"); Stage 4 matches it against this list to resolve the canonical name ("Medical History") and semantic_type. Replaces `patient_info_terms.json` — no synonym file needed.
+- `ontology_index`: which index Stage 4 searches (`null` = skip lookup).
+- `entity_extractor`: extraction strategy before lookup (`default` uses entity as-is; `medication` strips dose/unit).
+- `fallback_index`: secondary index tried if primary yields no match.
+- `passthrough_type`: for actions with `ontology_index: null` that carry meaningful entities — assigned as `semantic_type` without lookup.
+- `canonical_entities` *(show only)*: closed-set EHR record types; Stage 4 exact/fuzzy-matches the entity against this list.
+
+The same file also contains `ontology_sources` — which data files feed each Stage 4 index, their format types, filter parameters, and fuzzy cutoffs. No separate `ontology_sources.yaml` file exists.
 
 ```yaml
 domain: healthcare
@@ -203,7 +237,10 @@ actions:
     grammar_command_type: request_data
     description: "Display patient data, test results, vital signs, records, or messages"
     allowed_slot_types: [vital_sign, lab_result, patient_info, medication, document, imaging, messaging, procedure]
-    canonical_entities:          # grouped by semantic_type → Stage 4 reads type from here
+    ontology_index: show             # vital_signs.json + domain_config canonical_entities
+    fallback_index: null
+    entity_extractor: default
+    canonical_entities:              # grouped by semantic_type → Stage 4 reads type from here
       patient_info:
         - Medical History
         - Medication List
@@ -225,24 +262,92 @@ actions:
     grammar_command_type: diagnosis
     description: "Record a clinical diagnosis"
     allowed_slot_types: [disease, symptom, condition, finding]
+    ontology_index: diagnosis        # doid.obo (disease) + hp.obo (symptom)
+    fallback_index: null
+    entity_extractor: default
 
   set_medication:
     grammar_command_type: set_medication
     description: "Prescribe medication — entity MUST include drug name, dose, and unit"
     allowed_slot_types: [medication]
+    ontology_index: medication       # RXNCONSO.RRF
+    fallback_index: null
+    entity_extractor: medication     # strips dose/unit before RxNorm lookup
 
-  # ... (all 14 actions, each with grammar_command_type)
+  set_note:
+    grammar_command_type: protocol
+    description: "Dictate a free-text clinical note"
+    allowed_slot_types: [free_text]
+    ontology_index: null             # free text — no lookup
+    passthrough_type: free_text
+
+  change_patient:
+    grammar_command_type: request_patient
+    description: "Switch the active patient context"
+    allowed_slot_types: [patient_identifier]
+    ontology_index: null             # patient name — no lookup
+    passthrough_type: patient_identifier
+
+  turn_on:
+    grammar_command_type: glasses_command
+    description: "Activate a display or system feature"
+    allowed_slot_types: [system]
+    ontology_index: null             # system command — no entity, no lookup
+
+  # ... (all 13 actions follow same pattern)
+
+ontology_sources:
+  show:
+    fuzzy_cutoff: 0.72
+    sources:
+      - type: json_labels
+        file: ontologies/vital_signs.json
+        source_name: vital_signs
+      - type: domain_config_canonical   # reads canonical_entities from this file
+
+  diagnosis:
+    fuzzy_cutoff: 0.90
+    sources:
+      - type: obo
+        file: ontologies/doid.obo
+        semantic_type: disease
+        source_name: doid
+      - type: obo
+        file: ontologies/hp.obo
+        semantic_type: symptom
+        source_name: hp
+
+  procedure:
+    fuzzy_cutoff: 0.86
+    sources:
+      - type: ncit
+        file: ontologies/Thesaurus.txt
+        semantic_type: procedure
+        source_name: ncit
+        filter_semantic_types:          # moves _NCIT_PROCEDURE_TYPES constant into config
+          - "Therapeutic or Preventive Procedure"
+          - "Laboratory Procedure"
+          - "Diagnostic Procedure"
+
+  medication:
+    fuzzy_cutoff: 0.88
+    sources:
+      - type: rxnorm
+        file: ontologies/RXNCONSO.RRF
+        semantic_type: medication
+        source_name: rxnorm
+        term_types: [IN, BN, PIN, MIN] # moves _RXNORM_TTY constant into config
 
 domain_rules:
   - "This is a MEDICAL clinical interface. Non-medical commands → UNKNOWN."
   - "If 'start'/'begin'/'trigger' appears near 'emergency', action is ALWAYS 'emergency'."
   - "set_medication entity MUST contain drug name, dose number, and unit."
-  - "For show commands, extract the data type exactly as spoken — do not normalise or rename it."
+  - "For show commands, map to the closest canonical EHR record name from the closed list in canonical_entities."
   # ...
 
 few_shot_examples:
   - input: "show patient history"
-    output: '{"action":"show","entity":"patient history","end_signal":false,"confidence":0.97}'
+    output: '{"action":"show","entity":"Medical History","end_signal":false,"confidence":0.97}'
   - input: "set medication hypertension"
     output: '{"action":"set_medication","entity":"hypertension","end_signal":false,"confidence":0.95}'
   # ...
@@ -412,43 +517,23 @@ The grammar extends Ludyga's original (`baseline_ludyga/`). Changes are document
 
 ---
 
-### `ontology_sources.yaml`
+### Ontology Sources (declared in `domain_config.yaml`)
 
-```yaml
-sources:
-  disease_ontology:
-    format: obo
-    path: ./ontologies/doid.obo
-    provides_semantic_types: [disease, condition, finding]
-    semantic_type_assignment: hardcoded  # every term in DOID = disease by definition
-    notes: "Human Disease Ontology — CC0, no license required"
+There is no separate `ontology_sources.yaml`. All ontology source declarations live in the `ontology_sources` block of `domain_config.yaml` (shown above), so the pipeline has a single configuration file to update when adapting to a new domain.
 
-  phenotype_ontology:
-    format: obo
-    path: ./ontologies/hp.obo
-    provides_semantic_types: [symptom, clinical_finding]
-    semantic_type_assignment: hardcoded  # every term in HPO = symptom/phenotype
-    notes: "Human Phenotype Ontology — free for academic use"
+| Index | Source file(s) | Format | Semantic type | Notes |
+|---|---|---|---|---|
+| `show` | `vital_signs.json` | `json_labels` | `vital_sign` | 25 vital sign labels with semantic types |
+| `show` | `domain_config.yaml` | `domain_config_canonical` | varies | `canonical_entities` from same config — EHR record names |
+| `diagnosis` | `doid.obo` | `obo` | `disease` | Human Disease Ontology — CC0 |
+| `diagnosis` | `hp.obo` | `obo` | `symptom` | Human Phenotype Ontology — free academic use |
+| `procedure` | `Thesaurus.txt` | `ncit` | `procedure` | NCI Thesaurus — rows filtered by `filter_semantic_types` in config |
+| `medication` | `RXNCONSO.RRF` | `rxnorm` | `medication` | NLM RxNorm prescribable content — no UMLS license required |
 
-  rxnorm:
-    format: rrf
-    path: ./ontologies/RXNCONSO.RRF
-    provides_semantic_types: [medication]
-    semantic_type_assignment: hardcoded  # every term in RxNorm = medication
-    notes: "NLM Prescribable Content — no UMLS license required"
-
-  ncit_procedures:
-    format: flat
-    path: ./ontologies/Thesaurus.txt
-    provides_semantic_types: [treatment, procedure]
-    semantic_type_assignment: column     # filter rows where semantic_type contains "Therapeutic or Preventive Procedure" or "Diagnostic Procedure"
-    notes: "NCI Thesaurus flat file — free, NCI Terms of Use. Replaces SNOMED CT (license rejected). Vital signs NOT sourced from NCIt — blood pressure appears as Finding not vital_sign in NCIt."
-
-  # patient_info_terms.json is NOT used as an ontology lookup source.
-  # Stage 4 matches the raw entity ("patient history", "discharge letter") against the
-  # canonical_entities list in domain_config.yaml to resolve canonical name + semantic_type.
-  # The LLM preserves the entity as spoken; resolution is Stage 4's responsibility.
-```
+**Design notes:**
+- SNOMED CT was rejected (requires license) — replaced by DOID + HPO + NCIt
+- NCIt vital signs were rejected (blood pressure appears as `Finding`, not `vital_sign`) — `vital_signs.json` was built manually for the 25 core vital signs
+- `patient_info_terms.json` was dropped — the LLM maps directly to canonical EHR names; Stage 4 matches against `canonical_entities` in config
 
 ---
 
@@ -456,15 +541,26 @@ sources:
 
 OBO files (DOID, HPO) do **not** contain a semantic type field. The type is assigned based on which file the term comes from — every term in DOID is a disease by definition, every term in HPO is a symptom. NCIt is the exception: it covers all concept types in one file, so we use its `semantic_type` column to filter only procedure/vital sign rows at load time.
 
-**Parsing happens once at startup** — all files are read and merged into a single in-memory index:
+**Parsing happens once at startup** — `_ensure_loaded()` iterates the `ontology_sources` block in `domain_config.yaml`, dispatches each source to its loader via `_FORMAT_LOADERS`, and builds a separate named in-memory index per ontology group:
 
 ```
-"hemolysis"      → {semantic_type: "disease",   concept_id: "DOID:3680",   source: "doid"}
-"hemodialysis"   → {semantic_type: "procedure", concept_id: "NCIt:C15248", source: "ncit"}
-"aspirin"        → {semantic_type: "medication", concept_id: "RxCUI:1191", source: "rxnorm"}
+Index "diagnosis":
+  "hemolysis"        → {semantic_type: "disease",    concept_id: "DOID:3680",   source: "doid"}
+  "acute hemolysis"  → {semantic_type: "disease",    concept_id: "DOID:3680",   source: "doid"}  # synonym
+  "hyperthyroidism"  → {semantic_type: "symptom",    concept_id: "HP:0000853",  source: "hp"}
+
+Index "procedure":
+  "hemodialysis"     → {semantic_type: "procedure",  concept_id: "NCIt:C15248", source: "ncit"}
+
+Index "medication":
+  "aspirin"          → {semantic_type: "medication",  concept_id: "RxCUI:1191", source: "rxnorm"}
+
+Index "show":
+  "blood pressure"   → {semantic_type: "vital_sign",  concept_id: None,         source: "vital_signs"}
+  "Medical History"  → {semantic_type: "patient_info", concept_id: None,        source: "domain_config"}
 ```
 
-Synonyms are indexed as separate keys pointing to the same concept. Every Stage 4 query is then an O(1) dict lookup — no file I/O at query time. This keeps per-command latency at < 1ms for the ontology step, acceptable for real-time AR glasses use.
+Synonyms are indexed as separate keys pointing to the same concept. Every Stage 4 query is then an O(1) dict lookup for exact and synonym matches, with a linear fuzzy scan as fallback — no file I/O at query time. This keeps per-command latency at < 1ms for the ontology step, acceptable for real-time AR glasses use.
 
 
 ---
@@ -495,44 +591,51 @@ Input to LLM: "illustrate the patients medical history"
 
 LLM reasoning (internal):
   "illustrate" → closest action = "show" (display something)
-  "patients medical history" → entity preserved as spoken
+  domain rule: "For show commands, map to closest canonical EHR record name"
+  "patients medical history" → maps to "Medical History" (canonical list)
   No end signal.
 
 LLM output:
 {
   "action":     "show",
-  "entity":     "patients medical history",
+  "entity":     "Medical History",
   "end_signal": false,
   "confidence": 0.95
 }
 
 → Ludyga's grammar: FAILS ("illustrate" is not a lexer token)
-→ LLM: SUCCEEDS — maps action synonym, entity preserved as spoken
+→ LLM: SUCCEEDS — maps action synonym AND entity to canonical name directly
 ```
 
 **Stage 3 — ANTLR Frame Validation**
 ```
-Reconstruct canonical: "ok glasses show patients medical history"
+Reconstruct canonical: "ok glasses show Medical History"
 Rule matched: request_data → u14: SHOW data ✓
-data "patients medical history" is non-empty ✓
+data "Medical History" is non-empty ✓
 command_type = "request_data"
 Frame: VALID
 ```
 
 **Stage 4 — Ontology / Canonical Lookup**
 ```
-entity = "patients medical history"
+entity = "Medical History"
 action = "show"
+ontology_index = "show"   (from domain_config)
+entity_extractor = "default"
 
-Match against canonical_entities in domain_config.yaml (no external file):
-  "patients medical history" → fuzzy match → "Medical History" (patient_info group)
+Index "show" contains:
+  - vital_signs.json entries (vital_sign type)
+  - canonical_entities from domain_config (EHR record names)
+
+"Medical History" → exact match in domain_config_canonical (patient_info group)
 
 Result:
-  raw_entity     = "patients medical history"
+  raw_entity     = "Medical History"
   canonical      = "Medical History"
   semantic_type  = "patient_info"
-  match_type     = "canonical"
-  confidence     = 1.0
+  match_method   = "exact"
+  score          = 1.0
+  source         = "domain_config"
 ```
 
 **Stage 5 — Semantic Validation**
@@ -552,17 +655,18 @@ Result: ACCEPTED
   "action": "show",
   "slots": {
     "patient_info": {
-      "raw_entity":    "patients medical history",
+      "raw_entity":    "Medical History",
       "canonical":     "Medical History",
       "semantic_type": "patient_info",
-      "match_type":    "canonical",
-      "confidence":    1.0
+      "match_method":  "exact",
+      "score":         1.0,
+      "source":        "domain_config"
     }
   },
   "explanation": {
-    "llm_extraction":      "'Illustrate' mapped to action 'show'. Entity 'patients medical history' preserved as spoken — canonical resolution is Stage 4's responsibility.",
+    "llm_extraction":      "'Illustrate' mapped to action 'show'. Domain rule instructs LLM to map entity to closest canonical EHR name — 'Medical History' returned directly.",
     "grammar_validation":  "SHOW data frame valid. command_type=request_data.",
-    "ontology_evidence":   "'patients medical history' matched to canonical 'Medical History' (patient_info) via domain_config canonical_entities. No external file lookup.",
+    "ontology_evidence":   "'Medical History' exact-matched in domain_config canonical_entities (patient_info group). No external ontology file needed.",
     "semantic_validation": "Action 'show' permits slot type 'patient_info'. Accepted."
   }
 }
@@ -1033,7 +1137,7 @@ Stage 5:
 diagnosis + disease → ✓ allowed
 ```
 
-Output: ACCEPTED, DIAGNOSIS_DISEASE with SNOMED/ICD-10 code for documentation.
+Output: ACCEPTED, DIAGNOSIS_DISEASE with DOID concept ID for documentation.
 
 ---
 
@@ -1050,6 +1154,16 @@ Output: ACCEPTED, DIAGNOSIS_DISEASE with SNOMED/ICD-10 code for documentation.
 | `"diagnosis hemolysis"` (correct) | ❌ Fails — "hemolysis" not a grammar token | ✅ ACCEPTED via DOID exact match + Stage 7 confirmation |
 
 ---
-*Document version 1.0 — May 2026*
+
+## UML Diagrams
+
+Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md) (renders in GitHub/GitLab). Three diagrams:
+
+1. **Pipeline Architecture** — six-stage component flow, Stages 1–4 implemented, 5–6 planned
+2. **Stage 4 Design Patterns** — class diagram showing `_STRATEGIES` (Strategy pattern) and `_FORMAT_LOADERS` (Registry pattern) and their relationship to `domain_config.yaml`
+3. **Domain Independence Boundary** — component diagram separating domain-independent core from domain-specific artefacts
+
+---
+*Document version 2.0 — August 2026*
 *Master Thesis: Improving Intent Recognition in Grammar-Based Voice Interfaces*
 *Anushka Joshi — TU Dresden, Chair of Software Technology*

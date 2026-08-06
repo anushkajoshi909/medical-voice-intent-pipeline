@@ -1,102 +1,156 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOMAIN CONFIGURATION
+#
+# How to adapt this file for a NEW DOMAIN:
+#
+# ┌─ REPLACE (domain-specific content) ────────────────────────────────────────┐
+# │  domain, domain_description, trigger_phrase                                │
+# │  All action names and their descriptions                                   │
+# │  grammar_command_type values  (must match rules in your .g4 parser file)   │
+# │  allowed_slot_types values    (choose names meaningful to your domain)     │
+# │  ontology_index values        (must match loaders in stage4_ontology_lookup│
+# │                                .py — add a new _load_X() + _cache key)     │
+# │  canonical_entities           (your domain's closed-set entity lists)      │
+# │  domain_rules, few_shot_examples                                           │
+# └────────────────────────────────────────────────────────────────────────────┘
+# ┌─ KEEP (structural keys the pipeline reads — rename breaks things) ──────────┐
+# │  actions:                                                                   │
+# │    <action_name>:                                                           │
+# │      grammar_command_type:   validated vs .g4 at startup by domain_loader  │
+# │      description:            injected into LLM system prompt               │
+# │      allowed_slot_types:     Stage 5 validates entity semantic type here   │
+# │      ontology_index:         Stage 4 — which index to search (null=skip)   │
+# │      fallback_index:         Stage 4 — retry index if primary misses       │
+# │      entity_extractor:       Stage 4 — extraction strategy before lookup   │
+# │                              "default" (use entity as-is)                  │
+# │                              "medication" (strip dose/unit before lookup)   │
+# │                              add new strategies in stage4_ontology_lookup  │
+# │      passthrough_type:       Stage 4 — semantic_type to assign when        │
+# │                              ontology_index is null and entity has meaning  │
+# │                              omit for system commands with no entity        │
+# │  domain_rules:               injected into LLM prompt as numbered list     │
+# │  few_shot_examples:          injected into LLM prompt                      │
+# └────────────────────────────────────────────────────────────────────────────┘
+
 domain: healthcare
 domain_description: "medical voice interface running on smart glasses worn by clinicians"
 trigger_phrase: "ok glasses"
 
 # ── Actions ────────────────────────────────────────────────────────────────────
-# Structure (entity_required / entity_optional / entity_forbidden) lives in the
-# ANTLR grammar (MedicalSmartGlassesParser.g4). This file holds only:
-#   description       — injected into LLM prompt
-#   allowed_slot_types — semantic constraints checked in Stage 5
-#   canonical_entities — closed-set entities the LLM should normalise to
-#                        (open-set entities go to Stage 4 ontology lookup)
+# grammar_command_type : must match a rule name in MedicalSmartGlassesParser.g4
+#                        (validated at startup — mismatch raises ValueError)
+# ontology_index       : index name in Stage 4 cache, or null for passthrough
+# fallback_index       : secondary index tried when ontology_index yields nothing
+# entity_extractor     : extraction strategy applied before ontology lookup
+# passthrough_type     : semantic_type assigned for null-index actions that
+#                        carry meaningful entities (patient names, free text)
 
 actions:
   start:
     grammar_command_type: treatment
     description: "Initiate a treatment, procedure, or medication"
     allowed_slot_types: [treatment, procedure, medication, shared_session, emergency]
+    ontology_index: procedure       # try NCIt Thesaurus first
+    fallback_index: medication      # if not a procedure, try RXNORM (drug start)
+    entity_extractor: default
+    fallback_extractor: medication  # strip dose/unit before RxNorm lookup
 
   show:
     grammar_command_type: request_data
     description: "Display patient data, test results, vital signs, records, or messages"
-    allowed_slot_types: [vital_sign, lab_result, patient_info, medication, document, imaging, messaging, procedure]
-    canonical_entities:
-      patient_info:
-        - Medical History
-        - Medication List
-        - Allergy List
-        - Problem List
-        - Vital Signs Record
-        - Patient Demographics
-      document:
-        - Discharge Summary
-        - Progress Notes
-        - Referral Letter
-        - Consultation Note
-        - Operative Note
-        - Lab Report
-      messaging:
-        - Messages
+    allowed_slot_types: [vital_sign, lab_result, ehr_record]
+    ontology_index: show              # vital_signs.json only
+    fallback_index: null
+    entity_extractor: default
+    passthrough_fallback_type: ehr_record  # anything not in vital_signs → ehr_record
 
   diagnosis:
     grammar_command_type: diagnosis
     description: "Record a clinical diagnosis"
     allowed_slot_types: [disease, symptom, condition, finding]
+    ontology_index: diagnosis       # doid.obo (disease) + hp.obo (symptom)
+    fallback_index: null
+    entity_extractor: default
 
   set_medication:
     grammar_command_type: set_medication
     description: "Prescribe or record a medication — entity MUST include drug name, dose, and unit (e.g. 'paracetamol 100 mg')"
     allowed_slot_types: [medication]
+    ontology_index: medication      # RXNCONSO.RRF
+    fallback_index: null
+    entity_extractor: medication    # strips dose/unit before lookup
 
   set_note:
     grammar_command_type: protocol
     description: "Dictate a free-text clinical note"
     allowed_slot_types: [free_text]
+    ontology_index: null            # entity is free text — no lookup
+    passthrough_type: free_text
 
   stop:
     grammar_command_type: stop_cmd
     description: "Discontinue a treatment, medication, or session"
     allowed_slot_types: [treatment, procedure, medication, shared_session, emergency, system]
+    ontology_index: procedure       # try NCIt first
+    fallback_index: medication      # if not a procedure, try RXNORM
+    entity_extractor: default
+    fallback_extractor: medication  # strip dose/unit before RxNorm lookup
 
   turn_on:
     grammar_command_type: glasses_command
     description: "Activate a display or system feature"
     allowed_slot_types: [system]
+    ontology_index: null            # system command — no ontology lookup
+    entity_slot: false              # grammar enforces no entity; pipeline strips any LLM extractions
 
   turn_off:
     grammar_command_type: glasses_command
     description: "Deactivate a display or system feature"
     allowed_slot_types: [system]
+    ontology_index: null
+    entity_slot: false
 
   continue:
     grammar_command_type: glasses_command
     description: "Resume a paused display or operation"
     allowed_slot_types: [system]
+    ontology_index: null
+    entity_slot: false
 
   change_patient:
     grammar_command_type: request_patient
     description: "Switch the active patient context — requires explicit patient name"
     allowed_slot_types: [patient_identifier]
+    ontology_index: null            # entity IS the patient identifier — no lookup
+    passthrough_type: patient_identifier
 
   send_message:
     grammar_command_type: message
     description: "Compose and send a message to a team member"
     allowed_slot_types: [free_text]
+    ontology_index: null
+    passthrough_type: free_text
 
   emergency:
     grammar_command_type: glasses_command
     description: "Trigger emergency protocol immediately"
     allowed_slot_types: []
+    ontology_index: null
+    entity_slot: false
 
   accept_emergency:
     grammar_command_type: glasses_command
     description: "Accept or acknowledge an incoming emergency alert"
     allowed_slot_types: []
+    ontology_index: null
+    entity_slot: false
 
   leave_emergency:
     grammar_command_type: glasses_command
     description: "Exit emergency mode"
     allowed_slot_types: []
+    ontology_index: null
+    entity_slot: false
 
 # ── Domain-specific LLM rules (healthcare only) ────────────────────────────────
 # Generic rules (don't judge entity type, raw JSON only, etc.) live in the
@@ -108,7 +162,72 @@ domain_rules:
   - "If 'start', 'begin', 'trigger', or 'initiate' appears before or near 'emergency', the action is ALWAYS 'emergency' — NOT 'start'. The action 'start' is only for treatments, procedures, or medications."
   - "If 'stop', 'finish', 'terminate', 'end', or 'cancel' appears with 'emergency', the action is 'leave_emergency' — NOT 'stop'."
   - "For set_medication, the entity MUST contain the drug name, dose number, and unit (e.g. 'paracetamol 100 mg'). If dose or unit is missing, still extract what was said but mark confidence low."
-  - "For show commands, map the requested data type to the closest canonical EHR record name from this closed list: Medical History, Medication List, Allergy List, Problem List, Vital Signs Record, Patient Demographics, Discharge Summary, Progress Notes, Referral Letter, Consultation Note, Operative Note, Lab Report, Messages. If the entity refers to a vital sign, lab result, or clinical measurement (e.g. 'blood pressure', 'CBC', 'hemoglobin'), extract it as spoken — those are looked up in a separate ontology at Stage 4. If the entity does not match any known EHR record type or clinical measurement, extract it as spoken."
+  - "For show commands, extract the data type exactly as spoken (e.g. 'blood pressure', 'patient history', 'lab results'). Do not rename or normalise. If the requested data has no plausible clinical meaning (e.g. 'show movie', 'show my emails'), return UNKNOWN."
+  - "turn_on and turn_off apply ONLY to features of the smart glasses system itself (AR display, overlays, notifications, recording). Physical environment controls (lights, volume, external devices) are not glasses features — return UNKNOWN."
+  - "send_message is for clinical communication with medical team members only (doctors, nurses, colleagues). Non-clinical messages (newsletters, general announcements, emails unrelated to patient care) → UNKNOWN."
+
+# ── Ontology sources ──────────────────────────────────────────────────────────
+# Declares what data files feed each Stage 4 index.
+#
+# ┌─ REPLACE for a new domain ──────────────────────────────────────────────────┐
+# │  index names (must match ontology_index values declared in actions above)   │
+# │  file paths, semantic_type, source_name, and format-specific filter params  │
+# │  fuzzy_cutoff per index (higher = stricter matching)                        │
+# └────────────────────────────────────────────────────────────────────────────┘
+# ┌─ KEEP (structural keys Stage 4 reads) ──────────────────────────────────────┐
+# │  ontology_sources:                                                           │
+# │    <index_name>:                                                             │
+# │      fuzzy_cutoff: <float>    0.0–1.0; higher = stricter                   │
+# │      sources:                                                                │
+# │        - type: <loader_type>  must be registered in _FORMAT_LOADERS         │
+# │          file: <path>         relative to project root                      │
+# │          semantic_type: <str> assigned to matched entries                   │
+# │          source_name: <str>   label in OntologyResult.source                │
+# │          <extra params>       loader-specific (filter_semantic_types, etc.) │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+ontology_sources:
+  show:
+    fuzzy_cutoff: 0.72          # loose — for vital sign label matching only
+    sources:
+      - type: json_labels       # vital signs only — short, stable ontology
+        file: ontologies/vital_signs.json
+        source_name: vital_signs
+      # EHR record categories are NOT a closed list here — the LLM gates validity
+      # via domain rules; anything not a vital sign becomes semantic_type=ehr_record
+
+  diagnosis:
+    fuzzy_cutoff: 0.90          # strict — hemolysis vs hemoptysis differ at 0.84
+    sources:
+      - type: obo
+        file: ontologies/doid.obo
+        semantic_type: disease
+        source_name: doid
+      - type: obo
+        file: ontologies/hp.obo
+        semantic_type: symptom
+        source_name: hp
+
+  procedure:
+    fuzzy_cutoff: 0.86
+    sources:
+      - type: ncit
+        file: ontologies/Thesaurus.txt
+        semantic_type: procedure
+        source_name: ncit
+        filter_semantic_types:
+          - "Therapeutic or Preventive Procedure"
+          - "Laboratory Procedure"
+          - "Diagnostic Procedure"
+
+  medication:
+    fuzzy_cutoff: 0.88
+    sources:
+      - type: rxnorm
+        file: ontologies/RXNCONSO.RRF
+        semantic_type: medication
+        source_name: rxnorm
+        term_types: [IN, BN, PIN, MIN]
 
 # ── Healthcare few-shot examples ───────────────────────────────────────────────
 few_shot_examples:
@@ -140,10 +259,10 @@ few_shot_examples:
     output: '{"action":"set_medication","entity":"hypertension","end_signal":false,"confidence":0.95}'
 
   - input: "show patient history"
-    output: '{"action":"show","entity":"Medical History","end_signal":false,"confidence":0.97}'
+    output: '{"action":"show","entity":"patient history","end_signal":false,"confidence":0.97}'
 
   - input: "pull up the discharge letter"
-    output: '{"action":"show","entity":"Discharge Summary","end_signal":false,"confidence":0.96}'
+    output: '{"action":"show","entity":"discharge letter","end_signal":false,"confidence":0.96}'
 
   - input: "get the stuff for patient"
     output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'

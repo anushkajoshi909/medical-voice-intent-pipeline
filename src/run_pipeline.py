@@ -6,7 +6,8 @@ Stages implemented:
   2  LLM structured extraction               (stage2_llm_extract.py)
   3  ANTLR frame validation                  (stage3_antlr_validate.py)
   4  Ontology entity lookup                  (stage4_ontology_lookup.py)
-  [5 to be added as implemented]
+  5  Semantic type validation                (stage5_type_validate.py)
+  [6 to be added as implemented]
 
 Data source: data/annotated_commands.json (216 entries = 198 commands + 18 extended)
   Each entry has expected_action for action-level accuracy scoring.
@@ -31,6 +32,17 @@ from stage1_preprocess import preprocess
 from stage2_llm_extract import extract, get_client, _select_model_interactive, DEFAULT_MODEL
 from stage3_antlr_validate import validate as frame_validate
 from stage4_ontology_lookup import lookup as ontology_lookup
+from stage5_type_validate import validate as type_validate
+from domain_loader import load as _load_domain
+
+_ACTION_CONFIG: dict = {}
+
+
+def _action_cfg() -> dict:
+    global _ACTION_CONFIG
+    if not _ACTION_CONFIG:
+        _ACTION_CONFIG = _load_domain()["action_config"]
+    return _ACTION_CONFIG
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
@@ -63,29 +75,54 @@ def run_command(client, cmd: dict, model: str) -> dict:
                            error="format_invalid: non-speech input detected by Stage 1")
     else:
         stage2 = extract(client, clean, model=model)
-    stage3 = frame_validate(stage2.action, stage2.entity)
+
+    # Structural entity enforcement: if action config declares entity_slot=false,
+    # strip any entity the LLM extracted before passing to Stage 3.
+    entity_for_pipeline = stage2.entity
+    if stage2.action not in ("UNKNOWN", ""):
+        if not _action_cfg().get(stage2.action, {}).get("entity_slot", True):
+            entity_for_pipeline = ""
+
+    stage3 = frame_validate(stage2.action, entity_for_pipeline)
 
     # Stage 4: ontology lookup — only when stage 3 passed and action is known
     if stage3.valid and stage2.action not in ("UNKNOWN", ""):
-        stage4 = ontology_lookup(stage2.action, stage2.entity)
+        stage4 = ontology_lookup(stage2.action, entity_for_pipeline)
     else:
         from stage4_ontology_lookup import OntologyResult
-        stage4 = OntologyResult(False, stage2.entity, None, None, None, "none", 0.0, None)
+        stage4 = OntologyResult(False, entity_for_pipeline, None, None, None, "none", 0.0, None)
 
-    expected     = cmd.get("expected_action")
-    got          = stage2.action
+    # Stage 5: semantic type validation — only when stage 3 passed and action is known
+    if stage3.valid and stage2.action not in ("UNKNOWN", ""):
+        stage5 = type_validate(stage2.action, stage4)
+    else:
+        from stage5_type_validate import Stage5Result
+        stage5 = Stage5Result("skipped", None, [], "stage 3 rejected or action unknown")
+
+    expected = cmd.get("expected_action")
+    got      = stage2.action
     # stage2_valid overrides valid for type_mismatch cases:
     # these are end-to-end invalid (Stage 5 catches them) but Stage 2 should
     # extract action+entity faithfully and pass them through.
     s2_valid = cmd.get("stage2_valid", cmd.get("valid"))
 
-    # Binary accept/reject (Stages 2 + 3 must both pass for acceptance)
-    if s2_valid is False:
-        # Invalid command: correct if Stage 2 OR Stage 3 rejects it
-        binary_correct = (got == "UNKNOWN" or not stage2.valid_action or not stage3.valid)
+    s5_rejects  = stage5.status == "type_mismatch"
+    cmd_valid   = cmd.get("valid")
+
+    # Binary accept/reject
+    if cmd_valid is False:
+        if s2_valid is True:
+            # Type-mismatch test cases: Stage 2 extracts correctly, Stage 3 or Stage 5 rejects
+            binary_correct = (not stage3.valid or s5_rejects)
+        else:
+            # Regular invalid commands: any stage rejection counts
+            binary_correct = (got == "UNKNOWN" or not stage2.valid_action
+                              or not stage3.valid or s5_rejects)
     else:
-        # Valid command: correct if Stage 2 maps to known action AND Stage 3 validates frame
-        binary_correct = (got != "UNKNOWN" and stage2.valid_action and stage3.valid)
+        # Valid command: Stages 2+3 must pass AND Stage 5 must not type-mismatch
+        # entity_not_found = accepted with clarification (intent understood)
+        binary_correct = (got != "UNKNOWN" and stage2.valid_action and stage3.valid
+                          and stage5.status in ("accepted", "skipped", "entity_not_found"))
 
     # Action-level correct — for type_mismatch, Stage 2 should return expected_action
     action_correct = (expected is not None) and (got == expected)
@@ -110,13 +147,18 @@ def run_command(client, cmd: dict, model: str) -> dict:
         "frame_reason":     stage3.reason,
         "canonical_form":   stage3.canonical_form,
         "command_type":     stage3.command_type,
-        "ont_found":        stage4.found,
-        "ont_canonical":    stage4.canonical,
-        "ont_semantic_type":stage4.semantic_type,
-        "ont_ontology_id":  stage4.ontology_id,
-        "ont_match_method": stage4.match_method,
-        "ont_score":        stage4.score,
-        "ont_source":       stage4.source,
+        "ont_found":                   stage4.found,
+        "ont_canonical":               stage4.canonical,
+        "ont_semantic_type":           stage4.semantic_type,
+        "ont_ontology_id":             stage4.ontology_id,
+        "ont_match_method":            stage4.match_method,
+        "ont_score":                   stage4.score,
+        "ont_source":                  stage4.source,
+        "ont_clarification_type":      stage4.clarification_type,
+        "ont_clarification_canonical": stage4.clarification_canonical,
+        "s5_status":        stage5.status,
+        "s5_reason":        stage5.reason,
+        "s5_allowed_types": stage5.allowed_types,
         "binary_correct":   binary_correct,
         "action_correct":   action_correct,
         "llm_error":        stage2.error,
@@ -178,6 +220,19 @@ def print_results(results: list[dict], stats: dict, model: str):
         print(f"\n  [!] Stage 3 frame failures: {len(frame_failures)}")
         for r in frame_failures:
             print(f"      {r['id']}  {r['action']!r}  entity={r['entity']!r}  → {r['frame_reason']}")
+
+    type_mismatches = [r for r in results if r.get("s5_status") == "type_mismatch"]
+    if type_mismatches:
+        print(f"\n  [!] Stage 5 type mismatches: {len(type_mismatches)}")
+        for r in type_mismatches:
+            print(f"      {r['id']}  {r['action']!r}  entity={r['entity']!r}  → {r['s5_reason']}")
+
+    entity_not_found = [r for r in results if r.get("s5_status") == "entity_not_found"
+                        and r["valid"] is True and r["binary_correct"]]
+    if entity_not_found:
+        print(f"\n  [?] Stage 5 entity not found ({len(entity_not_found)}) — accepted with clarification:")
+        for r in entity_not_found:
+            print(f"      {r['id']}  {r['action']!r}  entity={r['entity']!r}")
 
     print(f"""
   Binary (accept / reject)
@@ -262,6 +317,15 @@ def _print_stages(r: dict):
             if r['ont_ontology_id']:
                 print(f"     ont_id     : {r['ont_ontology_id']}")
             print(f"     source     : {r['ont_source']}")
+        if r.get('ont_clarification_type'):
+            print(f"     clarify    : found as {r['ont_clarification_type']!r}"
+                  f" ({r['ont_clarification_canonical']!r}) in global search")
+        print(f"  ── Stage 5: Semantic Type Validation")
+        s5_sym = {"accepted": "✓", "skipped": "–", "entity_not_found": "?", "type_mismatch": "✗"}.get(r['s5_status'], "?")
+        print(f"     status     : [{s5_sym}] {r['s5_status']}")
+        if r['s5_status'] == "type_mismatch":
+            print(f"     reason     : {r['s5_reason']}")
+            print(f"     allowed    : {r['s5_allowed_types']}")
     exp = r['expected_action']
     correct = "✓ CORRECT" if r['binary_correct'] else "✗ WRONG"
     print(f"  ── Result: {correct}"

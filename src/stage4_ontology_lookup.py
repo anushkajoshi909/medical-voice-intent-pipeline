@@ -4,19 +4,21 @@
 Maps the raw entity string (preserved as-spoken by Stage 2) to a canonical
 label, semantic type, and ontology identifier.
 
-Lookup source per action
-  show           → vital_signs.json  (vital_sign, lab_result)
-                   domain_config canonical_entities (patient_info, document, messaging)
-  diagnosis      → doid.obo (disease)  +  hp.obo (symptom / finding)
-  start / stop   → Thesaurus.txt NCIt filtered to Therapeutic/Lab Procedure
-  set_medication → RXNCONSO.RRF  (medication)
-  change_patient → passthrough — entity IS the patient identifier
-  set_note /
-  send_message   → passthrough — entity is free_text
-  emergency / accept_emergency /
-  leave_emergency / continue → no entity
+Routing is driven entirely by domain_config.yaml — each action declares:
+  ontology_index    : which cache index to search (null = passthrough)
+  fallback_index    : secondary index if primary misses (null = no fallback)
+  entity_extractor  : strategy applied before lookup
+                        "default"    — use entity as-is
+                        "medication" — strip dose/unit, then lookup
+  passthrough_type  : semantic_type to assign when ontology_index is null
+                      and the entity carries meaning (patient name, free text)
 
-Matching order: exact → synonym → fuzzy (difflib, cutoff 0.72) → none
+Adding a new action or new entity format:
+  1. Add ontology_index / entity_extractor to domain_config.yaml
+  2. If a new extractor is needed, add _strategy_X() and register in _STRATEGIES
+  3. No changes to this routing logic required
+
+Matching order: exact → synonym → fuzzy (difflib, per-index cutoff) → none
 Indices are built lazily on the first lookup call and cached for the session.
 """
 import json
@@ -39,9 +41,11 @@ class OntologyResult:
     canonical: str | None
     semantic_type: str | None
     ontology_id: str | None
-    match_method: str   # "exact" | "synonym" | "fuzzy" | "passthrough" | "none"
-    score: float        # 1.0=exact, 0.9=synonym, 0.7+=fuzzy, 0.0=none
-    source: str | None  # "vital_signs" | "domain_config" | "doid" | "hp" | "rxnorm" | "ncit"
+    match_method: str         # "exact" | "synonym" | "fuzzy" | "passthrough" | "none"
+    score: float              # 1.0=exact, 0.9=synonym, 0.7+=fuzzy, 0.0=none
+    source: str | None        # "vital_signs" | "domain_config" | "doid" | "hp" | "rxnorm" | "ncit"
+    clarification_type: str | None = None      # set when entity found in a DIFFERENT index
+    clarification_canonical: str | None = None # canonical label from that global match
 
 
 # ── Internal entry type ────────────────────────────────────────────────────────
@@ -89,27 +93,37 @@ def _build_maps(
 
 
 # ── Individual loaders ────────────────────────────────────────────────────────
+# Each loader receives a `src` dict (one entry from ontology_sources in
+# domain_config.yaml). All domain knowledge (filters, semantic types, file paths)
+# comes from that dict — functions are pure format parsers.
+#
+# To add a new file format for a new domain:
+#   1. Write _load_X(src: dict) -> list[tuple]
+#   2. Register it in _FORMAT_LOADERS below
 
-def _load_vital_signs() -> list[tuple]:
-    data = json.loads((ONTO / "vital_signs.json").read_text())
-    return [(item["label"], item["semantic_type"], None, "vital_signs", [])
+def _load_json_labels(src: dict) -> list[tuple]:
+    path   = ROOT / src["file"]
+    sname  = src.get("source_name", Path(src["file"]).stem)
+    data   = json.loads(path.read_text())
+    return [(item["label"], item["semantic_type"], None, sname, [])
             for item in data]
 
 
-def _load_domain_config_show() -> list[tuple]:
-    """Load closed-set EHR record types from domain_config for exact-match validation.
-    No synonyms — LLM already outputs the canonical name; Stage 4 just validates it."""
-    cfg = yaml.safe_load((ROOT / "domain_config.yaml").read_text())
+def _load_domain_config_show(src: dict) -> list[tuple]:
+    """Read closed-set EHR record types from actions.show.canonical_entities.
+    Uses the already-loaded _action_cfg — no second file read."""
     rows = []
-    canon = cfg.get("actions", {}).get("show", {}).get("canonical_entities", {})
+    canon = _action_cfg.get("show", {}).get("canonical_entities", {})
     for stype, labels in canon.items():
         for label in labels:
             rows.append((label, stype, None, "domain_config", []))
     return rows
 
 
-
-def _load_obo(path: Path, semantic_type: str, source: str) -> list[tuple]:
+def _load_obo(src: dict) -> list[tuple]:
+    path          = ROOT / src["file"]
+    semantic_type = src["semantic_type"]
+    source        = src.get("source_name", path.stem)
     rows = []
     current: dict = {}
     in_term = False
@@ -139,7 +153,6 @@ def _load_obo(path: Path, semantic_type: str, source: str) -> list[tuple]:
                 if m:
                     current.setdefault("synonyms", []).append(m.group(1))
 
-    # Last term
     if in_term and current.get("id") and current.get("name") \
             and not current.get("is_obsolete"):
         rows.append((current["name"], semantic_type, current["id"],
@@ -147,91 +160,105 @@ def _load_obo(path: Path, semantic_type: str, source: str) -> list[tuple]:
     return rows
 
 
-_NCIT_PROCEDURE_TYPES = frozenset([
-    "Therapeutic or Preventive Procedure",
-    "Laboratory Procedure",
-    "Diagnostic Procedure",
-])
-
-def _load_ncit() -> list[tuple]:
+def _load_ncit(src: dict) -> list[tuple]:
+    path         = ROOT / src["file"]
+    filter_types = frozenset(src["filter_semantic_types"])
+    stype        = src.get("semantic_type", "procedure")
+    source       = src.get("source_name", "ncit")
     rows = []
-    for raw_line in (ONTO / "Thesaurus.txt").open(encoding="utf-8"):
+    for raw_line in path.open(encoding="utf-8"):
         parts = raw_line.rstrip("\n").split("\t")
         if len(parts) < 8:
             continue
-        code = parts[0].strip()
+        code        = parts[0].strip()
         names_field = parts[3].strip()
-        ncit_type = parts[7].strip()
+        ncit_type   = parts[7].strip()
 
-        if ncit_type not in _NCIT_PROCEDURE_TYPES:
+        if ncit_type not in filter_types:
             continue
 
         name_parts = [p.strip() for p in names_field.split("|") if p.strip()]
         if not name_parts:
             continue
         canonical = name_parts[0]
-        # Skip entries where "canonical" is all-caps (display variant only, no real preferred name)
         if canonical.isupper() and len(name_parts) > 1:
-            # Use the mixed-case alternative
             for alt in name_parts[1:]:
                 if not alt.isupper():
                     canonical = alt
                     break
 
         synonyms = [p for p in name_parts[1:] if p != canonical]
-        # Map NCIt type to internal semantic_type
-        stype = "procedure"
-        rows.append((canonical, stype, f"NCIt:{code}", "ncit", synonyms))
+        rows.append((canonical, stype, f"NCIt:{code}", source, synonyms))
     return rows
 
 
-_RXNORM_TTY = frozenset(["IN", "BN", "PIN", "MIN"])
-
-def _load_rxnorm() -> list[tuple]:
+def _load_rxnorm(src: dict) -> list[tuple]:
+    path       = ROOT / src["file"]
+    tty_filter = frozenset(src.get("term_types", ["IN", "BN", "PIN", "MIN"]))
+    stype      = src.get("semantic_type", "medication")
+    source     = src.get("source_name", "rxnorm")
     concepts: dict[str, list[tuple[str, str]]] = {}
 
-    for raw_line in (ONTO / "RXNCONSO.RRF").open(encoding="utf-8"):
+    for raw_line in path.open(encoding="utf-8"):
         parts = raw_line.split("|")
         if len(parts) < 17:
             continue
-        rxcui = parts[0]
-        lat = parts[1]
-        sab = parts[11]
-        tty = parts[12]
-        string = parts[14]
+        rxcui    = parts[0]
+        lat      = parts[1]
+        sab      = parts[11]
+        tty      = parts[12]
+        string   = parts[14]
         suppress = parts[16]
 
         if lat != "ENG" or sab != "RXNORM" or suppress == "Y":
             continue
-        if tty not in _RXNORM_TTY:
+        if tty not in tty_filter:
             continue
 
         concepts.setdefault(rxcui, []).append((tty, string))
 
     rows = []
     for rxcui, names in concepts.items():
-        # Prefer generic (IN) as canonical; fall back to brand (BN)
-        generics = [n for t, n in names if t == "IN"]
-        brands   = [n for t, n in names if t == "BN"]
-        others   = [n for t, n in names if t not in ("IN", "BN")]
+        generics  = [n for t, n in names if t == "IN"]
+        brands    = [n for t, n in names if t == "BN"]
+        others    = [n for t, n in names if t not in ("IN", "BN")]
         all_names = generics or brands or others
         if not all_names:
             continue
         canonical = all_names[0]
         synonyms  = list({n for _, n in names} - {canonical})
-        rows.append((canonical, "medication", f"RXCUI:{rxcui}", "rxnorm", synonyms))
+        rows.append((canonical, stype, f"RXCUI:{rxcui}", source, synonyms))
 
     return rows
+
+
+# ── Format loader registry ─────────────────────────────────────────────────────
+# Maps type names (from ontology_sources in domain_config.yaml) to loader fns.
+# New file format for a new domain → add _load_X(src) + register here.
+
+_FORMAT_LOADERS: dict = {
+    "json_labels":             _load_json_labels,
+    "domain_config_canonical": _load_domain_config_show,
+    "obo":                     _load_obo,
+    "ncit":                    _load_ncit,
+    "rxnorm":                  _load_rxnorm,
+}
 
 
 # ── Singleton cache ───────────────────────────────────────────────────────────
 
 _cache: dict[str, tuple[dict, list]] = {}
+_FUZZY_CUTOFF: dict[str, float] = {}   # populated by _ensure_loaded from config
 _loaded = False
 
 
 def _ensure_loaded(verbose: bool = False) -> None:
-    global _loaded
+    """Load all ontology indexes declared in ontology_sources in domain_config.yaml.
+
+    Generic loop — no index names or file paths hardcoded here.
+    To add a new index: edit domain_config.yaml (ontology_sources) only.
+    """
+    global _loaded, _FUZZY_CUTOFF
     if _loaded:
         return
 
@@ -241,26 +268,25 @@ def _ensure_loaded(verbose: bool = False) -> None:
 
     _msg("Loading ontologies …")
 
-    _msg("vital_signs.json + domain_config canonical_entities …")
-    # show index: vital_signs.json (open-set clinical measurements, exact match)
-    # + domain_config canonical_entities (closed-set EHR record types, exact match only).
-    # LLM already outputs canonical names for EHR record types; Stage 4 validates
-    # the entity is known and assigns its semantic_type.
-    _cache["show"] = _build_maps(_load_vital_signs() + _load_domain_config_show())
+    ont_cfg = yaml.safe_load((ROOT / "domain_config.yaml").read_text()).get("ontology_sources", {})
 
-    _msg("doid.obo …")
-    doid_rows = _load_obo(ONTO / "doid.obo", "disease", "doid")
-    _msg("hp.obo …")
-    hp_rows   = _load_obo(ONTO / "hp.obo",   "symptom", "hp")
-    _cache["diagnosis"] = _build_maps(doid_rows + hp_rows)
+    for index_name, index_info in ont_cfg.items():
+        _msg(f"Building '{index_name}' index …")
+        rows: list[tuple] = []
+        for src in index_info.get("sources", []):
+            loader = _FORMAT_LOADERS.get(src["type"])
+            if loader is None:
+                raise ValueError(
+                    f"Unknown ontology source type: {src['type']!r}. "
+                    f"Register a _load_X(src) function in _FORMAT_LOADERS."
+                )
+            rows.extend(loader(src))
+        _cache[index_name] = _build_maps(rows)
 
-    _msg("Thesaurus.txt (NCIt) …")
-    ncit_rows = _load_ncit()
-    _cache["procedure"] = _build_maps(ncit_rows)
-
-    _msg("RXNCONSO.RRF …")
-    rx_rows = _load_rxnorm()
-    _cache["medication"] = _build_maps(rx_rows)
+    _FUZZY_CUTOFF = {
+        name: info.get("fuzzy_cutoff", 0.80)
+        for name, info in ont_cfg.items()
+    }
 
     _loaded = True
     _msg("Ontologies ready.")
@@ -268,14 +294,7 @@ def _ensure_loaded(verbose: bool = False) -> None:
 
 # ── Matcher ───────────────────────────────────────────────────────────────────
 
-# Higher cutoff for clinical indexes where false positives are dangerous
-_FUZZY_CUTOFF = {
-    "show":       0.72,  # display terms — looser is fine
-    "diagnosis":  0.90,  # disease/symptom — strict to avoid hemolysis→hemoptysis
-    "procedure":  0.86,  # treatments/procedures
-    "medication": 0.88,  # drug names
-}
-_FUZZY_N = 1
+_FUZZY_N = 1  # _FUZZY_CUTOFF is populated at load time from ontology_sources config
 
 
 _INT_OF_RE = re.compile(r"\bof\b\s+(.+)", re.IGNORECASE)
@@ -327,28 +346,41 @@ def _match(query_norm: str, index_name: str) -> OntologyResult | None:
     return None
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# ── Lookup strategies ─────────────────────────────────────────────────────────
+# Each strategy takes (raw_entity, index_name) and returns OntologyResult|None.
+# Register new strategies here — reference them via entity_extractor in
+# domain_config.yaml. No changes to the routing logic in lookup() required.
 
-# Actions where entity has a specific semantic type but no ontology lookup
-_PASSTHROUGH_PATIENT    = frozenset(["change_patient"])
-_PASSTHROUGH_FREE_TEXT  = frozenset(["set_note", "send_message"])
+def _strategy_default(raw_entity: str, index_name: str) -> "OntologyResult | None":
+    return _match(_norm(raw_entity), index_name)
 
-# Primary ontology index per action
-_ACTION_INDEX = {
-    "show":           "show",
-    "diagnosis":      "diagnosis",
-    "start":          "procedure",
-    "stop":           "procedure",
-    "set_medication": "medication",
+
+def _strategy_medication(raw_entity: str, index_name: str) -> "OntologyResult | None":
+    return _lookup_medication(raw_entity)
+
+
+_STRATEGIES: dict = {
+    "default":    _strategy_default,
+    "medication": _strategy_medication,
 }
 
-# Fallback index: tried when primary returns no match
-# start/stop allow medication slot type — if not in NCIt try RXNORM
-_ACTION_FALLBACK = {
-    "start": "medication",
-    "stop":  "medication",
-}
 
+# ── Action config (loaded lazily from domain_config.yaml) ─────────────────────
+
+_action_cfg: dict = {}
+_action_cfg_loaded = False
+
+
+def _ensure_action_config_loaded() -> None:
+    global _action_cfg, _action_cfg_loaded
+    if _action_cfg_loaded:
+        return
+    from domain_loader import load as _domain_load
+    _action_cfg = _domain_load()["action_config"]
+    _action_cfg_loaded = True
+
+
+# ── Medication helper (used by _strategy_medication) ──────────────────────────
 
 def _lookup_medication(raw_entity: str) -> OntologyResult | None:
     """Medication lookup using grammar-driven medicine name extraction.
@@ -370,50 +402,95 @@ def _lookup_medication(raw_entity: str) -> OntologyResult | None:
     return result
 
 
+def _global_clarification_search(
+    query_norm: str, exclude_indexes: set[str]
+) -> "OntologyResult | None":
+    """Exact + synonym search across ALL indexes except those already tried.
+
+    Called only when the action-specific (and fallback) search failed.
+    Identifies what the entity actually IS so Stage 5 / Stage 6 can produce
+    a specific message ("hemodialysis is a procedure, not a diagnosis")
+    rather than a generic "entity not found".
+    No fuzzy matching — only high-confidence matches are used for clarification.
+    """
+    for index_name, (exact_map, _) in _cache.items():
+        if index_name in exclude_indexes:
+            continue
+        entry = exact_map.get(query_norm)
+        if entry:
+            method = "exact" if query_norm == _norm(entry[0]) else "synonym"
+            return OntologyResult(
+                False, "", entry[0], entry[1], entry[2], method,
+                1.0 if method == "exact" else 0.9, entry[3],
+            )
+    return None
+
+
 def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResult:
     """Resolve raw_entity for a given action using the appropriate ontology.
 
+    Routing is driven by domain_config.yaml — no action names are hardcoded here.
     Call this only when Stage 3 passed (frame_valid=True) and action != "UNKNOWN".
     """
     raw_entity = raw_entity.strip()
+    _ensure_action_config_loaded()
 
-    # Explicit passthroughs with known semantic types
-    if action in _PASSTHROUGH_PATIENT:
-        return OntologyResult(True, raw_entity, raw_entity, "patient_identifier",
-                              None, "passthrough", 1.0, None)
-    if action in _PASSTHROUGH_FREE_TEXT:
-        return OntologyResult(True, raw_entity, raw_entity, "free_text",
-                              None, "passthrough", 1.0, None)
+    action_info      = _action_cfg.get(action, {})
+    ont_index        = action_info.get("ontology_index")    # None → passthrough
+    passthrough_type = action_info.get("passthrough_type")  # semantic type for passthrough
 
-    # Actions with no defined ontology index → passthrough
-    # (system commands, display toggles, emergency actions, etc.)
-    index_name = _ACTION_INDEX.get(action)
-    if index_name is None:
-        return OntologyResult(True, raw_entity, None, None, None, "passthrough", 1.0, None)
+    # Passthrough: skip ontology lookup entirely
+    # — if passthrough_type is set, assign that semantic type and return entity as canonical
+    # — if not set (system/no-entity commands), canonical is None
+    if ont_index is None:
+        canonical = raw_entity if passthrough_type else None
+        return OntologyResult(True, raw_entity, canonical, passthrough_type,
+                              None, "passthrough", 1.0, None)
 
     if not raw_entity:
         return OntologyResult(False, raw_entity, None, None, None, "none", 0.0, None)
 
     _ensure_loaded(verbose=verbose)
 
-    query_norm = _norm(raw_entity)
+    # Dispatch to the configured extraction strategy
+    strategy_name = action_info.get("entity_extractor", "default")
+    strategy      = _STRATEGIES.get(strategy_name, _STRATEGIES["default"])
+    result = strategy(raw_entity, ont_index)
 
-    # Medication lookup gets dose-stripping; others use plain match
-    if index_name == "medication":
-        result = _lookup_medication(raw_entity)
-    else:
-        result = _match(query_norm, index_name)
-        # Try fallback index (e.g. start/stop → also check RXNORM for drug entities)
-        if not result:
-            fallback = _ACTION_FALLBACK.get(action)
-            if fallback == "medication":
-                result = _lookup_medication(raw_entity)
-            elif fallback:
-                result = _match(query_norm, fallback)
+    # Try fallback index if primary missed
+    fallback = action_info.get("fallback_index")
+    if not result and fallback:
+        fb_strategy_name = action_info.get("fallback_extractor", strategy_name)
+        fb_strategy      = _STRATEGIES.get(fb_strategy_name, _STRATEGIES["default"])
+        result = fb_strategy(raw_entity, fallback)
 
     if result:
         result.raw_entity = raw_entity
         return result
+
+    # Primary and fallback both missed.
+
+    # If action declares passthrough_fallback_type, accept the entity as-is
+    # with that semantic type (e.g. show action treats anything not a vital sign
+    # as ehr_record — the LLM gates clinical validity via domain rules).
+    passthrough_fallback = action_info.get("passthrough_fallback_type")
+    if passthrough_fallback:
+        return OntologyResult(
+            True, raw_entity, raw_entity, passthrough_fallback,
+            None, "passthrough_fallback", 1.0, None,
+        )
+
+    # Search all OTHER indexes (exact+synonym only) to identify what the entity
+    # actually is — gives Stage 5 enough info to produce a specific clarification
+    # ("hemodialysis is a procedure, not a diagnosis") rather than a generic miss.
+    searched = {ont_index} | ({fallback} if fallback else set())
+    clarification = _global_clarification_search(_norm(raw_entity), searched)
+    if clarification:
+        return OntologyResult(
+            False, raw_entity, None, None, None, "none", 0.0, None,
+            clarification_type=clarification.semantic_type,
+            clarification_canonical=clarification.canonical,
+        )
 
     return OntologyResult(False, raw_entity, None, None, None, "none", 0.0, None)
 
