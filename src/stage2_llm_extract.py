@@ -45,6 +45,7 @@ class LLMResult:
     confidence: float
     raw_response: str
     model: str
+    recipient: str = ""      # send_message only: the person the message is addressed to
     error: str | None = None
 
     @property
@@ -90,6 +91,7 @@ def extract(client: OpenAI, clean_text: str, model: str = DEFAULT_MODEL) -> LLMR
             confidence=float(parsed.get("confidence", 0.0)),
             raw_response=raw,
             model=model,
+            recipient=str(parsed.get("recipient", "")),
         )
     except json.JSONDecodeError as e:
         return LLMResult(

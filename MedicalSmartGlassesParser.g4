@@ -1,6 +1,6 @@
 // MedicalSmartGlassesParser.g4
 // Extended from Ludyga (baseline_ludyga/MedicalSmartGlassesParser.g4).
-// Adds: diagnosis (u21), start_treatment (u22), send_message simplified (u20b).
+// Adds: diagnosis (u21), start_treatment (u22). u20 reverted to Ludyga original.
 // Retains: command type hierarchy, medication structure enforcement.
 //
 // Stage 3 reconstructs a canonical string from LLM {action, entity} output
@@ -50,7 +50,7 @@ u16 : trig_medication MEDICATION medications FINISH MEDICATION ;   // dose requi
 u17 : trig_medication MEDICATION medications AT timestamp FINISH MEDICATION ;
 u18 : CHANGE PATIENT TO patient_name ;           // change patient to <name>
 u19 : trig_message MESSAGES ;                    // show messages / switch to messages
-u20 : SEND MESSAGE note ;                        // send message <free text content>
+u20 : START (NEW)? MESSAGE note FINISH (NEW)? MESSAGE (AND)? SEND IT TO patient_name ; // compose and send to recipient
 u21 : DIAGNOSIS entity ;                         // diagnosis <entity>
 u22 : START entity ;                             // start <treatment/procedure>
 

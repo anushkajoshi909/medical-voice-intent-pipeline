@@ -46,8 +46,9 @@ def _sanitize(entity: str) -> str:
     return re.sub(r' +', ' ', entity).strip()
 
 
-def _canonical(action: str, entity: str) -> str:
+def _canonical(action: str, entity: str, recipient: str = "") -> str:
     e = _sanitize(entity.strip())
+    r = _sanitize(recipient.strip())
     templates = {
         "show":             f"ok glasses show {e}",
         "diagnosis":        f"ok glasses diagnosis {e}",
@@ -61,7 +62,8 @@ def _canonical(action: str, entity: str) -> str:
         "accept_emergency": "ok glasses accept emergency",
         "leave_emergency":  "ok glasses leave emergency",
         "change_patient":   f"ok glasses change patient to {e}",
-        "send_message":     f"ok glasses send message {e}",
+        # Restored Ludyga original: START [NEW] MESSAGE note FINISH [NEW] MESSAGE [AND] SEND IT TO patient_name
+        "send_message":     f"ok glasses start message {e} finish message and send it to {r}",
         # set_medication: entity must be "medicine INT unit" e.g. "paracetamol 100 mg"
         "set_medication":   f"ok glasses set medication {e} finish medication",
         "set_note":         f"ok glasses set note {e} finish note",
@@ -112,7 +114,7 @@ _VALID_ACTIONS = {
 _ENTITY_FORBIDDEN = {"emergency", "accept_emergency", "leave_emergency", "continue"}
 
 
-def validate(action: str, entity: str) -> FrameResult:
+def validate(action: str, entity: str, recipient: str = "") -> FrameResult:
     entity = entity.strip()
 
     if action not in _VALID_ACTIONS:
@@ -123,7 +125,7 @@ def validate(action: str, entity: str) -> FrameResult:
         return FrameResult(False, "UNEXPECTED_ENTITY",
                            _canonical(action, entity), "glasses_command")
 
-    canonical = _canonical(action, entity)
+    canonical = _canonical(action, entity, recipient=recipient)
 
     # Run ANTLR parser
     input_stream = InputStream(canonical)
@@ -169,7 +171,8 @@ if __name__ == "__main__":
         ("stop",             "hemodialysis"),
         ("stop",             ""),
         ("change_patient",   "John Smith"),
-        ("send_message",     "patient is ready"),
+        ("send_message",     "patient is ready"),        # FAIL — no recipient
+        ("send_message",     "patient is ready|Dr Smith"), # note: pass recipient separately
         ("not_an_action",    ""),                   # FAIL
     ]
     for action, entity in cases:

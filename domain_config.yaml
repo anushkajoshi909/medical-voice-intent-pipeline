@@ -126,7 +126,14 @@ actions:
 
   send_message:
     grammar_command_type: message
-    description: "Compose and send a message to a team member"
+    # Ludyga's u20 grammar rule requires both a message body (note) and a named
+    # recipient (patient_name): START [NEW] MESSAGE note FINISH [NEW] MESSAGE [AND] SEND IT TO patient_name
+    # Stage 2 (LLM) extracts two fields to feed this rule:
+    #   entity    — the message body
+    #   recipient — the person or role the message is addressed to (e.g. "Dr. Smith")
+    # Stage 3 reconstructs: "ok glasses start message {entity} finish message and send it to {recipient}"
+    # A missing recipient causes a PARSE_ERROR — correct: an unsent message is invalid.
+    description: "Compose and send a message to a clinical team member — entity is the message body, recipient is the named addressee (required by grammar)"
     allowed_slot_types: [free_text]
     ontology_index: null
     passthrough_type: free_text
@@ -164,7 +171,7 @@ domain_rules:
   - "For set_medication, the entity MUST contain the drug name, dose number, and unit (e.g. 'paracetamol 100 mg'). If dose or unit is missing, still extract what was said but mark confidence low."
   - "For show commands, extract the data type exactly as spoken (e.g. 'blood pressure', 'patient history', 'lab results'). Do not rename or normalise. If the requested data has no plausible clinical meaning (e.g. 'show movie', 'show my emails'), return UNKNOWN."
   - "turn_on and turn_off apply ONLY to features of the smart glasses system itself (AR display, overlays, notifications, recording). Physical environment controls (lights, volume, external devices) are not glasses features — return UNKNOWN."
-  - "send_message is for clinical communication with medical team members only (doctors, nurses, colleagues). Non-clinical messages (newsletters, general announcements, emails unrelated to patient care) → UNKNOWN."
+  - "send_message is for clinical communication with medical team members only (doctors, nurses, colleagues). Non-clinical messages → UNKNOWN. For send_message, entity is the message body only. recipient is the name or role of the person the message is addressed to (e.g. 'Dr. Smith', 'the nurse', 'the team'). Extract recipient separately from entity."
 
 # ── Ontology sources ──────────────────────────────────────────────────────────
 # Declares what data files feed each Stage 4 index.
@@ -266,3 +273,9 @@ few_shot_examples:
 
   - input: "get the stuff for patient"
     output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "send message patient is stable to Dr Smith"
+    output: '{"action":"send_message","entity":"patient is stable","recipient":"Dr Smith","end_signal":false,"confidence":0.97}'
+
+  - input: "message the nurse that I need assistance"
+    output: '{"action":"send_message","entity":"I need assistance","recipient":"the nurse","end_signal":false,"confidence":0.95}'

@@ -1,4 +1,4 @@
-# Pipeline Architecture — UML Diagrams
+# Pipeline Architecture: UML Diagrams
 
 > Master Thesis · TU Dresden · Software Technology  
 > *Improving Intent Recognition in Grammar-Based Voice Interfaces*
@@ -9,8 +9,8 @@ Diagrams render in GitLab, GitHub, and VS Code with the Markdown Preview Mermaid
 
 ## Figure 1 · Pipeline Architecture (Component Flow)
 
-Six-stage pipeline from raw voice input to structured intent JSON.  
-Stages 1–4 implemented · Stages 5–6 planned.
+Six-stage pipeline from raw voice input to structured intent JSON.
+Stages 1-5 implemented · Stage 6 planned.
 
 ```mermaid
 graph TD
@@ -20,7 +20,7 @@ graph TD
     S2["Stage 2 · LLM Extraction\nstage2_llm_extract.py"]:::impl
     S3["Stage 3 · ANTLR Validation\nstage3_antlr_validate.py"]:::impl
     S4["Stage 4 · Ontology Lookup\nstage4_ontology_lookup.py"]:::impl
-    S5["Stage 5 · Type Validation\n(planned)"]:::planned
+    S5["Stage 5 · Semantic Validation\nstage5_type_validate.py"]:::impl
     S6["Stage 6 · Intent Output\n(planned)"]:::planned
 
     S1 --> S2 --> S3 --> S4 --> S5 --> S6
@@ -41,7 +41,7 @@ graph TD
 
 ## Figure 2 · Stage 4 Design Patterns (Class Diagram)
 
-Stage 4 applies the **Strategy pattern** (pluggable entity extraction) and the **Registry pattern** (pluggable format loaders).  
+Stage 4 applies the **Strategy pattern** (pluggable entity extraction) and the **Registry pattern** (pluggable format loaders).
 `domain_config.yaml` is the single source of truth for all routing decisions.
 
 ```mermaid
@@ -109,7 +109,7 @@ classDiagram
 |---------|--------|-----------------------|
 | Strategy | `_STRATEGIES` dispatch table | New entity extraction logic = new function + one YAML key |
 | Registry | `_FORMAT_LOADERS` dict | New ontology file format = new loader function + register |
-| Single Source of Truth | `domain_config.yaml` | Action routing, file paths, cutoffs — all in one place; zero hardcoding in routing code |
+| Single Source of Truth | `domain_config.yaml` | Action routing, file paths, cutoffs; all in one place; zero hardcoding in routing code |
 
 ---
 
@@ -120,20 +120,20 @@ Satisfies the *Domain Independence* non-functional requirement.
 
 ```mermaid
 graph LR
-    subgraph GENERIC["Domain-Independent Core — zero changes for a new domain"]
+    subgraph GENERIC["Domain-Independent Core: zero changes for a new domain"]
         direction TB
         LU["lookup()"]
         MT["_match() · _norm() · _build_maps()"]
         STR["_STRATEGIES Registry"]
         FLR["_FORMAT_LOADERS Registry"]
-        EL["_ensure_loaded() — generic loop"]
-        DL["domain_loader.py — validation + prompt builder"]
-        S1C["Stage 1 core — preprocess.py"]
-        S2C["Stage 2 core — llm_extract.py"]
-        S3C["Stage 3 runner — antlr_validate.py"]
+        EL["_ensure_loaded(): generic loop"]
+        DL["domain_loader.py: validation + prompt builder"]
+        S1C["Stage 1 core: preprocess.py"]
+        S2C["Stage 2 core: llm_extract.py"]
+        S3C["Stage 3 runner: antlr_validate.py"]
     end
 
-    subgraph DOMAIN["Domain-Specific — replaced for a new domain"]
+    subgraph DOMAIN["Domain-Specific: replaced for a new domain"]
         direction TB
         DC["domain_config.yaml\nactions + ontology_sources"]
         LD["Loader functions\n_load_obo / _load_ncit / _load_rxnorm"]
@@ -155,7 +155,7 @@ graph LR
 ```
 
 **Adapting to a new domain requires:**
-1. New `domain_config.yaml` — actions, descriptions, ontology sources, rules, examples
+1. New `domain_config.yaml`: actions, descriptions, ontology sources, rules, examples
 2. New ANTLR grammar `.g4` + recompile
 3. New ontology data files + loader functions for any new file formats (registered in `_FORMAT_LOADERS`)
 4. New `abbreviations.json` for domain abbreviations

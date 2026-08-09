@@ -83,7 +83,7 @@ def run_command(client, cmd: dict, model: str) -> dict:
         if not _action_cfg().get(stage2.action, {}).get("entity_slot", True):
             entity_for_pipeline = ""
 
-    stage3 = frame_validate(stage2.action, entity_for_pipeline)
+    stage3 = frame_validate(stage2.action, entity_for_pipeline, recipient=stage2.recipient)
 
     # Stage 4: ontology lookup — only when stage 3 passed and action is known
     if stage3.valid and stage2.action not in ("UNKNOWN", ""):
@@ -141,6 +141,7 @@ def run_command(client, cmd: dict, model: str) -> dict:
         "urgency":          stage1.urgency,
         "action":           got,
         "entity":           stage2.entity,
+        "recipient":        stage2.recipient,
         "end_signal":       stage2.end_signal,
         "confidence":       stage2.confidence,
         "frame_valid":      stage3.valid,
@@ -297,6 +298,8 @@ def _print_stages(r: dict):
     print(f"  ── Stage 2: LLM Extraction")
     print(f"     action     : {r['action']!r}")
     print(f"     entity     : {r['entity']!r}")
+    if r.get('recipient'):
+        print(f"     recipient  : {r['recipient']!r}")
     print(f"     end_signal : {r['end_signal']}")
     print(f"     confidence : {r['confidence']}")
     if r['llm_error']:
