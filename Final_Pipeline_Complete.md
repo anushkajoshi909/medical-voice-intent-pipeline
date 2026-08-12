@@ -30,13 +30,13 @@ Everything else is derived automatically:
 
 ### Design Patterns in Stage 4
 
-Two structural patterns make Stage 4 domain-independent:
+Stage 4 is built around two design patterns that keep the routing and loading code unchanged when the domain changes.
 
-**Registry Pattern** (`_FORMAT_LOADERS`): maps source type names to loader functions. `_ensure_loaded()` is a generic loop that reads `ontology_sources` from config and dispatches to the right loader by type name. New file format = write `_load_X(src)` and register it; the loading loop never changes.
+**Registry Pattern** (`_FORMAT_LOADERS`): Stage 4 needs to load several different ontology file formats — OBO files for diseases, an NCIt tab-separated file for procedures, an RxNorm pipe-delimited file for medications. Rather than writing a chain of `if format == "obo": ... elif format == "ncit": ...` inside the loading loop, each format has a dedicated loader function registered in a dictionary keyed by type name. When `_ensure_loaded()` reads `ontology_sources` from `domain_config.yaml`, it looks up the type name in the registry and calls the right function. Adding a new file format means writing one new loader function and adding one line to the registry; the loading loop itself never changes.
 
-**Strategy Pattern** (`_STRATEGIES`): maps extraction strategy names to functions. `lookup()` reads `entity_extractor` from the action's config and dispatches to the right strategy. New entity format (e.g. stripping qualifiers before lookup) = write `_strategy_X()` and register it; the routing logic never changes.
+**Strategy Pattern** (`_STRATEGIES`): Before looking up an entity in an ontology, Stage 4 sometimes needs to prepare it differently depending on the action. For `set_medication`, the entity is "paracetamol 100 mg" — but the lookup should be on just "paracetamol" (the dose is not part of the drug name in RxNorm). For `diagnosis` or `show`, the entity is looked up as-is. Each preparation approach is a separate strategy function. `domain_config.yaml` declares which strategy each action uses (`entity_extractor: medication` or `entity_extractor: default`), and `lookup()` dispatches to the right function from the registry. Adding a new preparation approach means writing one new strategy function and one YAML key; the dispatch logic never changes.
 
-Both patterns together mean: **adding a new action or a new ontology source requires only YAML edits, with no changes to routing or loading code.**
+Together, these two patterns mean that **adding a new action or a new ontology source requires only edits to `domain_config.yaml` and (for a new file format) one new loader function — no changes to routing or dispatch code.**
 
 ---
 
