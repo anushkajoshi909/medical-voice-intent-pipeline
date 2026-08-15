@@ -95,4 +95,4 @@ Stage 1 is largely unchanged from Ludyga, with urgency detection added. `domain_
 
 ## Result
 
-Across 243 test commands, the enhanced pipeline raises binary accuracy from 75.3% to 97.5%, valid recall from 50.0% to 98.5%, and maintains invalid precision at 96.5% (vs. Ludyga's 100%; the small drop trades extreme conservatism for practical usability).
+Across 243 test commands (130 valid, 113 invalid), the enhanced pipeline raises binary accuracy from 75.3% to 95.9%, valid recall from 50.0% to 98.5% (128/130), and invalid precision from 100% to 92.9% (105/113). The drop in invalid precision is deliberate: Ludyga's 100% was achieved by rejecting almost everything, including valid commands. The enhanced pipeline accepts borderline valid commands that the grammar could not handle, which naturally lowers precision slightly while making the system practically usable.

@@ -63,7 +63,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 1: Preprocessing                                     │
+│  STAGE 1: Preprocessing                    [implemented]    │
 │  • Lowercase everything                                     │
 │  • Strip punctuation; hyphens replaced with spaces           │
 │    ("non-invasive" -> "non invasive"; consistent with Stage 4)│
@@ -76,7 +76,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 2: LLM Structured Extraction                         │
+│  STAGE 2: LLM Structured Extraction        [implemented]    │
 │                                                             │
 │  Input:  preprocessed command text                          │
 │          + action list from domain_config (short form)      │
@@ -107,7 +107,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 3: ANTLR Frame Validation                            │
+│  STAGE 3: ANTLR Frame Validation           [implemented]    │
 │                                                             │
 │  Reconstructs canonical string from LLM {action, entity}:  │
 │    "ok glasses set medication paracetamol 100 mg            │
@@ -131,7 +131,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 4: Ontology / Canonical Lookup                       │
+│  STAGE 4: Ontology / Canonical Lookup      [implemented]    │
 │                                                             │
 │  Routing is fully config-driven from domain_config.yaml:    │
 │    • action → ontology_index, fallback_index, extractor     │
@@ -164,7 +164,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 5: Semantic Validation                               │
+│  STAGE 5: Semantic Validation              [implemented]    │
 │                                                             │
 │  Lookup: action → allowed_slot_types (from domain_config)   │
 │  Check:  resolved semantic_type ∈ allowed_slot_types?       │
@@ -180,15 +180,15 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 6: Intent JSON + Explanation                         │
-│  Full audit trail of every stage's decision                 │
-│  Clarification message if status ≠ accepted                 │
+│  STAGE 6: Intent JSON + Explanation           [pending]     │
+│  Assemble final structured payload for backend:             │
+│    action, canonical entity, semantic type, ontology ID,    │
+│    urgency flag (from Stage 1), clarification message       │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 7: User Confirmation  [designed; implement            │
-│                               if time allows]               │
+│  STAGE 7: User Confirmation         [designed; not started] │
 │                                                             │
 │  Glasses display a human-friendly interpretation:           │
 │    "Diagnosis: Hemolysis. Correct?"                         │
@@ -227,275 +227,31 @@ The **single source of truth** for the semantic layer and Stage 4 ontology routi
 
 The same file also contains `ontology_sources`, which declares which data files feed each Stage 4 index, their format types, filter parameters, and fuzzy cutoffs. No separate `ontology_sources.yaml` file exists.
 
-```yaml
-domain: healthcare
-domain_description: "medical voice interface running on smart glasses worn by clinicians"
-trigger_phrase: "ok glasses"
-
-actions:
-  show:
-    grammar_command_type: request_data
-    description: "Display patient data, test results, vital signs, records, or messages"
-    allowed_slot_types: [vital_sign, lab_result, ehr_record]
-    ontology_index: show              # vital_signs.json only
-    fallback_index: null
-    entity_extractor: default
-    passthrough_fallback_type: ehr_record   # anything not in vital_signs -> ehr_record
-
-  start:
-    grammar_command_type: treatment
-    description: "Initiate a treatment, procedure, or medication"
-    allowed_slot_types: [treatment, procedure, medication, shared_session, emergency]
-    ontology_index: procedure         # try NCIt Thesaurus first
-    fallback_index: medication        # if not a procedure, try RxNorm
-    entity_extractor: default
-    fallback_extractor: medication    # strip dose/unit before RxNorm lookup
-
-  diagnosis:
-    grammar_command_type: diagnosis
-    description: "Record a clinical diagnosis"
-    allowed_slot_types: [disease, symptom, condition, finding]
-    ontology_index: diagnosis         # doid.obo (disease) + hp.obo (symptom)
-    fallback_index: null
-    entity_extractor: default
-
-  set_medication:
-    grammar_command_type: set_medication
-    description: "Prescribe medication; entity MUST include drug name, dose, and unit"
-    allowed_slot_types: [medication]
-    ontology_index: medication        # RXNCONSO.RRF
-    fallback_index: null
-    entity_extractor: medication      # strips dose/unit before RxNorm lookup
-
-  set_note:
-    grammar_command_type: protocol
-    description: "Dictate a free-text clinical note"
-    allowed_slot_types: [free_text]
-    ontology_index: null              # free text; no lookup
-    passthrough_type: free_text
-
-  stop:
-    grammar_command_type: stop_cmd
-    description: "Discontinue a treatment, medication, or session"
-    allowed_slot_types: [treatment, procedure, medication, shared_session, emergency, system]
-    ontology_index: procedure
-    fallback_index: medication
-    entity_extractor: default
-
-  turn_on:
-    grammar_command_type: glasses_command
-    description: "Activate a display or system feature"
-    allowed_slot_types: [system]
-    ontology_index: null
-    entity_slot: false                # grammar enforces no entity; pipeline strips any LLM extractions
-
-  turn_off:
-    grammar_command_type: glasses_command
-    allowed_slot_types: [system]
-    ontology_index: null
-    entity_slot: false
-
-  continue:
-    grammar_command_type: glasses_command
-    allowed_slot_types: [system]
-    ontology_index: null
-    entity_slot: false
-
-  change_patient:
-    grammar_command_type: request_patient
-    description: "Switch the active patient context"
-    allowed_slot_types: [patient_identifier]
-    ontology_index: null
-    passthrough_type: patient_identifier
-
-  send_message:
-    grammar_command_type: message
-    description: "Compose and send a message to a clinical team member"
-    allowed_slot_types: [free_text]
-    ontology_index: null
-    passthrough_type: free_text
-    # Stage 2 extracts two fields: entity (message body) and recipient (named addressee).
-    # Stage 3 reconstructs: "ok glasses start message {entity} finish message and send it to {recipient}"
-    # A missing recipient causes PARSE_ERROR.
-
-  emergency:
-    grammar_command_type: glasses_command
-    allowed_slot_types: []
-    ontology_index: null
-    entity_slot: false
-
-  accept_emergency:
-    grammar_command_type: glasses_command
-    allowed_slot_types: []
-    ontology_index: null
-    entity_slot: false
-
-  leave_emergency:
-    grammar_command_type: glasses_command
-    allowed_slot_types: []
-    ontology_index: null
-    entity_slot: false
-
-ontology_sources:
-  show:
-    fuzzy_cutoff: 0.72
-    sources:
-      - type: json_labels
-        file: ontologies/vital_signs.json
-        source_name: vital_signs
-      # Anything not matched here gets passthrough_fallback_type=ehr_record in Stage 4
-
-  diagnosis:
-    fuzzy_cutoff: 0.90
-    sources:
-      - type: obo
-        file: ontologies/doid.obo
-        semantic_type: disease
-        source_name: doid
-      - type: obo
-        file: ontologies/hp.obo
-        semantic_type: symptom
-        source_name: hp
-
-  procedure:
-    fuzzy_cutoff: 0.86
-    sources:
-      - type: ncit
-        file: ontologies/Thesaurus.txt
-        semantic_type: procedure
-        source_name: ncit
-        filter_semantic_types:
-          - "Therapeutic or Preventive Procedure"
-          - "Laboratory Procedure"
-          - "Diagnostic Procedure"
-
-  medication:
-    fuzzy_cutoff: 0.88
-    sources:
-      - type: rxnorm
-        file: ontologies/RXNCONSO.RRF
-        semantic_type: medication
-        source_name: rxnorm
-        term_types: [IN, BN, PIN, MIN]
-
-domain_rules:
-  - "This is a MEDICAL clinical interface. Non-medical commands -> UNKNOWN."
-  - "If 'start'/'begin'/'trigger' appears near 'emergency', action is ALWAYS 'emergency'."
-  - "set_medication entity MUST contain drug name, dose number, and unit."
-  - "For show commands, extract the data type exactly as spoken. Do not rename or normalise."
-  - "turn_on and turn_off apply ONLY to features of the smart glasses system itself."
-  - "send_message: entity is the message body; recipient is the named addressee."
-  # (full list in domain_config.yaml)
-
-few_shot_examples:
-  - input: "send message patient is stable to Dr Smith"
-    output: '{"action":"send_message","entity":"patient is stable","recipient":"Dr Smith","end_signal":false,"confidence":0.97}'
-  - input: "show patient history"
-    output: '{"action":"show","entity":"patient history","end_signal":false,"confidence":0.97}'
-  - input: "set medication hypertension"
-    output: '{"action":"set_medication","entity":"hypertension","end_signal":false,"confidence":0.95}'
-  # ...
-```
+Full content: [`domain_config.yaml`](domain_config.yaml)
 
 ---
 
 ### `llm_system_prompt.txt`
 
-A **domain-agnostic template** that contains no action names, no healthcare examples, no healthcare rules. All domain-specific content is injected at runtime by `src/domain_loader.py` from `domain_config.yaml`.
+A **domain-agnostic template** that contains no action names, no healthcare examples, no healthcare rules. It has `{ACTION_LIST}`, `{DOMAIN_RULES}`, and `{FEW_SHOT_EXAMPLES}` placeholders that `src/domain_loader.py` fills from `domain_config.yaml` at startup. Changing the domain means changing `domain_config.yaml` only; the prompt template itself is untouched.
 
-```
-You are a structured intent extractor for a {DOMAIN_DESCRIPTION}.
-Your task is to understand the INTENT behind a spoken command and extract it as structured JSON.
-
-Available actions (you MUST use exactly these names):
-{ACTION_LIST}
-
-Output ONLY valid JSON in this exact schema:
-{
-  "action":      <one of the action names above, or "UNKNOWN">,
-  "entity":      <the relevant content. Strip filler words.
-                  For set_note and send_message: full dictated content, NOT end-signal words.
-                  For entity-free actions: "">,
-  "end_signal":  <true if user signalled they are done dictating, false otherwise>,
-  "confidence":  <0.0 to 1.0>
-}
-
-Domain-specific rules:
-{DOMAIN_RULES}
-
-Generic rules:
-1. Identify intent from meaning, not from specific trigger words.
-2. Do NOT judge entity type; preserve as spoken. Semantic validation is a later stage.
-3. Do NOT invent information not present in the command.
-4. Do NOT modify medical terms.
-5. Output raw JSON only.
-
-Examples:
-{FEW_SHOT_EXAMPLES}
-```
-
-`{ACTION_LIST}`, `{DOMAIN_RULES}`, and `{FEW_SHOT_EXAMPLES}` are filled from `domain_config.yaml`. Changing the domain = change `domain_config.yaml` only; the prompt template is untouched.
+Full content: [`llm_system_prompt.txt`](llm_system_prompt.txt)
 
 ---
 
 ### `src/domain_loader.py`
 
-Runs once at startup. Wires grammar → config → prompt and enforces consistency.
-
-```
-1. Parse MedicalSmartGlassesParser.g4
-   → extract command type rule names:
-     {glasses_command, request_data, protocol, set_medication,
-      stop_cmd, request_patient, message, diagnosis}
-
-2. Load domain_config.yaml
-   → for each action, check grammar_command_type ∈ grammar rules
-   → if mismatch: raise ValueError with the name of the missing rule
-   → pipeline CANNOT start with inconsistent grammar + config
-
-3. Fill llm_system_prompt.txt template:
-   {ACTION_LIST}        <- action name + description from config
-   {DOMAIN_RULES}       <- domain_rules list from config
-   {FEW_SHOT_EXAMPLES}  <- few_shot_examples from config
-
-4. Return: system_prompt, action_config, valid_actions, trigger_phrase
-```
+Runs once at startup. Parses `MedicalSmartGlassesParser.g4` to extract all command type rule names, loads `domain_config.yaml`, and for each action checks that `grammar_command_type` matches a rule in the grammar — raising a `ValueError` with the offending action name if not. It then fills the `llm_system_prompt.txt` template with the action list, domain rules, and few-shot examples from config, and returns `system_prompt`, `action_config`, `valid_actions`, and `trigger_phrase` for the rest of the pipeline to use.
 
 This is the enforced single-file change contract: add a new action to the grammar and config, loader validates both and builds the prompt; Stage 2 and Stage 3 pick it up automatically.
+
+Full content: [`src/domain_loader.py`](src/domain_loader.py)
 
 ---
 
 ### `abbreviations.json`
 
-```json
-{
-  "BP":   "blood pressure",
-  "HR":   "heart rate",
-  "RR":   "respiratory rate",
-  "SpO2": "oxygen saturation",
-  "ECG":  "electrocardiogram",
-  "EKG":  "electrocardiogram",
-  "CBC":  "complete blood count",
-  "BMP":  "basic metabolic panel",
-  "RRT":  "renal replacement therapy",
-  "HD":   "hemodialysis",
-  "PD":   "peritoneal dialysis",
-  "IV":   "intravenous",
-  "UTI":  "urinary tract infection",
-  "MI":   "myocardial infarction",
-  "CHF":  "congestive heart failure",
-  "COPD": "chronic obstructive pulmonary disease",
-  "DM":   "diabetes mellitus",
-  "HTN":  "hypertension",
-  "DVT":  "deep vein thrombosis",
-  "MRI":  "magnetic resonance imaging",
-  "CT":   "computed tomography",
-  "A1c":  "glycated hemoglobin",
-  "INR":  "international normalised ratio",
-  "WBC":  "white blood cell count",
-  "GFR":  "glomerular filtration rate"
-}
-```
+Full content: [`abbreviations.json`](abbreviations.json)
 
 ---
 
@@ -1183,17 +939,45 @@ Output: ACCEPTED, DIAGNOSIS_DISEASE with DOID concept ID for documentation.
 
 ---
 
+## Evaluation Results
+
+Evaluated on 243 commands (130 valid, 113 invalid) using Llama 3.3 70B Instruct.
+
+| Metric | Ludyga Baseline | Enhanced Pipeline |
+|---|---|---|
+| Binary accuracy | 75.3% | **95.9%** |
+| Valid recall (128/130) | 50.0% | **98.5%** |
+| Invalid precision (105/113) | 100% | **92.9%** |
+
+The drop in invalid precision is deliberate. Ludyga's 100% was achieved by rejecting almost everything, including valid clinical commands. The 7.1% false-accept rate in the enhanced pipeline comes from edge cases where the command structure is valid but the entity is clinically ambiguous or absent.
+
+### What passed each stage
+
+**Stage 1 rejections (5):** Non-speech inputs (JSON objects, `[inaudible]` markers, `{unintelligible}`) correctly rejected before reaching the LLM.
+
+**Stage 3 failures (4):** All `set_medication` commands missing the required dose and unit — e.g. `"aspirin"` alone, `"hypertension"` (not a drug), `"albuterol inhaler 2 puffs every 4 hours"` (dosage instruction format, not `medicine INT unit`). ANTLR catches these structurally.
+
+**Stage 5 type mismatches (3):** All `diagnosis` commands where the entity resolved as a procedure in NCIt — specifically hemodialysis and peritoneal dialysis. These are correctly rejected as type mismatches (semantic_type=procedure does not match allowed_slot_types for diagnosis).
+
+**Stage 5 entity not found (9):** Six `stop` commands where the entity was empty or not present in the procedure/medication ontology, two stop commands with clinical entities not in NCIt/RxNorm (`antibiotics`, `ventilator`), and one `set_medication` with a dosage-instruction format entity. All accepted as `entity_not_found` — the intent was understood even if the entity could not be ontologically grounded.
+
+### Remaining false accepts (8)
+
+Eight invalid commands passed when they should have been rejected. These are edge cases where the command structure is valid and the entity check does not fire — primarily commands with ambiguous intent that the LLM maps to a plausible action without strong evidence against it. Addressing these would require either additional domain rules or a confidence threshold gate, which is outside the current scope.
+
+---
+
 ## How the Pipeline Compares to Baseline
 
 | Scenario | Ludyga Baseline | Our Pipeline |
 |---|---|---|
-| `"start hemodialysis"` | ❌ Returns "undefined"; not in grammar tokens | ✅ ACCEPTED via NCIt exact match + Stage 7 confirmation |
-| `"illustrate medical history"` | ❌ Fails; "illustrate" not a token | ✅ ACCEPTED via LLM semantic mapping + Stage 7 confirmation |
-| `"diagnosis hemodialysis"` (ASR error for hemolysis) | ❌ Returns "undefined" or wrong result | ✅ NEEDS_CLARIFICATION with explanation + Stage 7 re-prompt loop |
-| `"note: on examination... I'm done"` | ❌ Fails; "I'm done" not a FINISH token | ✅ ACCEPTED via LLM end_signal detection |
-| `"set medication aspirin... finish medication"` | ✅ Handled; has exact FINISH MEDICATION token | ✅ Handled; LLM end_signal + Stage 7 explicit confirmation (medication = high-criticality) |
-| `"code red initiate immediately"` | ❌ Fails; "code red" not a token | ✅ LLM maps to emergency action (Stage 7 timeout = 0 for emergencies) |
-| `"diagnosis hemolysis"` (correct) | ❌ Fails; "hemolysis" not a grammar token | ✅ ACCEPTED via DOID exact match + Stage 7 confirmation |
+| `"start hemodialysis"` | Returns "undefined"; not in grammar tokens | ACCEPTED via NCIt exact match |
+| `"illustrate medical history"` | Fails; "illustrate" not a token | ACCEPTED via LLM synonym mapping |
+| `"diagnosis hemodialysis"` (ASR error for hemolysis) | Returns "undefined" or wrong result | REJECTED; Stage 5 type mismatch (procedure vs diagnosis) |
+| `"note: on examination... I'm done"` | Fails; "I'm done" not a FINISH token | ACCEPTED via LLM end_signal detection |
+| `"set medication aspirin... finish medication"` | Handled; has exact FINISH MEDICATION token | Handled; LLM end_signal detection |
+| `"code red initiate immediately"` | Fails; "code red" not a token | ACCEPTED; LLM maps to emergency |
+| `"diagnosis hemolysis"` (correct) | Fails; "hemolysis" not a grammar token | ACCEPTED via DOID exact match |
 
 ---
 
@@ -1201,7 +985,7 @@ Output: ACCEPTED, DIAGNOSIS_DISEASE with DOID concept ID for documentation.
 
 Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md) (renders in GitHub/GitLab). Three diagrams:
 
-1. **Pipeline Architecture**: six-stage component flow, Stages 1–4 implemented, 5–6 planned
+1. **Pipeline Architecture**: five-stage component flow (Stages 1–5 implemented, Stage 6 pending)
 2. **Stage 4 Design Patterns**: class diagram showing `_STRATEGIES` (Strategy pattern) and `_FORMAT_LOADERS` (Registry pattern) and their relationship to `domain_config.yaml`
 3. **Domain Independence Boundary**: component diagram separating domain-independent core from domain-specific artefacts
 

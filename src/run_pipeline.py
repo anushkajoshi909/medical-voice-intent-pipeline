@@ -157,6 +157,7 @@ def run_command(client, cmd: dict, model: str) -> dict:
         "ont_source":                  stage4.source,
         "ont_clarification_type":      stage4.clarification_type,
         "ont_clarification_canonical": stage4.clarification_canonical,
+        "ont_drug_list":               stage4.drug_list,
         "s5_status":        stage5.status,
         "s5_reason":        stage5.reason,
         "s5_allowed_types": stage5.allowed_types,
@@ -312,14 +313,25 @@ def _print_stages(r: dict):
         print(f"     cmd_type   : {r['command_type']}")
     if r['frame_valid'] and r['action'] not in ("UNKNOWN", ""):
         print(f"  ── Stage 4: Ontology Lookup")
-        ont_sym = "✓" if r['ont_found'] else "✗"
-        matched_str = f"  matched={r['ont_canonical']!r}" if r['ont_found'] and r['ont_match_method'] not in ("passthrough",) else ""
-        print(f"     found      : [{ont_sym}] method={r['ont_match_method']}  score={r['ont_score']:.2f}{matched_str}")
-        if r['ont_found']:
+        drug_list = r.get('ont_drug_list')
+        if drug_list:
+            print(f"     compound   : {len(drug_list)} drugs")
+            for i, d in enumerate(drug_list, 1):
+                sym = "✓" if d.found else "✗"
+                id_str = f"  id={d.ontology_id}" if d.ontology_id else ""
+                dose_str = f"  dose={d.dose!r}" if d.dose else ""
+                can_str = f" → {d.canonical!r}" if d.found else ""
+                print(f"     drug {i}     : [{sym}] {d.medicine!r}{can_str}{id_str}{dose_str}  ({d.match_method}, {d.score:.2f})")
             print(f"     sem_type   : {r['ont_semantic_type']}")
-            if r['ont_ontology_id']:
-                print(f"     ont_id     : {r['ont_ontology_id']}")
-            print(f"     source     : {r['ont_source']}")
+        else:
+            ont_sym = "✓" if r['ont_found'] else "✗"
+            matched_str = f"  matched={r['ont_canonical']!r}" if r['ont_found'] and r['ont_match_method'] not in ("passthrough",) else ""
+            print(f"     found      : [{ont_sym}] method={r['ont_match_method']}  score={r['ont_score']:.2f}{matched_str}")
+            if r['ont_found']:
+                print(f"     sem_type   : {r['ont_semantic_type']}")
+                if r['ont_ontology_id']:
+                    print(f"     ont_id     : {r['ont_ontology_id']}")
+                print(f"     source     : {r['ont_source']}")
         if r.get('ont_clarification_type'):
             print(f"     clarify    : found as {r['ont_clarification_type']!r}"
                   f" ({r['ont_clarification_canonical']!r}) in global search")
@@ -343,7 +355,18 @@ def main():
     parser.add_argument("--save",     action="store_true", help="Save results JSON to results/")
     parser.add_argument("--verbose",  action="store_true", help="Print step-by-step stage output per command")
     parser.add_argument("--sample",   type=int,            help="Run N randomly selected commands")
+    parser.add_argument("--text",     type=str,            help="Run a single command string and print verbose output")
     args = parser.parse_args()
+
+    # Single-command mode: run one text string, print verbose, exit
+    if args.text:
+        client = get_client()
+        model  = _select_model_interactive(client) if args.select else DEFAULT_MODEL
+        cmd = {"id": "adhoc", "text": args.text, "valid": None, "expected_action": None,
+               "category": "adhoc", "action_source": "adhoc"}
+        r = run_command(client, cmd, model)
+        _print_stages(r)
+        return
 
     client = get_client()
     model  = _select_model_interactive(client) if args.select else DEFAULT_MODEL

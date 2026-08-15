@@ -35,6 +35,19 @@ ONTO = ROOT / "ontologies"
 # ── Result ────────────────────────────────────────────────────────────────────
 
 @dataclass
+class DrugResult:
+    """Per-drug result within a compound set_medication entity."""
+    raw_segment: str          # e.g. "aspirin 100 milligrams"
+    medicine: str             # extracted drug name, e.g. "aspirin"
+    dose: str                 # everything after the drug name, e.g. "100 milligrams"
+    canonical: str | None     # RxNorm canonical label
+    ontology_id: str | None
+    match_method: str
+    score: float
+    found: bool
+
+
+@dataclass
 class OntologyResult:
     found: bool
     raw_entity: str
@@ -46,6 +59,7 @@ class OntologyResult:
     source: str | None        # "vital_signs" | "domain_config" | "doid" | "hp" | "rxnorm" | "ncit"
     clarification_type: str | None = None      # set when entity found in a DIFFERENT index
     clarification_canonical: str | None = None # canonical label from that global match
+    drug_list: list | None = None              # list[DrugResult] for compound set_medication
 
 
 # ── Internal entry type ────────────────────────────────────────────────────────
@@ -383,22 +397,57 @@ def _ensure_action_config_loaded() -> None:
 # ── Medication helper (used by _strategy_medication) ──────────────────────────
 
 def _lookup_medication(raw_entity: str) -> OntologyResult | None:
-    """Medication lookup using grammar-driven medicine name extraction.
+    """Medication lookup for single and compound prescriptions.
 
-    The grammar guarantees entity is either "medicine INT unit" or
-    "INT unit OF medicine". We extract just the medicine name for lookup;
-    the raw entity string is never modified.
+    Splits on " and " and looks up every drug segment independently.
+    Returns an OntologyResult whose top-level fields reflect the first
+    confirmed drug (for Stage 5 type checking), and whose drug_list field
+    holds per-drug DrugResult entries so the display layer can show all hits.
     """
-    # Try full entity first (covers the rare case where entity IS just a drug name)
-    result = _match(_norm(raw_entity), "medication")
-    if result:
-        return result
+    segments = re.split(r'\s+and\s+', raw_entity, flags=re.IGNORECASE)
 
-    # Extract medicine name per grammar structure, then look up
-    medicine = _extract_medicine(raw_entity)
-    if medicine.lower() != raw_entity.lower():
-        result = _match(_norm(medicine), "medication")
+    drug_results: list[DrugResult] = []
+    first_match: OntologyResult | None = None
 
+    for seg in segments:
+        seg = seg.strip()
+        medicine = _extract_medicine(seg)
+        dose_part = seg[len(medicine):].strip() if seg.lower().startswith(medicine.lower()) else ""
+
+        # Try exact segment first, then extracted medicine name
+        match = _match(_norm(seg), "medication") or (
+            _match(_norm(medicine), "medication") if medicine.lower() != seg.lower() else None
+        )
+
+        drug_results.append(DrugResult(
+            raw_segment=seg,
+            medicine=medicine,
+            dose=dose_part,
+            canonical=match.canonical if match else None,
+            ontology_id=match.ontology_id if match else None,
+            match_method=match.match_method if match else "none",
+            score=match.score if match else 0.0,
+            found=bool(match),
+        ))
+
+        if match and first_match is None:
+            first_match = match
+
+    if first_match is None:
+        return None
+
+    # Return top-level fields from first confirmed drug; drug_list holds all
+    result = OntologyResult(
+        found=True,
+        raw_entity=raw_entity,
+        canonical=first_match.canonical,
+        semantic_type=first_match.semantic_type,
+        ontology_id=first_match.ontology_id,
+        match_method=first_match.match_method,
+        score=first_match.score,
+        source=first_match.source,
+        drug_list=drug_results if len(drug_results) > 1 else None,
+    )
     return result
 
 
