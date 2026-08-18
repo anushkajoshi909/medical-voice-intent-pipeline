@@ -34,30 +34,32 @@ Speech input (ASR / typed)
     │  Catches structural errors: missing dose/unit for set_medication,
     │  entity present where forbidden, etc. Returns command_type.
     │
-    ▼  Stage 4 — Ontology Lookup        [in progress]
-    │  Resolves entity to a known medical concept + semantic type
+    ▼  Stage 4 — Ontology Lookup        [implemented]
+    │  Resolves entity to a known medical concept + semantic type.
     │  Sources: DOID, HPO, RxNorm, NCIt, vital_signs.json.
-    │  Closed-set entities (show action) resolved from domain_config.yaml
+    │  Compound prescriptions (e.g. "aspirin and clopidogrel") look up
+    │  each drug independently. Registry + Strategy design patterns.
     │
-    ▼  Stage 5 — Semantic Validation    [in progress]
+    ▼  Stage 5 — Semantic Validation    [implemented]
     │  Checks: does this action allow this semantic type?
     │  Catches "diagnosis hemodialysis" → procedure ≠ disease
     │
-    ▼  Stage 6 — Intent JSON Output     [in progress]
-       Full audit trail of every stage's decision
+    ▼  Stage 6 — Intent JSON Output     [pending]
+       Assembles final structured payload: action, canonical entity,
+       semantic type, ontology ID, urgency flag from Stage 1
 ```
 
 ---
 
-## Results (Stages 1–3)
+## Results (Stages 1–5)
 
-Evaluated on 243 annotated commands (198 base + 45 extended).
+Evaluated on 243 annotated commands (130 valid, 113 invalid).
 
 | Metric | Ludyga Baseline | Our Pipeline (Llama 3.3 70B) |
 |---|---|---|
-| Binary accuracy | 75.3% | **94.4%** |
-| Valid recall | 50.0% | **99.1%** |
-| Invalid precision | 100% | 90.2% |
+| Binary accuracy | 75.3% | **95.9%** |
+| Valid recall | 50.0% | **98.5%** |
+| Invalid precision | 100% | **92.9%** |
 | Action accuracy | — | **96.3%** |
 
 ---
@@ -129,6 +131,12 @@ python src/run_pipeline.py --verbose
 python src/run_pipeline.py --select
 ```
 
+### Run a single command verbosely
+```bash
+python src/run_pipeline.py --text "ok glasses set medication aspirin 100 milligrams and clopidogrel 75 milligrams finish medication"
+```
+Prints step-by-step output for every stage without running the full evaluation set. Useful for testing a specific command or debugging.
+
 ### Save results to `results/`
 ```bash
 python src/run_pipeline.py --save
@@ -142,13 +150,16 @@ python src/run_pipeline.py --save
 ├── src/
 │   ├── stage1_preprocess.py        # Normalisation, abbreviation expansion, urgency
 │   ├── stage2_llm_extract.py       # LLM structured extraction (loaded via domain_loader)
-│   ├── stage3_antlr_validate.py    # Real ANTLR4 frame validation
+│   ├── stage3_antlr_validate.py    # Real ANTLR4 frame validation; action list + entity
+│   │                               #   rules loaded from domain_config.yaml at runtime
+│   ├── stage4_ontology_lookup.py   # Ontology lookup: Registry + Strategy patterns
+│   ├── stage5_type_validate.py     # Semantic type validation against domain_config rules
 │   ├── domain_loader.py            # Wires grammar + config + prompt at startup
 │   ├── grammar/                    # Generated Python parser (from .g4 files, committed)
 │   │   ├── MedicalSmartGlassesLexer.py
 │   │   ├── MedicalSmartGlassesParser.py
 │   │   └── MedicalSmartGlassesParserListener.py
-│   ├── run_pipeline.py             # Full pipeline runner + evaluation
+│   ├── run_pipeline.py             # Full pipeline runner + evaluation (--text for single command)
 │   ├── build_annotated_dataset.py  # Rebuilds data/annotated_commands.json
 │   └── run_baseline.py             # Ludyga baseline evaluation
 │
@@ -157,16 +168,26 @@ python src/run_pipeline.py --save
 │   ├── extended_test_cases.json    # Extended commands (abbreviations, type mismatches)
 │   └── annotated_commands.json     # Combined + annotated (auto-generated)
 │
+├── docs/
+│   ├── uml_diagrams.md            # UML: component flow, Stage 4 class diagram,
+│   │                              #   domain independence boundary
+│   └── pipeline_evolution.md      # Mermaid diagram: Ludyga baseline vs enhanced pipeline
+│
 ├── ontologies/
-│   ├── vital_signs.json            # 44 vital sign + lab result terms (curated)
+│   ├── vital_signs.json            # 25 vital sign + lab result terms (curated)
+│   ├── patient_info_terms.json     # Patient info entity terms for show action
 │   └── ONTOLOGY_SOURCES.md        # Rationale for every ontology choice
 │
+├── results/
+│   └── pipeline_results_full.json  # Full evaluation output (243 commands, all stages)
+│
 ├── MedicalSmartGlassesLexer.g4    # ANTLR lexer — grammar authority for structure
-├── MedicalSmartGlassesParser.g4   # ANTLR parser — command type hierarchy
+├── MedicalSmartGlassesParser.g4   # ANTLR parser — command type hierarchy (u21 diagnosis,
+│                                  #   u22 treatment added)
 ├── grammar_extend.md              # Documents changes from Ludyga's baseline grammar
-├── domain_config.yaml             # Semantic layer: descriptions, slot types,
-│                                  #   grammar_command_type, canonical_entities,
-│                                  #   domain rules, few-shot examples
+├── domain_config.yaml             # Single source of truth: actions, slot rules,
+│                                  #   grammar_command_type, ontology sources,
+│                                  #   domain description, few-shot examples
 ├── llm_system_prompt.txt          # Domain-agnostic prompt template ({placeholders})
 ├── abbreviations.json             # Medical abbreviation expansion table
 └── Final_Pipeline_Complete.md     # Full pipeline design + worked examples

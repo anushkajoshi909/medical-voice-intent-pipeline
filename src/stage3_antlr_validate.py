@@ -105,23 +105,34 @@ class FrameResult:
     command_type:   str   # e.g. "request_data", "set_medication", "diagnosis"
 
 
-_VALID_ACTIONS = {
-    "show", "diagnosis", "start", "stop", "continue", "turn_on", "turn_off",
-    "emergency", "accept_emergency", "leave_emergency", "change_patient",
-    "send_message", "set_medication", "set_note",
-}
+_domain_cfg: dict | None = None
 
-_ENTITY_FORBIDDEN = {"emergency", "accept_emergency", "leave_emergency", "continue"}
+
+def _get_domain_cfg() -> dict:
+    global _domain_cfg
+    if _domain_cfg is None:
+        from domain_loader import load as _domain_load
+        _domain_cfg = _domain_load()
+    return _domain_cfg
+
+
+def _valid_actions() -> set[str]:
+    return _get_domain_cfg()["valid_actions"]
+
+
+def _entity_forbidden() -> set[str]:
+    cfg = _get_domain_cfg()["action_config"]
+    return {name for name, info in cfg.items() if not info.get("entity_slot", True)}
 
 
 def validate(action: str, entity: str, recipient: str = "") -> FrameResult:
     entity = entity.strip()
 
-    if action not in _VALID_ACTIONS:
+    if action not in _valid_actions():
         return FrameResult(False, "INVALID_ACTION", f"ok glasses {action} {entity}".strip(), "unknown")
 
     # Quick pre-check: entity-forbidden actions
-    if action in _ENTITY_FORBIDDEN and entity:
+    if action in _entity_forbidden() and entity:
         return FrameResult(False, "UNEXPECTED_ENTITY",
                            _canonical(action, entity), "glasses_command")
 
