@@ -175,7 +175,6 @@ python src/run_pipeline.py --save
 │
 ├── ontologies/
 │   ├── vital_signs.json            # 25 vital sign + lab result terms (curated)
-│   ├── patient_info_terms.json     # Patient info entity terms for show action
 │   └── ONTOLOGY_SOURCES.md        # Rationale for every ontology choice
 │
 ├── results/

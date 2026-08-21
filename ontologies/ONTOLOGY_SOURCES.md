@@ -97,21 +97,6 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
   - `"show INR"` → Stage 1 expands INR → `"international normalised ratio"` → exact match → `semantic_type=lab_result` → `show` allows `lab_result` → **ACCEPTED**
   - `"show CBC"` → Stage 1 expands CBC → `"complete blood count"` → exact match → `semantic_type=lab_result` → **ACCEPTED**
 
-### 6. `patient_info_terms.json`
-- **Provides semantic types:** `patient_info`, `document`, `messaging`
-- **Entries:** 13 terms
-- **Structure:** `{label, synonyms[], semantic_type}`
-- **Why curated:**
-  - No standard ontology covers administrative/record-level terms at this scope
-  - "Discharge summary", "medication list", "progress notes" are system-level document categories, not clinical concepts owned by any standards body
-  - Scope is small and well-defined — 13 entries cover all record types present in the evaluation command set
-- **Example resolutions:**
-  - `"show patient history"` → entity=`"patient history"` → synonym match → `"Medical History"` → `semantic_type=patient_info` → `show` allows `patient_info` → **ACCEPTED**
-  - `"show discharge summary"` → exact match → `semantic_type=document` → `show` allows `document` → **ACCEPTED**
-  - `"show messages"` → exact match → `semantic_type=messaging` → `show` allows `messaging` → **ACCEPTED**
-  - `"Let me see the patient's vitals"` → Stage 2 strips fillers → entity=`"vitals"` → synonym match → `"Vital Signs Record"` → `semantic_type=patient_info` → `show` allows `patient_info` → **ACCEPTED**
-  - `"Pull up the lab results"` → Stage 2 strips fillers → entity=`"lab results"` → synonym match → `"Lab Report"` → `semantic_type=document` → `show` allows `document` → **ACCEPTED**
-
 ---
 
 ## Ontologies Considered and Rejected
@@ -155,8 +140,7 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
 | `medication` | RxNorm Prescribable (`RXNCONSO.RRF`) |
 | `treatment`, `procedure` | NCI Thesaurus (`Thesaurus.txt`) |
 | `vital_sign`, `lab_result` | Curated `vital_signs.json` |
-| `patient_info`, `document`, `imaging` | Curated `patient_info_terms.json` |
-| `messaging` | Curated `patient_info_terms.json` |
+| `ehr_record` | No lookup — passthrough fallback for `show` entities not matched in `vital_signs.json` |
 | `free_text` | No lookup — raw text stored as-is |
 | `patient_identifier` | No ontology — entity is a proper name |
 | `system` | No ontology — entity is optional/empty |
