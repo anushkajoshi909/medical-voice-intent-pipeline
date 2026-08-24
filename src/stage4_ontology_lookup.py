@@ -5,8 +5,8 @@ Maps the raw entity string (preserved as-spoken by Stage 2) to a canonical
 label, semantic type, and ontology identifier.
 
 Routing is driven entirely by domain_config.yaml — each action declares:
-  ontology_index    : which cache index to search (null = passthrough)
-  fallback_index    : secondary index if primary misses (null = no fallback)
+  ontology_index    : index or list of indexes to search in order (null = passthrough)
+  fallback_index    : secondary index if all primary indexes miss; may use a different extractor
   entity_extractor  : strategy applied before lookup
                         "default"    — use entity as-is
                         "medication" — strip dose/unit, then lookup
@@ -485,7 +485,7 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
     _ensure_action_config_loaded()
 
     action_info      = _action_cfg.get(action, {})
-    ont_index        = action_info.get("ontology_index")    # None → passthrough
+    ont_index        = action_info.get("ontology_index")    # None, str, or list[str]
     passthrough_type = action_info.get("passthrough_type")  # semantic type for passthrough
 
     # Passthrough: skip ontology lookup entirely
@@ -501,12 +501,21 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
 
     _ensure_loaded(verbose=verbose)
 
-    # Dispatch to the configured extraction strategy
+    # Normalise ontology_index to a list so single strings and lists are handled uniformly
+    indexes = [ont_index] if isinstance(ont_index, str) else list(ont_index)
+
     strategy_name = action_info.get("entity_extractor", "default")
     strategy      = _STRATEGIES.get(strategy_name, _STRATEGIES["default"])
-    result = strategy(raw_entity, ont_index)
 
-    # Try fallback index if primary missed
+    # Try each index in order — return the first match
+    result = None
+    for idx in indexes:
+        result = strategy(raw_entity, idx)
+        if result:
+            break
+
+    # Try fallback index if all primary indexes missed (fallback may use a different extractor,
+    # e.g. start/stop use medication extractor to strip dose/unit before RxNorm lookup)
     fallback = action_info.get("fallback_index")
     if not result and fallback:
         fb_strategy_name = action_info.get("fallback_extractor", strategy_name)
@@ -517,7 +526,7 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
         result.raw_entity = raw_entity
         return result
 
-    # Primary and fallback both missed.
+    # All indexes and fallback missed.
 
     # If action declares passthrough_fallback_type, accept the entity as-is
     # with that semantic type (e.g. show action treats anything not a vital sign
@@ -532,7 +541,7 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
     # Search all OTHER indexes (exact+synonym only) to identify what the entity
     # actually is — gives Stage 5 enough info to produce a specific clarification
     # ("hemodialysis is a procedure, not a diagnosis") rather than a generic miss.
-    searched = {ont_index} | ({fallback} if fallback else set())
+    searched = set(indexes) | ({fallback} if fallback else set())
     clarification = _global_clarification_search(_norm(raw_entity), searched)
     if clarification:
         return OntologyResult(

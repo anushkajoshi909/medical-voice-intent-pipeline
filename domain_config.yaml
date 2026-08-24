@@ -68,8 +68,7 @@ actions:
     grammar_command_type: diagnosis
     description: "Record a clinical diagnosis"
     allowed_slot_types: [disease, symptom, condition, finding]
-    ontology_index: diagnosis       # doid.obo (disease) + hp.obo (symptom)
-    fallback_index: null
+    ontology_index: [doid, hp]      # search disease ontology first, then symptom
     entity_extractor: default
 
   set_medication:
@@ -203,13 +202,17 @@ ontology_sources:
       # EHR record categories are NOT a closed list here — the LLM gates validity
       # via domain rules; anything not a vital sign becomes semantic_type=ehr_record
 
-  diagnosis:
+  doid:
     fuzzy_cutoff: 0.90          # strict — hemolysis vs hemoptysis differ at 0.84
     sources:
       - type: obo
         file: ontologies/doid.obo
         semantic_type: disease
         source_name: doid
+
+  hp:
+    fuzzy_cutoff: 0.88
+    sources:
       - type: obo
         file: ontologies/hp.obo
         semantic_type: symptom
