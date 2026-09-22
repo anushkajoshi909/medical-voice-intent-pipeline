@@ -29,7 +29,7 @@ graph TD
 
 The enhanced pipeline keeps ANTLR as the structural authority but splits its responsibilities. A new LLM extraction stage (Stage 2) sits between preprocessing and grammar validation, handling the parts a lexer cannot: filler words, synonym variation, and natural phrasing. ANTLR (Stage 3) then validates the LLM's output against the same grammar rules and remains the gatekeeping step it always was.
 
-Stages 4 and 5 are entirely new. Stage 4 resolves the extracted entity against real medical ontologies and flags type mismatches. Stage 5 enforces the semantic constraint for each action and generates a human-readable clarification message. Stage 6 (Intent JSON) assembles everything into the final structured payload.
+Stages 4 and 5 are entirely new. Stage 4 resolves the extracted entity against real medical ontologies and flags type mismatches. Stage 5 enforces the semantic constraint for each action and generates a human-readable clarification message. Stage 6 (Intent JSON) assembles everything into the final structured payload, and Stage 7 (User Confirmation) presents it to the doctor for an explicit "correct"/"wrong" before anything executes — closing the loop back to a repeat if rejected.
 
 ```mermaid
 graph TD
@@ -40,7 +40,8 @@ graph TD
     S3["Stage 3: ANTLR Validation\nStructural validation only\ncommand_type returned for backend routing"]:::updated
     S4["Stage 4: Ontology Lookup\nNCIt · RxNorm · DOID · HP\nTwo-pass: primary index + global clarification"]:::new_stage
     S5["Stage 5: Semantic Validation\nallowed_slot_types enforcement\ntype_mismatch clarification message"]:::new_stage
-    S6["Stage 6: Intent JSON\nAction + canonical entity + semantic type\n+ urgency flag from Stage 1"]:::pending
+    S6["Stage 6: Intent JSON\nAction + canonical entity + semantic type\n+ urgency flag from Stage 1"]:::new_stage
+    S7["Stage 7: User Confirmation\nGlasses display + 'correct'/'wrong'\nper-action confirmation_timeout_sec"]:::new_stage
 
     S1 --> S2
     S2 -->|action=UNKNOWN| R1([Rejected]):::rej
@@ -50,11 +51,14 @@ graph TD
     S4 --> S5
     S5 -->|type_mismatch| CL([Clarification]):::rej
     S5 --> S6
-    S6 --> OUT([Intent JSON]):::src
+    S6 --> S7
+    S7 -->|confirmed / auto-confirmed| OUT([Intent JSON]):::src
+    S7 -->|rejected / unclear| RPT([Repeat Command]):::rej
 
     ABB([abbreviations.json]):::cfg --> S1
     DC([domain_config.yaml]):::cfg --> S2
     DC --> S4
+    DC -->|confirmation_timeout_sec| S7
     GR(["ANTLR Grammar (.g4 + compiled)"]):::cfg --> S3
     ONT([Ontologies\nDOID · HP · NCIt · RxNorm]):::cfg --> S4
 

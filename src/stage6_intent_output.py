@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+"""Stage 6: Intent JSON Assembly
+
+Takes the results of Stages 1-5 and assembles the final structured payload
+handed to the backend / Stage 7 confirmation UI.
+
+Statuses produced:
+  rejected              — Stage 1 format rejection, Stage 2 UNKNOWN, or
+                           Stage 3 structural failure
+  accepted              — Stage 5 status "accepted" or "skipped", end_signal
+                           true (or action has no end-of-dictation concept)
+  accepted_partial      — free-text action (set_note, send_message) still
+                           open (end_signal=false); nothing to confirm yet
+  needs_clarification   — Stage 5 status "type_mismatch" or "entity_not_found"
+
+No domain knowledge is hardcoded here: allowed_slot_types, semantic types,
+and action names all come from the Stage 2-5 results, which are themselves
+driven by domain_config.yaml.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+
+_FREE_TEXT_TYPES = {"free_text"}
+
+
+@dataclass
+class IntentResult:
+    status: str                    # rejected | accepted | accepted_partial | needs_clarification
+    payload: dict = field(default_factory=dict)
+
+
+def _drug_slot_list(drug_list) -> list[dict]:
+    slots = []
+    for d in drug_list:
+        dose_value, _, dose_unit = d.dose.partition(" ")
+        slots.append({
+            "raw":           d.raw_segment,
+            "drug_label":    d.canonical,
+            "rxcui":         d.ontology_id,
+            "dose":          dose_value or None,
+            "dose_unit":     dose_unit or None,
+            "semantic_type": "medication" if d.found else None,
+            "match_type":    d.match_method,
+        })
+    return slots
+
+
+def _entity_slot(stage4, semantic_type: str | None) -> dict:
+    return {
+        "raw_entity":    stage4.raw_entity,
+        "canonical":     stage4.canonical,
+        "semantic_type": semantic_type,
+        "ontology_id":   stage4.ontology_id,
+        "match_method":  stage4.match_method,
+        "score":         stage4.score,
+        "source":        stage4.source,
+    }
+
+
+def _intent_name(action: str, type_hint: str | None) -> str:
+    base = action.upper()
+    return f"{base}_{type_hint.upper()}" if type_hint else base
+
+
+def _llm_explanation(stage1, stage2) -> str:
+    parts = [f"Action {stage2.action!r} extracted with confidence {stage2.confidence}."]
+    if stage1.abbreviations_expanded:
+        parts.append(f"Abbreviations expanded: {stage1.abbreviations_expanded}.")
+    if stage2.end_signal:
+        parts.append("End-of-dictation signal detected.")
+    return " ".join(parts)
+
+
+def _grammar_explanation(stage3) -> str:
+    if stage3.valid:
+        return f"Frame valid. command_type={stage3.command_type}."
+    return f"Frame invalid: {stage3.reason}."
+
+
+def _ontology_explanation(stage4, action_info: dict) -> str:
+    if action_info.get("ontology_index") is None:
+        if action_info.get("passthrough_type"):
+            return f"Free-text/passthrough slot; assigned semantic_type={action_info['passthrough_type']!r} without lookup."
+        return "System command with no entity slot; no ontology lookup performed."
+    if stage4.drug_list:
+        found = sum(1 for d in stage4.drug_list if d.found)
+        return f"{found}/{len(stage4.drug_list)} drug(s) confirmed via ontology lookup."
+    if stage4.found:
+        return (f"{stage4.raw_entity!r} matched {stage4.source} concept "
+                f"{stage4.ontology_id} via {stage4.match_method} at score {stage4.score:.2f}.")
+    if stage4.clarification_type:
+        return (f"{stage4.raw_entity!r} was found as a {stage4.clarification_type!r} "
+                f"({stage4.clarification_canonical!r}) in a different ontology index, "
+                f"not in the index searched for this action.")
+    return f"{stage4.raw_entity!r} was not found in any configured ontology index."
+
+
+def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_config: dict) -> IntentResult:
+    """Assemble the Stage 6 intent payload.
+
+    stage1..stage5 are the dataclass results from the corresponding modules.
+    action_config is domain_loader's per-action config dict (for slot naming).
+    """
+    action = stage2.action
+    action_info = action_config.get(action, {})
+
+    # ── Rejections (never reached Stage 5) ──────────────────────────────────
+    if stage1.format_invalid:
+        return IntentResult("rejected", {
+            "status": "rejected",
+            "reason": "non_speech_input",
+            "original_command": original_text,
+            "explanation": {"stage1": "Input rejected as non-speech (JSON/code/inaudible marker)."},
+        })
+
+    if action == "UNKNOWN" or not stage2.valid_action:
+        return IntentResult("rejected", {
+            "status": "rejected",
+            "reason": "unrecognized_command",
+            "original_command": original_text,
+            "explanation": {"llm_extraction": "No valid action could be mapped from the input."},
+        })
+
+    if not stage3.valid:
+        return IntentResult("rejected", {
+            "status": "rejected",
+            "reason": "invalid_structure",
+            "action": action,
+            "original_command": original_text,
+            "explanation": {
+                "llm_extraction":     _llm_explanation(stage1, stage2),
+                "grammar_validation": _grammar_explanation(stage3),
+            },
+        })
+
+    urgency = stage1.urgency
+
+    # ── Needs clarification (Stage 5 type_mismatch / entity_not_found) ─────
+    if stage5.status in ("type_mismatch", "entity_not_found"):
+        if stage5.status == "type_mismatch":
+            found_type  = stage4.clarification_type or stage5.semantic_type
+            found_label = stage4.clarification_canonical or stage4.canonical or stage4.raw_entity
+            clarification_message = (
+                f"I heard '{stage4.raw_entity}' and recognised it as a {found_type}, "
+                f"not a {'/'.join(stage5.allowed_types) or 'compatible type'}. "
+                f"Did you mean something else? Please repeat or confirm."
+            )
+            resolved_entity = {
+                "matched_label":  found_label,
+                "concept_id":     stage4.ontology_id,
+                "semantic_type":  found_type,
+                "match_type":     stage4.match_method if stage4.found else "exact",
+            }
+        else:
+            clarification_message = (
+                f"I couldn't find '{stage4.raw_entity}' in the reference data for '{action}'. "
+                f"The command was understood, but the entity could not be grounded. "
+                f"Please repeat or rephrase."
+            )
+            resolved_entity = None
+
+        payload = {
+            "status": "needs_clarification",
+            "reason": stage5.status,
+            "intent_attempted": _intent_name(action, stage5.allowed_types[0] if stage5.allowed_types else None),
+            "action": action,
+            "original_command": original_text,
+            "raw_entity": stage4.raw_entity,
+            "expected_semantic_types": stage5.allowed_types,
+            "urgency": urgency,
+            "explanation": {
+                "llm_extraction":      _llm_explanation(stage1, stage2),
+                "grammar_validation":  _grammar_explanation(stage3),
+                "ontology_evidence":   _ontology_explanation(stage4, action_info),
+                "semantic_validation": stage5.reason,
+            },
+            "clarification_message": clarification_message,
+        }
+        if resolved_entity is not None:
+            payload["resolved_entity"] = resolved_entity
+        return IntentResult("needs_clarification", payload)
+
+    # ── Accepted / accepted_partial (Stage 5 accepted or skipped) ───────────
+    passthrough_type = action_info.get("passthrough_type")
+    is_free_text_open = (passthrough_type in _FREE_TEXT_TYPES) and not stage2.end_signal
+
+    if is_free_text_open:
+        payload = {
+            "status": "accepted_partial",
+            "intent": f"{action.upper()}_OPEN",
+            "action": action,
+            "original_command": original_text,
+            "urgency": urgency,
+            "slots": {
+                "free_text": {
+                    "content":    stage2.entity,
+                    "end_signal": stage2.end_signal,
+                    "note_state": "open -- awaiting end-of-dictation signal",
+                }
+            },
+            "explanation": {
+                "llm_extraction":      _llm_explanation(stage1, stage2),
+                "grammar_validation":  _grammar_explanation(stage3),
+                "ontology_evidence":   "Free-text slot; no ontology lookup.",
+                "semantic_validation": stage5.reason,
+            },
+        }
+        return IntentResult("accepted_partial", payload)
+
+    slots: dict = {}
+    if stage5.status != "skipped":
+        semantic_type = stage5.semantic_type
+        slot_key = semantic_type or action
+        if stage4.drug_list:
+            slots[slot_key] = _drug_slot_list(stage4.drug_list)
+        elif semantic_type in _FREE_TEXT_TYPES or semantic_type == "patient_identifier":
+            slots[slot_key] = {"content": stage2.entity, "recipient": stage2.recipient or None}
+        else:
+            slots[slot_key] = _entity_slot(stage4, semantic_type)
+
+    payload = {
+        "status": "accepted",
+        "intent": _intent_name(action, stage5.semantic_type),
+        "action": action,
+        "original_command": original_text,
+        "urgency": urgency,
+        "slots": slots,
+        "explanation": {
+            "llm_extraction":      _llm_explanation(stage1, stage2),
+            "grammar_validation":  _grammar_explanation(stage3),
+            "ontology_evidence":   _ontology_explanation(stage4, action_info),
+            "semantic_validation": stage5.reason,
+        },
+    }
+    return IntentResult("accepted", payload)

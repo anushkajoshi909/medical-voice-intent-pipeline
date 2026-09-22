@@ -180,17 +180,25 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 6: Intent JSON + Explanation           [pending]     │
+│  STAGE 6: Intent JSON + Explanation        [implemented]    │
 │  Assemble final structured payload for backend:             │
 │    action, canonical entity, semantic type, ontology ID,    │
 │    urgency flag (from Stage 1), clarification message       │
+│                                                             │
+│  status ∈ {accepted, accepted_partial, needs_clarification, │
+│            rejected}                                        │
+│  Driven entirely by Stage 1-5 results + domain_config.yaml  │
+│  action metadata (passthrough_type, allowed_slot_types);    │
+│  no action names hardcoded in src/stage6_intent_output.py   │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 7: User Confirmation         [designed; not started] │
+│  STAGE 7: User Confirmation                [implemented]    │
 │                                                             │
-│  Glasses display a human-friendly interpretation:           │
+│  Glasses display a human-friendly interpretation, built     │
+│  from the Stage 6 payload (accepted slots or the             │
+│  clarification_message):                                    │
 │    "Diagnosis: Hemolysis. Correct?"                         │
 │                                                             │
 │  User responds:                                             │
@@ -198,12 +206,24 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │    "ok glasses, wrong"   → REJECTED  → user prompted to     │
 │                            repeat the command               │
 │    [timeout after N sec] → auto-confirm for low-risk        │
-│                            actions (configurable per action) │
+│                            actions (per-action                │
+│                            confirmation_timeout_sec in       │
+│                            domain_config.yaml; 0 = confirm   │
+│                            instantly, e.g. emergency;        │
+│                            null = always block for an        │
+│                            explicit response, e.g.           │
+│                            diagnosis/set_medication)          │
 │                                                             │
 │  Creates a dialogue feedback loop. Directly addresses the   │
 │  hemodialysis/hemolysis use case: even if Stage 5 issues    │
 │  a clarification, Stage 7 gives the user a final            │
 │  yes/no checkpoint before any action is executed.           │
+│                                                             │
+│  Response classification (src/stage7_confirmation.py) is a  │
+│  small deterministic keyword match, not an LLM call — the   │
+│  confirmation vocabulary is intentionally narrow and fixed. │
+│  Run it: `python src/run_pipeline.py --text "..."` (single  │
+│  command) or `--interactive` (REPL with repeat-on-reject).  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -985,7 +1005,7 @@ Eight invalid commands passed when they should have been rejected. These are edg
 
 Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md) (renders in GitHub/GitLab). Three diagrams:
 
-1. **Pipeline Architecture**: five-stage component flow (Stages 1–5 implemented, Stage 6 pending)
+1. **Pipeline Architecture**: seven-stage component flow (Stages 1–7 implemented)
 2. **Stage 4 Design Patterns**: class diagram showing `_STRATEGIES` (Strategy pattern) and `_FORMAT_LOADERS` (Registry pattern) and their relationship to `domain_config.yaml`
 3. **Domain Independence Boundary**: component diagram separating domain-independent core from domain-specific artefacts
 

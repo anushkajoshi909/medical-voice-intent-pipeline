@@ -9,8 +9,8 @@ Diagrams render in GitLab, GitHub, and VS Code with the Markdown Preview Mermaid
 
 ## Figure 1 · Pipeline Architecture (Component Flow)
 
-Six-stage pipeline from raw voice input to structured intent JSON.
-Stages 1-5 implemented · Stage 6 planned.
+Seven-stage pipeline from raw voice input to a confirmed, executable command.
+Stages 1-7 implemented.
 
 ```mermaid
 graph TD
@@ -21,20 +21,25 @@ graph TD
     S3["Stage 3 · ANTLR Validation\nstage3_antlr_validate.py"]:::impl
     S4["Stage 4 · Ontology Lookup\nstage4_ontology_lookup.py"]:::impl
     S5["Stage 5 · Semantic Validation\nstage5_type_validate.py"]:::impl
-    S6["Stage 6 · Intent Output\n(planned)"]:::planned
+    S6["Stage 6 · Intent Output\nstage6_intent_output.py"]:::impl
+    S7["Stage 7 · User Confirmation\nstage7_confirmation.py"]:::impl
 
-    S1 --> S2 --> S3 --> S4 --> S5 --> S6
-    S6 --> OUT([Intent JSON])
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+    S7 -->|confirmed / auto-confirmed| OUT([Command Executed]):::src
+    S7 -->|rejected / unclear| RPT([Repeat Command]):::rej
+    RPT -.-> S1
 
     ABB([abbreviations.json]):::cfg --> S1
     DC([domain_config.yaml]):::cfg --> S2
     DC --> S4
+    DC -->|confirmation_timeout_sec| S7
     GR([ANTLR Grammar\n.g4 + compiled]):::cfg --> S3
     ONT([Ontologies\nDOID · HP · NCIt · RXNORM]):::cfg --> S4
 
     classDef impl fill:#3B72B0,color:#fff,stroke:#2A5A90
-    classDef planned fill:#8B97B0,color:#fff,stroke:#6B7A90,stroke-dasharray:5 5
     classDef cfg fill:#EBF2FA,color:#1C2438,stroke:#3B72B0
+    classDef src fill:#1e293b,color:#fff,stroke:#334155
+    classDef rej fill:#ef4444,color:#fff,stroke:#b91c1c
 ```
 
 ---

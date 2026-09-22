@@ -28,6 +28,12 @@
 # │      passthrough_type:       Stage 4 — semantic_type to assign when        │
 # │                              ontology_index is null and entity has meaning  │
 # │                              omit for system commands with no entity        │
+# │      confirmation_timeout_sec: Stage 7 — null=always block for an explicit │
+# │                              "correct"/"wrong" response (high-risk action).│
+# │                              <int>=auto-confirm after N idle seconds       │
+# │                              (low-risk action). 0=skip the prompt entirely │
+# │                              and confirm immediately (delay unacceptable,  │
+# │                              e.g. emergency).                              │
 # │  domain_rules:               injected into LLM prompt as numbered list     │
 # │  few_shot_examples:          injected into LLM prompt                      │
 # └────────────────────────────────────────────────────────────────────────────┘
@@ -54,6 +60,7 @@ actions:
     fallback_index: medication      # if not a procedure, try RXNORM (drug start)
     entity_extractor: default
     fallback_extractor: medication  # strip dose/unit before RxNorm lookup
+    confirmation_timeout_sec: null  # initiating treatment/procedure/medication — explicit only
 
   show:
     grammar_command_type: request_data
@@ -63,6 +70,7 @@ actions:
     fallback_index: null
     entity_extractor: default
     passthrough_fallback_type: ehr_record  # anything not in vital_signs → ehr_record
+    confirmation_timeout_sec: 5     # read-only — safe to auto-confirm
 
   diagnosis:
     grammar_command_type: diagnosis
@@ -70,6 +78,7 @@ actions:
     allowed_slot_types: [disease, symptom, condition, finding]
     ontology_index: [doid, hp]      # search disease ontology first, then symptom
     entity_extractor: default
+    confirmation_timeout_sec: null  # clinical diagnosis — explicit only
 
   set_medication:
     grammar_command_type: set_medication
@@ -78,6 +87,7 @@ actions:
     ontology_index: medication      # RXNCONSO.RRF
     fallback_index: null
     entity_extractor: medication    # strips dose/unit before lookup
+    confirmation_timeout_sec: null  # high-criticality — always explicit
 
   set_note:
     grammar_command_type: protocol
@@ -85,6 +95,7 @@ actions:
     allowed_slot_types: [free_text]
     ontology_index: null            # entity is free text — no lookup
     passthrough_type: free_text
+    confirmation_timeout_sec: 6     # dictation — low risk, easily amended
 
   stop:
     grammar_command_type: stop_cmd
@@ -94,6 +105,7 @@ actions:
     fallback_index: medication      # if not a procedure, try RXNORM
     entity_extractor: default
     fallback_extractor: medication  # strip dose/unit before RxNorm lookup
+    confirmation_timeout_sec: null  # discontinuing treatment/medication — explicit only
 
   turn_on:
     grammar_command_type: glasses_command
@@ -101,6 +113,7 @@ actions:
     allowed_slot_types: [system]
     ontology_index: null            # system command — no ontology lookup
     entity_slot: false              # grammar enforces no entity; pipeline strips any LLM extractions
+    confirmation_timeout_sec: 3     # trivial UI control
 
   turn_off:
     grammar_command_type: glasses_command
@@ -108,6 +121,7 @@ actions:
     allowed_slot_types: [system]
     ontology_index: null
     entity_slot: false
+    confirmation_timeout_sec: 3
 
   continue:
     grammar_command_type: glasses_command
@@ -115,6 +129,7 @@ actions:
     allowed_slot_types: [system]
     ontology_index: null
     entity_slot: false
+    confirmation_timeout_sec: 3
 
   change_patient:
     grammar_command_type: request_patient
@@ -122,6 +137,7 @@ actions:
     allowed_slot_types: [patient_identifier]
     ontology_index: null            # entity IS the patient identifier — no lookup
     passthrough_type: patient_identifier
+    confirmation_timeout_sec: null  # mixing up patient context is dangerous — explicit only
 
   send_message:
     grammar_command_type: message
@@ -136,6 +152,7 @@ actions:
     allowed_slot_types: [free_text]
     ontology_index: null
     passthrough_type: free_text
+    confirmation_timeout_sec: null  # avoid misfired clinical communication — explicit only
 
   emergency:
     grammar_command_type: glasses_command
@@ -143,6 +160,7 @@ actions:
     allowed_slot_types: []
     ontology_index: null
     entity_slot: false
+    confirmation_timeout_sec: 0     # any delay is unacceptable — confirm instantly
 
   accept_emergency:
     grammar_command_type: glasses_command
@@ -150,6 +168,7 @@ actions:
     allowed_slot_types: []
     ontology_index: null
     entity_slot: false
+    confirmation_timeout_sec: 0     # any delay is unacceptable — confirm instantly
 
   leave_emergency:
     grammar_command_type: glasses_command
@@ -157,6 +176,7 @@ actions:
     allowed_slot_types: []
     ontology_index: null
     entity_slot: false
+    confirmation_timeout_sec: null  # standing down a real emergency should be deliberate
 
 # ── Domain-specific LLM rules (healthcare only) ────────────────────────────────
 # Generic rules (don't judge entity type, raw JSON only, etc.) live in the
@@ -240,41 +260,62 @@ ontology_sources:
         term_types: [IN, BN, PIN, MIN]
 
 # ── Healthcare few-shot examples ───────────────────────────────────────────────
+# NOTE: none of these inputs should be verbatim matches to any command in
+# data/annotated_commands.json — these teach the model a pattern to
+# generalise from, not the exact eval-set answer. Reword rather than reuse
+# eval-set phrasing if you add new examples (checked via a substring scan
+# against the eval set; see docs/findings.md Finding 6).
 few_shot_examples:
-  - input: "start emergency"
+  - input: "kick off the emergency protocol right away"
     output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
 
-  - input: "begin emergency"
+  - input: "please begin our emergency response plan"
     output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
 
-  - input: "trigger emergency situation"
+  - input: "a crisis is unfolding, trigger the emergency protocol"
     output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
 
-  - input: "finish emergency"
+  - input: "we're all clear now, please finish the emergency response"
     output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
 
-  - input: "stop emergency"
+  - input: "the situation is resolved, stop the emergency alert"
     output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
 
-  - input: "cancel emergency mode"
+  - input: "it's safe now, please cancel the emergency status"
     output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
 
-  - input: "halt animation"
+  - input: "please halt the ongoing animation sequence"
     output: '{"action":"stop","entity":"","end_signal":false,"confidence":0.95}'
 
-  - input: "diagnosis hemodialysis"
-    output: '{"action":"diagnosis","entity":"hemodialysis","end_signal":false,"confidence":0.97}'
+  - input: "diagnosis appendectomy"
+    output: '{"action":"diagnosis","entity":"appendectomy","end_signal":false,"confidence":0.97}'
 
-  - input: "set medication hypertension"
-    output: '{"action":"set_medication","entity":"hypertension","end_signal":false,"confidence":0.95}'
+  - input: "set medication migraine"
+    output: '{"action":"set_medication","entity":"migraine","end_signal":false,"confidence":0.95}'
 
-  - input: "show patient history"
-    output: '{"action":"show","entity":"patient history","end_signal":false,"confidence":0.97}'
+  - input: "show the patient's clinical history"
+    output: '{"action":"show","entity":"clinical history","end_signal":false,"confidence":0.97}'
 
   - input: "pull up the discharge letter"
     output: '{"action":"show","entity":"discharge letter","end_signal":false,"confidence":0.96}'
 
-  - input: "get the stuff for patient"
+  - input: "sort out the stuff for the patient"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  # These four are well-formed, professional-sounding sentences about real
+  # (non-medical) topics — not vague filler. They teach that a command can be
+  # grammatically valid and still be UNKNOWN if the subject matter isn't
+  # clinical; the rule alone under-fires without this pattern represented.
+  - input: "display the quarterly financial summary for the board meeting"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "assess the durability of the new packaging design"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "outline the maintenance schedule for the office elevators"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "start the quarterly budget review process"
     output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
 
   - input: "send message patient is stable to Dr Smith"

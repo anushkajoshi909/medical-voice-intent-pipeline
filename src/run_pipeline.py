@@ -7,7 +7,8 @@ Stages implemented:
   3  ANTLR frame validation                  (stage3_antlr_validate.py)
   4  Ontology entity lookup                  (stage4_ontology_lookup.py)
   5  Semantic type validation                (stage5_type_validate.py)
-  [6 to be added as implemented]
+  6  Intent JSON assembly                     (stage6_intent_output.py)
+  7  User confirmation (--text/--interactive) (stage7_confirmation.py)
 
 Data source: data/annotated_commands.json (216 entries = 198 commands + 18 extended)
   Each entry has expected_action for action-level accuracy scoring.
@@ -18,8 +19,11 @@ Usage:
   python src/run_pipeline.py --extended   # extended test cases only (18)
   python src/run_pipeline.py --failures   # baseline grammar-rejected valid commands only
   python src/run_pipeline.py --save       # save results JSON to results/
+  python src/run_pipeline.py --interactive  # type commands, full pipeline + Stage 7
+  python src/run_pipeline.py --voice        # speak commands (Whisper ASR), full pipeline + Stage 7
 """
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -33,6 +37,8 @@ from stage2_llm_extract import extract, get_client, _select_model_interactive, D
 from stage3_antlr_validate import validate as frame_validate
 from stage4_ontology_lookup import lookup as ontology_lookup
 from stage5_type_validate import validate as type_validate
+from stage6_intent_output import assemble as assemble_intent
+from stage7_confirmation import run as confirm_intent
 from domain_loader import load as _load_domain
 
 _ACTION_CONFIG: dict = {}
@@ -99,6 +105,9 @@ def run_command(client, cmd: dict, model: str) -> dict:
         from stage5_type_validate import Stage5Result
         stage5 = Stage5Result("skipped", None, [], "stage 3 rejected or action unknown")
 
+    # Stage 6: assemble final intent JSON from Stages 1-5
+    stage6 = assemble_intent(cmd["text"], stage1, stage2, stage3, stage4, stage5, _action_cfg())
+
     expected = cmd.get("expected_action")
     got      = stage2.action
     # stage2_valid overrides valid for type_mismatch cases:
@@ -161,6 +170,8 @@ def run_command(client, cmd: dict, model: str) -> dict:
         "s5_status":        stage5.status,
         "s5_reason":        stage5.reason,
         "s5_allowed_types": stage5.allowed_types,
+        "s6_status":        stage6.status,
+        "s6_payload":       stage6.payload,
         "binary_correct":   binary_correct,
         "action_correct":   action_correct,
         "llm_error":        stage2.error,
@@ -341,10 +352,113 @@ def _print_stages(r: dict):
         if r['s5_status'] == "type_mismatch":
             print(f"     reason     : {r['s5_reason']}")
             print(f"     allowed    : {r['s5_allowed_types']}")
+    print(f"  ── Stage 6: Intent JSON")
+    print(f"     status     : {r['s6_status']}")
+    print(json.dumps(r['s6_payload'], indent=6))
     exp = r['expected_action']
     correct = "✓ CORRECT" if r['binary_correct'] else "✗ WRONG"
     print(f"  ── Result: {correct}"
           + (f"  (expected {exp!r})" if exp else ""))
+
+
+def _run_confirmation(r: dict):
+    """Run Stage 7 for a single pipeline result and print its outcome."""
+    result = confirm_intent(r['s6_payload'], r['action'])
+    print(f"  ── Stage 7: User Confirmation")
+    if not result.needs_confirmation:
+        print(f"     n/a        : nothing to confirm ({result.final_message})")
+    else:
+        print(f"     outcome    : {result.outcome}")
+        print(f"     {result.final_message}")
+    return result
+
+
+def _interactive_loop(client, model: str):
+    """REPL: type a command, see it run through the full pipeline including
+    Stage 7 confirmation. On REJECTED, you're asked to repeat the command,
+    same as the real device flow (Final_Pipeline_Complete.md Stage 7)."""
+    print("Interactive mode — type a command (or 'exit' to quit).\n")
+    while True:
+        try:
+            text = input("> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not text or text.lower() in ("exit", "quit"):
+            break
+
+        cmd = {"id": "adhoc", "text": text, "valid": None, "expected_action": None,
+               "category": "adhoc", "action_source": "adhoc"}
+        r = run_command(client, cmd, model)
+        _print_stages(r)
+        result = _run_confirmation(r)
+
+        if result.outcome == "rejected" or result.outcome == "unclear":
+            print("\n  Please repeat the command.\n")
+        print()
+
+
+def _record_and_transcribe(asr_client) -> str:
+    """Push-to-talk mic capture (reuses listen.py's recording approach),
+    then transcribes with the same Whisper endpoint used in whisper_asr.py."""
+    import numpy as np
+    import sounddevice as sd
+    import soundfile as sf
+    from whisper_asr import transcribe
+
+    SAMPLE_RATE = 16000
+    out_path = ROOT / "data" / "audio" / "mic_capture.wav"
+
+    input("Press Enter to start recording...")
+    print("Recording... press Enter to stop.")
+    frames = []
+
+    def callback(indata, frame_count, time_info, status):
+        frames.append(indata.copy())
+
+    stream = sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16", callback=callback)
+    with stream:
+        input()
+    print("Stopped recording.")
+
+    audio = np.concatenate(frames, axis=0)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    sf.write(out_path, audio, SAMPLE_RATE)
+
+    print("Transcribing with Whisper...")
+    text = transcribe(asr_client, out_path).strip()
+    print(f"Transcript: {text!r}\n")
+    return text
+
+
+def _voice_loop(client, model: str):
+    """Push-to-talk voice mode: record from the mic, transcribe with Whisper
+    (src/whisper_asr.py), then run the transcript through the same 7-stage
+    pipeline as --interactive, including Stage 7 confirmation. One command
+    end-to-end: say it, the pipeline triggers on the transcript.
+
+    Uses the same OpenAI-compatible client for both Whisper and the LLM —
+    both are SCADS.AI endpoints under one API key."""
+    print("Voice mode — press Enter to record a command (Ctrl+C to quit).\n")
+    while True:
+        try:
+            text = _record_and_transcribe(client)
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not text:
+            print("  (empty transcript — try again)\n")
+            continue
+
+        cmd = {"id": "voice", "text": text, "valid": None, "expected_action": None,
+               "category": "voice", "action_source": "voice"}
+        r = run_command(client, cmd, model)
+        _print_stages(r)
+        result = _run_confirmation(r)
+
+        if result.outcome in ("rejected", "unclear"):
+            print("\n  Please repeat the command.\n")
+        print()
 
 
 def main():
@@ -356,7 +470,23 @@ def main():
     parser.add_argument("--verbose",  action="store_true", help="Print step-by-step stage output per command")
     parser.add_argument("--sample",   type=int,            help="Run N randomly selected commands")
     parser.add_argument("--text",     type=str,            help="Run a single command string and print verbose output")
+    parser.add_argument("--interactive", action="store_true", help="REPL: type commands, run full pipeline incl. Stage 7 confirmation")
+    parser.add_argument("--voice",     action="store_true", help="Push-to-talk: speak a command, Whisper transcribes it, full pipeline incl. Stage 7 runs on the transcript")
     args = parser.parse_args()
+
+    # Interactive mode: REPL loop with Stage 7 confirmation
+    if args.interactive:
+        client = get_client()
+        model  = _select_model_interactive(client) if args.select else DEFAULT_MODEL
+        _interactive_loop(client, model)
+        return
+
+    # Voice mode: mic -> Whisper -> full pipeline incl. Stage 7 confirmation
+    if args.voice:
+        client = get_client()
+        model  = _select_model_interactive(client) if args.select else DEFAULT_MODEL
+        _voice_loop(client, model)
+        return
 
     # Single-command mode: run one text string, print verbose, exit
     if args.text:
@@ -366,6 +496,7 @@ def main():
                "category": "adhoc", "action_source": "adhoc"}
         r = run_command(client, cmd, model)
         _print_stages(r)
+        _run_confirmation(r)
         return
 
     client = get_client()
@@ -414,8 +545,14 @@ def main():
     print_results(results, stats, model)
 
     if args.save:
+        def _json_default(o):
+            if dataclasses.is_dataclass(o) and not isinstance(o, type):
+                return dataclasses.asdict(o)
+            return str(o)
+
         out = ROOT / "results" / f"pipeline_results_{label}.json"
-        out.write_text(json.dumps({"model": model, "stats": stats, "results": results}, indent=2))
+        out.write_text(json.dumps({"model": model, "stats": stats, "results": results},
+                                   indent=2, default=_json_default))
         print(f"Saved → {out}")
 
 

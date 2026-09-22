@@ -44,9 +44,16 @@ Speech input (ASR / typed)
     │  Checks: does this action allow this semantic type?
     │  Catches "diagnosis hemodialysis" → procedure ≠ disease
     │
-    ▼  Stage 6 — Intent JSON Output     [pending]
-       Assembles final structured payload: action, canonical entity,
-       semantic type, ontology ID, urgency flag from Stage 1
+    ▼  Stage 6 — Intent JSON Output     [implemented]
+    │  Assembles final structured payload: action, canonical entity,
+    │  semantic type, ontology ID, urgency flag from Stage 1
+    │  status ∈ {accepted, accepted_partial, needs_clarification, rejected}
+    │
+    ▼  Stage 7 — User Confirmation      [implemented]
+       Glasses display a human-friendly summary; user says
+       "ok glasses, correct/wrong". Per-action confirmation_timeout_sec
+       in domain_config.yaml: null=always block, N=auto-confirm after
+       N idle seconds, 0=confirm instantly (e.g. emergency).
 ```
 
 ---
@@ -135,7 +142,13 @@ python src/run_pipeline.py --select
 ```bash
 python src/run_pipeline.py --text "ok glasses set medication aspirin 100 milligrams and clopidogrel 75 milligrams finish medication"
 ```
-Prints step-by-step output for every stage without running the full evaluation set. Useful for testing a specific command or debugging.
+Prints step-by-step output for every stage without running the full evaluation set. Also runs Stage 7: the glasses-display confirmation prompt, which either blocks for your terminal input ("ok glasses, correct"/"ok glasses, wrong") or auto-confirms after a per-action timeout, depending on that action's `confirmation_timeout_sec` in `domain_config.yaml`.
+
+### Interactive REPL (full pipeline + Stage 7, repeat-on-reject)
+```bash
+python src/run_pipeline.py --interactive
+```
+Type a command, see it run through all 7 stages. On `REJECTED` you're asked to repeat the command — the same confirm/reject/repeat loop described in `Final_Pipeline_Complete.md`'s Stage 7 worked examples. Type `exit` to quit.
 
 ### Save results to `results/`
 ```bash
@@ -154,6 +167,8 @@ python src/run_pipeline.py --save
 │   │                               #   rules loaded from domain_config.yaml at runtime
 │   ├── stage4_ontology_lookup.py   # Ontology lookup: Registry + Strategy patterns
 │   ├── stage5_type_validate.py     # Semantic type validation against domain_config rules
+│   ├── stage6_intent_output.py     # Assembles final intent JSON from Stages 1-5 results
+│   ├── stage7_confirmation.py      # User confirmation dialogue (--text/--interactive)
 │   ├── domain_loader.py            # Wires grammar + config + prompt at startup
 │   ├── grammar/                    # Generated Python parser (from .g4 files, committed)
 │   │   ├── MedicalSmartGlassesLexer.py
