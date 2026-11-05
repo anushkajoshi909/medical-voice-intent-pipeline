@@ -30,7 +30,7 @@
     "git_commit": "551971a0d3075363f277d9b54229100503e8ed5f",
     "git_dirty": true,
     "dataset": "data/annotated_commands.json, 243 commands (130 valid, 113 invalid)",
-    "gold_labels": "evaluation/dataset/gold_labels.json (entity, end_signal) and entity_resolution_gold.csv (E3)",
+    "gold_labels": "data/labels/gold_labels.json (entity, end_signal) and entity_resolution_gold.csv (E3)",
     "metrics": {
       "valid_recall_pct": "valid commands accepted by the pipeline, % of 130",
       "valid_clarification_rate_pct": "valid commands sent to clarification (entity could not be grounded), % of 130",

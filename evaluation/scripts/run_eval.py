@@ -149,7 +149,7 @@ def load_dataset(paths, limit, sample=None):
     items = []
     for p in paths:
         items += json.loads(Path(p).read_text())
-    gold_path = ROOT / "evaluation" / "dataset" / "gold_labels.json"
+    gold_path = ROOT / "data" / "labels" / "gold_labels.json"
     gold = json.loads(gold_path.read_text()) if gold_path.exists() else {}
     for it in items:
         it["gold"] = gold.get(it["id"], {})

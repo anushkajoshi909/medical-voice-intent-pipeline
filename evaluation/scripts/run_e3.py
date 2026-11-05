@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E3 - entity resolution and type checking (Stages 4 and 5), no LLM involved.
 
-Reads evaluation/dataset/entity_resolution_gold.csv, sends every (action, entity) row through
+Reads data/labels/entity_resolution_gold.csv, sends every (action, entity) row through
 Stage 4 (ontology lookup) and Stage 5 (type check) of the pipeline and compares the result with the
 expected status / type / concept of the row. Writes an append-only run folder
 
@@ -42,7 +42,7 @@ logging.disable(logging.CRITICAL)
 import stage4_ontology_lookup as s4  # noqa: E402
 import stage5_type_validate as s5    # noqa: E402
 
-SET = ROOT / "evaluation" / "dataset" / "entity_resolution_gold.csv"
+SET = ROOT / "data" / "labels" / "entity_resolution_gold.csv"
 
 
 def n(s):

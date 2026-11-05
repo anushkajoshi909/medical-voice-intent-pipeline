@@ -5,7 +5,7 @@ A batch = all complete run folders in evaluation/runs/ with the given date and d
 (default: today, tags final500 and final4000), plus one baseline folder and one E3 entity-resolution folder.
 The script only READS run folders; it never calls an LLM or a pipeline stage.
 
-Gold labels (evaluation/dataset/gold_labels.json) are joined on the command id when the report is built, so
+Gold labels (data/labels/gold_labels.json) are joined on the command id when the report is built, so
 entity accuracy and end-signal metrics can also be computed for runs that were made before the labels existed.
 
 Files written (evaluation/reports/final/)
@@ -57,7 +57,7 @@ def pct(a, b):
     return round(100 * a / b, 1) if b else None
 
 
-GOLD_FILE = ROOT / "evaluation" / "dataset" / "gold_labels.json"
+GOLD_FILE = ROOT / "data" / "labels" / "gold_labels.json"
 
 
 def load_gold():
@@ -108,7 +108,7 @@ def per_command(d, meta, label, gold):
 COLUMN_NOTES = [
     "per_command_<date>.csv, written by evaluation/scripts/build_final_report.py from results.jsonl of the run folders.",
     "One row = one command in one repetition of one system. system = model name (+ __maxtok4000 for the 4000-token budget).",
-    "pred_* = what Stage 2 returned; gold_* = human-checked label (evaluation/dataset/gold_labels.json); empty = no gold label.",
+    "pred_* = what Stage 2 returned; gold_* = human-checked label (data/labels/gold_labels.json); empty = no gold label.",
     "entity_ok compares entity text ignoring case and punctuation; only valid commands with a gold entity. end_signal_ok likewise.",
     "outcome = ACCEPT / CLARIFY / REJECT of the full pipeline. *_s = seconds spent in that stage; end_to_end_s = whole command.",
     "stage2_s is the LLM call (empty when no LLM call was made, e.g. input rejected in Stage 1).",
@@ -207,7 +207,7 @@ def main():
         "date": args.date, "dataset_tags": args.tags, "run_folders": sorted(runs_used),
         "git_commit": sample.get("git_commit"), "git_dirty": sample.get("git_dirty"),
         "dataset": "data/annotated_commands.json, 243 commands (130 valid, 113 invalid)",
-        "gold_labels": "evaluation/dataset/gold_labels.json (entity, end_signal) and entity_resolution_gold.csv (E3)",
+        "gold_labels": "data/labels/gold_labels.json (entity, end_signal) and entity_resolution_gold.csv (E3)",
         "metrics": {
             "valid_recall_pct": "valid commands accepted by the pipeline, % of 130",
             "valid_clarification_rate_pct": "valid commands sent to clarification (entity could not be grounded), % of 130",

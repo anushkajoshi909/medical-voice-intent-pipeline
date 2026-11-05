@@ -11,13 +11,15 @@ This folder holds everything for the evaluation of the pipeline: the scripts, th
 
 ## 2. Dataset and labels
 
+All dataset files are in `data/`: the commands and their sources in `data/`, and the labels in `data/labels/`.
+
 | File | Content |
 |---|---|
 | `data/annotated_commands.json` | the 243 commands with `valid`, `expected_action`, and `category` |
 | `data/commands_200.json` | the original sentences of Ludyga |
-| `evaluation/dataset/gold_labels.json` | the expected **entity** of 92 valid commands and the expected **end signal** of the 20 dictations, by command id |
-| `evaluation/dataset/gold_labels_worksheet.csv` | the worksheet from which the gold labels were made |
-| `evaluation/dataset/entity_resolution_gold.csv` | the set **E3**: 98 pairs of an action and an entity with the expected status, type, and concept |
+| `data/labels/gold_labels.json` | the expected **entity** of 92 valid commands and the expected **end signal** of the 20 dictations, by command id |
+| `data/labels/gold_labels_worksheet.csv` | the worksheet from which the gold labels were made |
+| `data/labels/entity_resolution_gold.csv` | the set **E3**: 98 pairs of an action and an entity with the expected status, type, and concept |
 
 **Commands:** 198 are the sentences of Ludyga (98 valid, 100 invalid). 45 were added (32 valid, 13 invalid): synonyms (18), abbreviations (10), entity lookup (4), other out-of-domain requests (5), entities of the wrong type (6), and abbreviations with entities of the wrong type (2).
 
@@ -30,7 +32,6 @@ This folder holds everything for the evaluation of the pipeline: the scripts, th
 ```
 evaluation/
   evaluation.md                  this file
-  dataset/                       the labels (section 2)
   scripts/                       the scripts (section 5)
   runs/<date>_<system>_<tag>_r<k>/   one folder for each run (never overwritten)
       results.jsonl              one line for each command: the labels, the outcome, the output of every stage,

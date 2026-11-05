@@ -178,10 +178,14 @@ python src/run_pipeline.py --save
 │   ├── build_annotated_dataset.py  # Rebuilds data/annotated_commands.json
 │   └── run_baseline.py             # Ludyga baseline evaluation
 │
-├── data/
+├── data/                           # The dataset: commands and labels
 │   ├── commands_200.json           # 200 base evaluation commands
 │   ├── extended_test_cases.json    # Extended commands (abbreviations, type mismatches)
-│   └── annotated_commands.json     # Combined + annotated (auto-generated)
+│   ├── annotated_commands.json     # Combined + annotated (auto-generated), 243 commands
+│   └── labels/                     # Labels for the evaluation
+│       ├── gold_labels.json            # Expected entity and end signal (by command id)
+│       ├── gold_labels_worksheet.csv   # Worksheet from which the gold labels were made
+│       └── entity_resolution_gold.csv  # Entity-resolution set E3 (98 pairs)
 │
 ├── docs/
 │   ├── uml_diagrams.md            # Current architecture diagrams (UML component, sequence and
@@ -193,8 +197,11 @@ python src/run_pipeline.py --save
 │   ├── vital_signs.json            # 43 vital sign + lab result terms (curated)
 │   └── ONTOLOGY_SOURCES.md        # Rationale for every ontology choice
 │
-├── results/
-│   └── pipeline_results_full.json  # Full evaluation output (243 commands, all stages)
+├── evaluation/                     # The evaluation (see evaluation/evaluation.md)
+│   ├── evaluation.md               # Dataset, metrics, folders, how to run
+│   ├── scripts/                    # run_all.py, run_eval.py, run_e3.py, build_final_report.py, ...
+│   ├── runs/                       # One folder for each run (results.jsonl, meta.json, summary.json)
+│   └── reports/                    # final/ (reports of each run), tables/ (overview and summary)
 │
 ├── MedicalSmartGlassesLexer.g4    # ANTLR lexer — grammar authority for structure
 ├── MedicalSmartGlassesParser.g4   # ANTLR parser — command type hierarchy (u21 diagnosis,

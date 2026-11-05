@@ -163,7 +163,7 @@ out += ["## Where to find more", "",
         "- `evaluation/reports/final/` has the full reports of each run (`all_results_*.json` with all metrics, `main_results_*.md`, `per_command_*.csv` with one row for each command).",
         "- `evaluation/reports/tables/overview_*.csv` has one row for each run folder.",
         "- `evaluation/runs/` has the run folders with the result of every command.",
-        "- `evaluation/dataset/` has the labels, and `evaluation/evaluation.md` describes the dataset, the metrics, and how to run the evaluation."]
+        "- `data/labels/` has the labels, and `evaluation/evaluation.md` describes the dataset, the metrics, and how to run the evaluation."]
 dest = ROOT / "reports" / "tables" / "results_summary.md"
 dest.write_text("\n".join(out) + "\n")
 print(f"-> {dest}")

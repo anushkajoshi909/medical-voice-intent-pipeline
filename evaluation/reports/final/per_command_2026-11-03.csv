@@ -1,6 +1,6 @@
 # per_command_<date>.csv, written by evaluation/scripts/build_final_report.py from results.jsonl of the run folders.
 # One row = one command in one repetition of one system. system = model name (+ __maxtok4000 for the 4000-token budget).
-# pred_* = what Stage 2 returned; gold_* = human-checked label (evaluation/dataset/gold_labels.json); empty = no gold label.
+# pred_* = what Stage 2 returned; gold_* = human-checked label (data/labels/gold_labels.json); empty = no gold label.
 # entity_ok compares entity text ignoring case and punctuation; only valid commands with a gold entity. end_signal_ok likewise.
 # outcome = ACCEPT / CLARIFY / REJECT of the full pipeline. *_s = seconds spent in that stage; end_to_end_s = whole command.
 # stage2_s is the LLM call (empty when no LLM call was made, e.g. input rejected in Stage 1).

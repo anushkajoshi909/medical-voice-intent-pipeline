@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the entity-resolution gold set (evaluation/dataset/entity_resolution_gold.csv) against the
+"""Check the entity-resolution gold set (data/labels/entity_resolution_gold.csv) against the
 raw ontology files. It does NOT import or run any pipeline stage, so the gold stays independent of
 the system under test.
 
@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 ONT = ROOT / "ontologies"
-SET = ROOT / "evaluation" / "dataset" / "entity_resolution_gold.csv"
+SET = ROOT / "data" / "labels" / "entity_resolution_gold.csv"
 ACTION_SOURCES = {"diagnosis": ["DOID", "HP"], "start": ["NCIt", "RXCUI"], "stop": ["NCIt", "RXCUI"],
                   "set_medication": ["RXCUI"], "show": ["vital_signs"]}
 

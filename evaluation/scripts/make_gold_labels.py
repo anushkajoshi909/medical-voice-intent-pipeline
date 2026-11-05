@@ -4,13 +4,13 @@
 Gold label = the correct answer for a command, written by a human (not by the system).
 The evaluation compares the system's output against it.
 
-  draft  Write an empty evaluation/dataset/gold_labels_worksheet.csv (id, text, expected_action, entity,
+  draft  Write an empty data/labels/gold_labels_worksheet.csv (id, text, expected_action, entity,
          end_signal) for the valid commands that carry an entity, to be filled in by a human.
          Commands whose action has no entity (emergency, turn on/off, continue) are left out.
          Items that already carry expected_entity / expected_entity_expanded in the dataset are
          pre-filled. No model output is used, so the labels stay independent of the system under test.
          Refuses to overwrite an existing worksheet.
-  build  Read the worksheet and write evaluation/dataset/gold_labels.json from the filled columns
+  build  Read the worksheet and write data/labels/gold_labels.json from the filled columns
          only (run_eval.py joins that file on the item id).
 
 Worksheet columns
@@ -35,7 +35,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 DATA = ROOT / "data" / "annotated_commands.json"
-OUT_DIR = ROOT / "evaluation" / "dataset"
+OUT_DIR = ROOT / "data" / "labels"
 WORKSHEET = OUT_DIR / "gold_labels_worksheet.csv"
 GOLD = OUT_DIR / "gold_labels.json"
 DICTATION = {"set_note", "send_message"}
