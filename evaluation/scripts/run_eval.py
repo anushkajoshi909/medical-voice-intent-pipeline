@@ -158,7 +158,7 @@ def load_dataset(paths, limit, sample=None):
     return items[:limit] if limit else items
 
 
-# ── scoring (counting rules: evaluation/evaluation.md §5) ────────────────────
+# ── scoring (counting rules: evaluation/evaluation.md section 4) ────────────────────
 
 def first_rejecting_stage(r):
     """First stage that did not let the command through ('none' if accepted)."""
@@ -465,7 +465,7 @@ def main():
         "environment": environment(), "endpoint": ENDPOINT,
         "fingerprints": fingerprints(args.dataset, args.hash_ontologies),
         "decoding": {"temperature": 0, "max_tokens": args.max_tokens, "response_format": "json_object"},
-        "counting_rules": "evaluation/evaluation.md section 5",
+        "counting_rules": "evaluation/evaluation.md section 4",
     }
 
     overview = []

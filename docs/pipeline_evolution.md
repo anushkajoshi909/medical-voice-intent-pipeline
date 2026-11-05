@@ -29,14 +29,19 @@ The enhanced pipeline keeps ANTLR for the structure and splits the work of the o
 
 ![The seven stages and the three possible outcomes](figures/pipeline_architecture.png)
 
-## What Moved Where
+## Comparison: Ludyga's Baseline and This Thesis
 
-- **Moved to Stage 2 (language model):** the identification of the action, synonyms, filler words, and abbreviations of the wording. A grammar cannot generalise over these.
-- **Stayed in Stage 3 (ANTLR):** the check of the structure. Does a medication have a drug, a dose, and a unit? Does a message have a recipient? A formal grammar expresses this exactly.
-- **New (Stages 4 and 5):** the grounding of the entity and the type check. The language model extracts "hemodialysis"; Stages 4 and 5 find that hemodialysis is a procedure and that a diagnosis expects a disease or a symptom.
-- **New (Stage 7):** the confirmation.
-
-`domain_config.yaml` is new. It drives the prompt, the lookup, and the confirmation, so that no action names are fixed in the code.
+| Aspect | Ludyga's baseline | This thesis |
+|---|---|---|
+| Understanding the wording | Closed vocabulary: only the wording that is written in the grammar is understood. Synonyms and abbreviations are rejected. | A language model reads free wording and returns the action and the entity (Stage 2). |
+| Structure check | The grammar parses the text. Identifying the action and checking the structure happen in one step. | The grammar only checks the structure, on a command that is rebuilt from the action and the entity (Stage 3). The check is deterministic. |
+| Entity | Part of the text. It is not checked against any knowledge source. | Looked up in DOID, HPO, the NCI Thesaurus, or RxNorm, with identifier, source, and type (Stage 4). |
+| Type check | None. A well-formed command with a wrong entity is accepted. | The type of the entity is compared with the types that the action allows (Stage 5). A mismatch leads to a clarification request. |
+| Commands outside the domain | Rejected, because they do not match the grammar. | The language model decides whether a command belongs to the domain. |
+| Result | A JSON object with the type and the content, or an empty result without a reason. | A structured intent with a reason and an explanation for each stage (Stage 6). |
+| Confirmation | None. | The interpretation is shown to the user before it is acted on (Stage 7). |
+| Definition of the domain | The grammar and the code that builds the JSON. | A configuration file, the grammar, the ontology files, and the abbreviation list. The stages are the same for every domain. |
+| Response time | 195 ms on average (Ludyga); about 0.1 ms in our measurement. | A median of 0.4 to 1.6 s. The call to the language model takes almost all of it. |
 
 ## Result
 

@@ -1,7 +1,0 @@
-run,system,rep,n,valid_recall_pct,valid_clarification_rate_pct,false_rejection_rate_pct,false_acceptance_rate_pct,precision_pct,f1_pct,accuracy_strict_pct,accuracy_lenient_pct,action_accuracy_pct,llm_only_far_pct,llm_only_recall_pct,llm_error_rate_pct,latency_median_s,latency_p95_s,latency_mean_s
-2026-11-05_openai_gpt-oss-120b__maxtok4000_final4000_r1,openai/gpt-oss-120b__maxtok4000,1,243,93.1,2.3,4.6,2.7,97.6,95.3,95.1,96.3,94.6,8.0,95.4,0.0,1.5324,5.4054,4.5165
-2026-11-05_openai_gpt-oss-120b__maxtok4000_final4000_r2,openai/gpt-oss-120b__maxtok4000,2,243,92.3,2.3,5.4,3.5,96.8,94.5,94.2,95.5,94.6,8.8,94.6,0.0,1.5367,6.9191,4.8459
-2026-11-05_openai_gpt-oss-120b__maxtok4000_final4000_r3,openai/gpt-oss-120b__maxtok4000,3,243,90.0,3.1,6.9,2.7,97.5,93.6,93.4,95.1,92.3,8.0,93.1,0.0,1.5364,4.5697,4.7365
-2026-11-05_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final4000_r1,deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000,1,243,89.2,4.6,6.2,1.8,98.3,93.5,93.4,95.9,93.8,7.1,93.8,0.4,1.0814,3.7477,1.5749
-2026-11-05_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final4000_r2,deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000,2,243,88.5,4.6,6.9,1.8,98.3,93.1,93.0,95.5,91.5,7.1,93.1,0.0,1.0884,3.9844,1.535
-2026-11-05_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final4000_r3,deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000,3,243,88.5,5.4,6.2,1.8,98.3,93.1,93.0,95.9,92.3,7.1,93.8,0.0,1.1002,3.599,1.4137

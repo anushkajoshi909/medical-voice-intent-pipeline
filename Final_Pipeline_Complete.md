@@ -19,6 +19,12 @@ The pipeline is designed so that **adding a new action requires editing exactly 
    - `passthrough_type`: semantic type assigned without lookup (for free-text or patient-identifier slots)
    - `passthrough_fallback_type`: for show only; entity not matched in vital signs gets this type (e.g. `ehr_record`)
    - `entity_slot: false`: structural flag for actions where grammar forbids an entity (pipeline strips any LLM extraction before Stage 3)
+   - `fallback_extractor`: extraction strategy for the fallback index (`medication` strips dose and unit)
+   - `stage3_template`: the text that Stage 3 builds for the grammar, with `{trigger}`, `{entity}`, `{recipient}` (required for every action)
+   - `stage3_entity_view`: which copy of the entity the grammar check sees (`medication_core` keeps drug, dose, and unit and drops frequency words)
+   - `entity_optional`: `true` if the action is valid without an entity (a bare "stop")
+   - `confirmation_timeout_sec`: Stage 7 time limit (`null` waits for an answer, `0` confirms at once)
+   - `structure_hint`: the sentence for the message when the structure is incomplete (set_medication, send_message)
 
    The same file also contains `ontology_sources`, which declares which data files feed each Stage 4 index, along with format type, file path, filter parameters, and fuzzy cutoff; no file paths or filter values are hardcoded in Stage 4.
 
@@ -64,14 +70,16 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  STAGE 1: Preprocessing                    [implemented]    │
+│  • Reject input that is clearly not speech (braces, brackets)│
+│  • Strip punctuation; hyphens become spaces                 │
+│  • Expand abbreviations (abbreviations.json, 183 entries)   │
 │  • Lowercase everything                                     │
-│  • Strip punctuation; hyphens replaced with spaces           │
-│    ("non-invasive" -> "non invasive"; consistent with Stage 4)│
-│  • Normalise trigger: "ok" → "okay", detect "okay glasses"  │
-│  • Remove trigger from string, keep remainder               │
-│  • Scan for urgency flags (stat, urgent, immediately)       │
-│    → store separately, remove from string                   │
-│  Result: clean command text, urgency metadata               │
+│  • Find the trigger (ok / okay / okie + glasses); remove it │
+│    and all text before it                                   │
+│  • Scan for urgency words (stat, urgent, urgently,          │
+│    immediately) → store separately, remove from the text    │
+│  Result: clean command text, urgency flags, expanded        │
+│          abbreviations                                      │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
@@ -82,14 +90,14 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │          + action list from domain_config (short form)      │
 │          + llm_system_prompt.txt (loaded at startup)        │
 │                                                             │
-│  Output: CONSTRAINED JSON                                   │
+│  Output: JSON (server JSON mode, checked in code)           │
 │  {                                                          │
 │    "action":     one valid action name or "UNKNOWN",        │
 │    "entity":     content string (entity / note text /       │
 │                  patient name), WITHOUT end signal words,   │
 │    "end_signal": true if user signalled end of dictation,   │
-│    "confidence": 0.0–1.0                                    │
-│  }                                                          │
+│    "confidence": 0.0–1.0   (shown, not used to decide)      │
+│  }   send_message also returns "recipient"                  │
 │                                                             │
 │  LLM handles:                                               │
 │  ✓ Action synonyms (illustrate → show, commence → start)   │
@@ -100,7 +108,8 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │    from entity where irrelevant)                            │
 │                                                             │
 │  Constraint: action MUST be from domain_config list         │
-│  If cannot map → action = "UNKNOWN" → reject immediately   │
+│  If cannot map, or the call fails, or the answer is not    │
+│  valid JSON → action = "UNKNOWN" → reject immediately       │
 └─────────────────────────────────────────────────────────────┘
     │
     │ action = "UNKNOWN" ──────────────────────→ UNRECOGNIZED_COMMAND
@@ -109,22 +118,28 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 ┌─────────────────────────────────────────────────────────────┐
 │  STAGE 3: ANTLR Frame Validation           [implemented]    │
 │                                                             │
-│  Reconstructs canonical string from LLM {action, entity}:  │
+│  Rebuilds a command of fixed form from {action, entity}, with│
+│  the template of the action (stage3_template in the config):│
 │    "ok glasses set medication paracetamol 100 mg            │
 │     finish medication"                                      │
+│    "ok glasses start treatment dialysis"  (start)           │
+│  The user never says 'treatment'; the word exists only in the│
+│  rebuilt command and gives the rule a fixed keyword.        │
 │                                                             │
-│  Feeds to real ANTLR4 Python runtime (generated from .g4)   │
+│  Feeds it to the real ANTLR4 Python runtime (generated from │
+│  the .g4 files)                                             │
 │                                                             │
-│  Grammar catches structural errors the LLM cannot:         │
+│  Grammar catches structural errors the LLM cannot:          │
 │  • set_medication: entity must match medicine INT unit      │
-│    → "set medication paracetamol" → PARSE_ERROR (no dose)  │
+│    → "set medication paracetamol" → PARSE_ERROR (no dose)   │
+│  • send_message: a recipient is required                    │
 │  • emergency: entity must be empty                          │
 │  • show / diagnosis: entity must be non-empty               │
 │                                                             │
 │  Output: valid bool + command_type (for backend routing)    │
-│    command_type ∈ {request_data, set_medication, diagnosis, │
-│                    glasses_command, protocol, stop_cmd,     │
-│                    request_patient, message}                │
+│    command_type ∈ {glasses_command, request_data, protocol, │
+│      treatment, stop_cmd, set_medication, request_patient,  │
+│      message, diagnosis}                                    │
 └─────────────────────────────────────────────────────────────┘
     │
     │ Frame invalid ───────────────────────────→ INVALID_STRUCTURE
@@ -216,7 +231,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  Glasses display a human-friendly interpretation, built     │
 │  from the Stage 6 payload (accepted slots or the             │
 │  clarification_message):                                    │
-│    "Diagnosis: Hemolysis. Correct?"                         │
+│    "Diagnosis: Pneumonia. Correct?"                         │
 │                                                             │
 │  Design decision: rejected + invalid_structure's             │
 │  clarification_message (above) does NOT go through this      │
@@ -231,7 +246,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  mode either way.                                            │
 │                                                             │
 │  User responds:                                             │
-│    "ok glasses, correct" → CONFIRMED → command executed     │
+│  "ok glasses, correct" → CONFIRMED (not carried out)        │
 │    "ok glasses, wrong"   → REJECTED  → user prompted to     │
 │                            repeat the command               │
 │    [timeout after N sec] → auto-confirm for low-risk        │
@@ -244,7 +259,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │                            diagnosis/set_medication)          │
 │                                                             │
 │  Creates a dialogue feedback loop. Directly addresses the   │
-│  hemodialysis/hemolysis use case: even if Stage 5 issues    │
+│  hemodialysis use case: even if Stage 5 issues              │
 │  a clarification, Stage 7 gives the user a final            │
 │  yes/no checkpoint before any action is executed.           │
 │                                                             │
@@ -273,6 +288,12 @@ The **single source of truth** for the semantic layer and Stage 4 ontology routi
 - `passthrough_type`: for actions with `ontology_index: null` that carry meaningful entities; assigned as `semantic_type` without lookup.
 - `passthrough_fallback_type`: for show only; entity not matched in vital signs gets this type (`ehr_record`).
 - `entity_slot: false`: structural flag for actions where grammar forbids an entity; pipeline strips any LLM extraction before Stage 3.
+- `fallback_extractor`: extraction strategy for the fallback index (`medication` strips dose and unit)
+- `stage3_template`: the text that Stage 3 builds for the grammar, with `{trigger}`, `{entity}`, `{recipient}` (required for every action)
+- `stage3_entity_view`: which copy of the entity the grammar check sees (`medication_core` keeps drug, dose, and unit and drops frequency words)
+- `entity_optional`: `true` if the action is valid without an entity (a bare "stop")
+- `confirmation_timeout_sec`: Stage 7 time limit (`null` waits for an answer, `0` confirms at once)
+- `structure_hint`: the sentence for the message when the structure is incomplete (set_medication, send_message)
 
 The same file also contains `ontology_sources`, which declares which data files feed each Stage 4 index, their format types, filter parameters, and fuzzy cutoffs. No separate `ontology_sources.yaml` file exists.
 
@@ -282,7 +303,7 @@ Full content: [`domain_config.yaml`](domain_config.yaml)
 
 ### `llm_system_prompt.txt`
 
-A **domain-agnostic template** that contains no action names, no healthcare examples, no healthcare rules. It has `{ACTION_LIST}`, `{DOMAIN_RULES}`, and `{FEW_SHOT_EXAMPLES}` placeholders that `src/domain_loader.py` fills from `domain_config.yaml` at startup. Changing the domain means changing `domain_config.yaml` only; the prompt template itself is untouched.
+A **domain-agnostic template** that contains no action names, no healthcare examples, no healthcare rules. It has four placeholders, `{DOMAIN_DESCRIPTION}`, `{ACTION_LIST}`, `{DOMAIN_RULES}`, and `{FEW_SHOT_EXAMPLES}`, that `src/domain_loader.py` fills from `domain_config.yaml` at startup. Changing the domain means changing `domain_config.yaml` only; the prompt template itself is untouched.
 
 Full content: [`llm_system_prompt.txt`](llm_system_prompt.txt)
 
@@ -309,7 +330,7 @@ Full content: [`abbreviations.json`](abbreviations.json)
 Extended from Ludyga's baseline grammar. Full content in the repo root files. Key design points:
 
 - **Lexer**: individual keyword tokens (`START`, `SHOW`, `DIAGNOSIS`, etc.); no compound action tokens. Compound action names (e.g. `change_patient`) are combinations of tokens, resolved by the parser rules. `WORD: [a-zA-Z]+` (Ludyga-identical); hyphens handled by Stage 1 preprocessing.
-- **Parser**: preserves Ludyga's command type hierarchy. Adds `diagnosis` and `treatment` as new types. `stop_cmd` accepts optional entity (for "stop hemodialysis"). `set_medication` retains the `medicine INT unit` enforcement from Ludyga.
+- **Parser**: preserves Ludyga's command type hierarchy. Adds `diagnosis` and `treatment` as new types. `treatment` has a fixed keyword (`START TREATMENT any_text`), so it cannot swallow the other commands that begin with `start`; Stage 3 rebuilds `start treatment <entity>` from the template, and the user never says "treatment". Diagnosis and stop accept any words (`any_text`). `stop_cmd` accepts optional entity (for "stop hemodialysis"). `set_medication` retains the `medicine INT unit` enforcement from Ludyga.
 
 The Python parser (`src/grammar/`) is generated from these files using:
 ```bash
@@ -392,8 +413,7 @@ OBO files (DOID, HPO) do **not** contain a semantic type field. The type is assi
 
 ```
 Index "diagnosis":
-  "hemolysis"        → {semantic_type: "disease",    concept_id: "DOID:3680",   source: "doid"}
-  "acute hemolysis"  → {semantic_type: "disease",    concept_id: "DOID:3680",   source: "doid"}  # synonym
+  "pneumonia"        → {semantic_type: "disease",    concept_id: "DOID:552",    source: "doid"}
   "hyperthyroidism"  → {semantic_type: "symptom",    concept_id: "HP:0000853",  source: "hp"}
 
 Index "procedure":
@@ -829,280 +849,155 @@ clarification from.
 
 ---
 
-## Supervisor's Test Cases: Hemolysis vs Hemodialysis
+## Supervisor's Test Cases: Hemodialysis
 
-These are the two use cases directly from the supervisor's email. This is the most important demonstration.
+These are the two use cases of the supervisor. The outputs below are real: they come from a stored run of the final evaluation (DeepSeek-V4.1-Flash, first run), command by command, stage by stage. The same two commands are the worked example of the thesis (Section 5.7).
 
 ---
 
-### Supervisor Use Case 1: Doctor says "start hemodialysis"
+### Use Case 1: Doctor says "start HD" (accepted)
 
-Input: `"ok glasses start hemodialysis"`
+The grammar of Ludyga rejects this command, because "HD" is not in the grammar. The pipeline expands the abbreviation, finds the procedure, and accepts.
 
-The original grammar returned "undefined" because hemodialysis was not in the grammar's treatment tokens. Our pipeline:
-
-**Stage 1: Preprocessing**
 ```
-Result: "start hemodialysis"
-```
+Input:   start HD
 
-**Stage 2: LLM Extraction**
-```
-{
-  "action":     "start",
-  "entity":     "hemodialysis",
-  "end_signal": false,
-  "confidence": 0.99
-}
+Stage 1: start hemodialysis
+         (abbreviation expanded: HD -> hemodialysis)
+Stage 2: {"action": "start", "entity": "hemodialysis",
+          "end_signal": false, "confidence": 0.97}
+Stage 3: ok glasses start treatment hemodialysis -> valid (command_type treatment)
+Stage 4: Hemodialysis, NCIt:C15248, procedure, exact match, score 1.0
+Stage 5: accepted ('procedure' is allowed for 'start')
+Stage 6: intent START_PROCEDURE (full output below)
+Stage 7: "Start: Hemodialysis. Correct?"   -> "ok glasses, correct" -> confirmed
 ```
 
-**Stage 4: Ontology Lookup**
-```
-raw_entity = "hemodialysis"
-allowed_slot_types for "start" = [treatment, procedure, medication, shared_session, emergency]
-
-Step 4a: Exact match in NCIt (Thesaurus.txt):
-  "hemodialysis" → NCIt:C15248, "Hemodialysis", semantic_type = "procedure"
-  → maps to our slot type: "treatment"
-
-matched_label  = "Hemodialysis"
-concept_id     = "NCIt:C15248"
-semantic_type  = "treatment"
-match_type     = "exact"
-confidence     = 1.0
-```
-
-**Stage 5: Semantic Validation**
-```
-start + treatment → allowed ✓
-```
-
-**Stage 6: Output**
+Stage 6 output:
 ```json
 {
   "status": "accepted",
-  "intent": "START_TREATMENT",
+  "intent": "START_PROCEDURE",
   "action": "start",
+  "original_command": "start HD",
+  "urgency": [],
   "slots": {
-    "treatment": {
-      "raw_entity":    "hemodialysis",
-      "matched_label": "Hemodialysis",
-      "concept_id":    "NCIt:C15248",
-      "semantic_type": "treatment",
-      "match_type":    "exact",
-      "confidence":    1.0
+    "procedure": {
+      "raw_entity": "hemodialysis",
+      "canonical": "Hemodialysis",
+      "semantic_type": "procedure",
+      "ontology_id": "NCIt:C15248",
+      "match_method": "exact",
+      "score": 1.0,
+      "source": "ncit"
     }
   },
   "explanation": {
-    "llm_extraction":      "Action 'start', entity 'hemodialysis' extracted with high confidence.",
-    "grammar_validation":  "Frame valid. command_type=treatment.",
-    "ontology_evidence":   "'Hemodialysis' matched NCIt concept C15248 as a clinical procedure.",
-    "semantic_validation": "Action 'start' permits slot type 'treatment'. Accepted."
+    "llm_extraction": "Action 'start' extracted with confidence 0.97. Abbreviations expanded: {'HD': 'hemodialysis'}.",
+    "grammar_validation": "Frame valid. command_type=treatment.",
+    "ontology_evidence": "'hemodialysis' matched ncit concept NCIt:C15248 via exact at score 1.00.",
+    "semantic_validation": "'procedure' \u2208 allowed_slot_types for 'start'"
   }
 }
 ```
 
-**Stage 7: User Confirmation**
-```
-Glasses display: "Start treatment: Hemodialysis (NCIt:C15248). Correct?"
-
-User says: "ok glasses, correct"
-→ CONFIRMED
-→ Nurses informed; hemodialysis treatment initiated
-```
-
-**Result: CORRECTLY ACCEPTED → nurses are informed of the treatment.**
-Supervisor's baseline returned "undefined". Our pipeline returns a fully resolved intent.
-
 ---
 
-### Supervisor Use Case 2: Doctor says "diagnosis hemolysis" (ASR returns "hemodialysis")
+### Use Case 2: "diagnosis hemodialysis" (needs clarification)
 
-This is the critical safety test. The doctor diagnosed hemolysis (a blood disorder). The ASR transcribed it as hemodialysis (a procedure). The system must catch this mismatch.
+The doctor diagnosed hemolysis (a blood disorder), and the recogniser wrote "hemodialysis", a procedure. The grammar accepts this command, because its structure is correct. The pipeline finds that hemodialysis is a procedure and that a diagnosis expects a disease or a symptom.
 
-Input: `"ok glasses diagnosis hemodialysis"` ← ASR error
-
-**Stage 1: Preprocessing**
 ```
-Result: "diagnosis hemodialysis"
-```
+Input:   diagnosis hemodialysis
 
-**Stage 2: LLM Extraction**
-```
-{
-  "action":     "diagnosis",
-  "entity":     "hemodialysis",
-  "end_signal": false,
-  "confidence": 0.97
-}
-
-Note: The LLM correctly maps "diagnosis" to action="diagnosis".
-It does NOT second-guess the entity word; it preserves "hemodialysis"
-exactly as spoken. The LLM is NOT responsible for catching this error.
-That is the ontology + semantic validator's job.
+Stage 1: diagnosis hemodialysis
+Stage 2: {"action": "diagnosis", "entity": "hemodialysis",
+          "end_signal": false, "confidence": 0.97}
+Stage 3: ok glasses diagnosis hemodialysis -> valid (command_type diagnosis)
+Stage 4: not found in DOID and HPO (the indexes of a diagnosis);
+         found in another index as a procedure (Hemodialysis)
+Stage 5: type_mismatch ('procedure'; a diagnosis expects disease,
+         symptom, condition, or finding)
+Stage 6: status needs_clarification (full output below)
+Stage 7: "I heard 'hemodialysis' and recognised it as a procedure,
+          not a disease/symptom/condition/finding.
+          Did you mean something else? Please repeat or confirm."
 ```
 
-**Stage 3: ANTLR Validation**
-```
-DIAGNOSIS entity → ✓ valid frame
-```
-
-**Stage 4: Ontology Lookup**
-```
-raw_entity = "hemodialysis"
-action     = "diagnosis"
-allowed_slot_types for "diagnosis" = [disease, symptom, condition, finding]
-
-Step 4a: Exact match:
-  Search disease_ontology (DOID) for "hemodialysis" → NOT FOUND
-  (Hemodialysis is not a disease)
-
-Step 4b: Synonym match in DOID: NOT FOUND
-
-Step 4c: Abbreviation expansion: not applicable
-
-Step 4d: Fuzzy match WITHIN allowed types only:
-  Scope: disease, symptom, condition, finding
-  (Procedure ontology is NOT searched; "diagnosis" does not allow procedures)
-
-  Fuzzy candidates within disease/finding scope:
-    "hemolysis" (DOID:3680) → edit_distance = 4  (haemodialysis vs hemolysis)
-    "haemolysis"            → edit_distance = 3
-    → edit_distance > 2 threshold → NOT auto-matched
-
-  No match within allowed semantic types at acceptable confidence.
-  
-  BUT: entity "hemodialysis" IS found in NCIt procedures (edit distance 0; exact match)
-  semantic_type: treatment/procedure
-  → This match is OUTSIDE the allowed types for "diagnosis"
-  → Store as "cross_type_match" for semantic validator
-```
-
-**Stage 5: Semantic Validation**
-```
-Scenario: entity found but ONLY as wrong semantic type
-
-action = "diagnosis"
-allowed_slot_types = [disease, symptom, condition, finding]
-
-resolved_semantic_type = "treatment" (from NCIt procedures cross-type match)
-"treatment" ∈ [disease, symptom, condition, finding]? → NO ✗
-
-Cross-type match detected:
-  Entity "hemodialysis" IS a known concept → semantic_type "treatment"
-  But "diagnosis" does NOT allow "treatment"
-  
-Result: NEEDS_CLARIFICATION
-Reason: semantic_type_mismatch
-```
-
-**Stage 6: Clarification Output**
+Stage 6 output:
 ```json
 {
   "status": "needs_clarification",
-  "reason": "semantic_type_mismatch",
+  "reason": "type_mismatch",
   "intent_attempted": "DIAGNOSIS_DISEASE",
   "action": "diagnosis",
+  "original_command": "diagnosis hemodialysis",
   "raw_entity": "hemodialysis",
-  "resolved_entity": {
-    "matched_label":  "Hemodialysis",
-    "concept_id":     "NCIt:C15248",
-    "semantic_type":  "treatment",
-    "match_type":     "exact",
-    "found_in":       "procedure ontology"
-  },
-  "expected_semantic_types": ["disease", "symptom", "condition", "finding"],
+  "expected_semantic_types": [
+    "disease",
+    "symptom",
+    "condition",
+    "finding"
+  ],
+  "urgency": [],
   "explanation": {
-    "llm_extraction":      "Action 'diagnosis', entity 'hemodialysis' extracted.",
-    "grammar_validation":  "DIAGNOSIS entity frame structurally valid.",
-    "ontology_evidence":   "'Hemodialysis' was found as NCIt concept C15248: a clinical PROCEDURE, not a disease. No match was found within the disease/symptom ontology at acceptable confidence.",
-    "semantic_validation": "Action 'diagnosis' expects a disease or symptom. 'Hemodialysis' resolves as a treatment/procedure. Mismatch detected."
+    "llm_extraction": "Action 'diagnosis' extracted with confidence 0.97.",
+    "grammar_validation": "Frame valid. command_type=diagnosis.",
+    "ontology_evidence": "'hemodialysis' was found as a 'procedure' ('Hemodialysis') in a different ontology index, not in the index searched for this action.",
+    "semantic_validation": "'Hemodialysis' is a 'procedure' \u2014 'diagnosis' expects one of ['disease', 'symptom', 'condition', 'finding']"
   },
-  "clarification_message": "I heard 'hemodialysis' and recognised it as a medical procedure, not a diagnosis. A diagnosis should be a disease or symptom. Did you mean to diagnose 'hemolysis' (a blood condition)? Please repeat or confirm."
+  "clarification_message": "I heard 'hemodialysis' and recognised it as a procedure, not a disease/symptom/condition/finding. Did you mean something else? Please repeat or confirm.",
+  "resolved_entity": {
+    "matched_label": "Hemodialysis",
+    "concept_id": null,
+    "semantic_type": "procedure",
+    "match_type": "exact"
+  }
 }
 ```
 
-**Stage 7: User Confirmation (for NEEDS_CLARIFICATION path)**
-```
-Glasses display:
-  "⚠ I heard 'hemodialysis'; this is a procedure, not a diagnosis.
-   Did you mean: hemolysis (blood condition)?
-   Say 'ok glasses, correct' to confirm hemolysis,
-   or 'ok glasses, wrong' to repeat the command."
-
-User says: "ok glasses, wrong"
-→ REJECTED
-→ Glasses respond: "Please repeat your diagnosis command."
-
-Doctor says: "ok glasses diagnosis hemolysis"
-→ Pipeline re-runs → ACCEPTED (DOID:3680)
-→ Stage 7 displays: "Diagnosis: Hemolysis. Correct?"
-→ Doctor says: "ok glasses, correct" → CONFIRMED
-```
-
-**Why this works correctly:**
-- The ontology found "hemodialysis" exactly: as a *procedure*
-- The semantic validator checked: does `diagnosis` allow `treatment`? No.
-- The system did NOT silently accept, did NOT silently correct, did NOT crash
-- It explains specifically WHAT was found and WHY it doesn't fit
-- It suggests the likely intended word ("hemolysis") as a prompt
-- Stage 7 adds a final confirmation gate: no command executes without the doctor's explicit "correct"
-
-**Now if the doctor repeats "diagnosis hemolysis" correctly:**
-
-Stage 4:
-```
-"hemolysis" → DOID:3680 → "Hemolysis" → semantic_type = "disease"
-```
-
-Stage 5:
-```
-diagnosis + disease → ✓ allowed
-```
-
-Output: ACCEPTED, DIAGNOSIS_DISEASE with DOID concept ID for documentation.
+**Why this works:**
+- The language model keeps the entity as spoken ("hemodialysis"). It is not asked to judge whether the entity fits the action. That is the job of the ontology lookup and the type check.
+- The ontology finds "hemodialysis" exactly, as a procedure, in a different index than the one searched for a diagnosis.
+- The type check compares that type with the allowed types of the action and finds a mismatch.
+- The pipeline does not accept the command silently, and it does not correct it silently. It says what it found and why it does not fit, and it asks the user.
 
 ---
 
 ## Evaluation Results
 
-Evaluated on 243 commands (130 valid, 113 invalid) using Llama 3.3 70B Instruct.
+Evaluated on 243 commands (130 valid, 113 invalid) with six systems (four language models; DeepSeek and gpt-oss with 500 and with 4000 tokens), three repetitions each, and the baseline B0 (Ludyga's grammar). The evaluation was made twice. The numbers are from the first run. The full results are in the thesis (Chapter 7), in `evaluation/reports/final/`, and in `evaluation/reports/tables/results_summary.md`.
 
-| Metric | Ludyga Baseline | Enhanced Pipeline |
+| Metric | B0 (Ludyga's grammar) | Pipeline (six systems) |
 |---|---|---|
-| Binary accuracy | 75.3% | **95.9%** |
-| Valid recall (128/130) | 50.0% | **98.5%** |
-| Invalid precision (105/113) | 100% | **92.9%** |
+| Accuracy | 70.8 % | 90.1 to 95.9 % |
+| Valid commands accepted | 46.2 % | 83.1 to 96.9 % |
+| Invalid commands wrongly accepted | 0.9 % | 1.8 to 7.1 % |
+| Median response time | 0.1 ms | 0.37 to 1.55 s |
 
-The drop in invalid precision is deliberate. Ludyga's 100% was achieved by rejecting almost everything, including valid clinical commands. The 7.1% false-accept rate in the enhanced pipeline comes from edge cases where the command structure is valid but the entity is clinically ambiguous or absent.
+The best system is Gemma 4 (accuracy 95.9 %, median 0.37 s). The rise in wrongly accepted invalid commands is the price of the flexibility: Ludyga's grammar rejects almost everything it does not know, including valid commands. The second run gives the same decisions, and the response times depend on the load of the model service.
 
-### What passed each stage
+**Where commands stop** (Gemma 4, first repetition): of the 113 invalid commands, the language model stops 100, Stage 1 stops 5 (not speech), Stage 3 stops 2, and Stage 5 stops 4 (type mismatch). Two are accepted. Of the 130 valid commands, 122 are accepted, 6 are sent to clarification by Stage 5 (entity not found), and 2 are rejected by the language model.
 
-**Stage 1 rejections (5):** Non-speech inputs (JSON objects, `[inaudible]` markers, `{unintelligible}`) correctly rejected before reaching the LLM.
-
-**Stage 3 failures (4):** All `set_medication` commands missing the required dose and unit — e.g. `"aspirin"` alone, `"hypertension"` (not a drug), `"albuterol inhaler 2 puffs every 4 hours"` (dosage instruction format, not `medicine INT unit`). ANTLR catches these structurally.
-
-**Stage 5 type mismatches (3):** All `diagnosis` commands where the entity resolved as a procedure in NCIt — specifically hemodialysis and peritoneal dialysis. These are correctly rejected as type mismatches (semantic_type=procedure does not match allowed_slot_types for diagnosis).
-
-**Stage 5 entity not found (9):** Six `stop` commands where the entity was empty or not present in the procedure/medication ontology, two stop commands with clinical entities not in NCIt/RxNorm (`antibiotics`, `ventilator`), and one `set_medication` with a dosage-instruction format entity. All accepted as `entity_not_found` — the intent was understood even if the entity could not be ontologically grounded.
-
-### Remaining false accepts (8)
-
-Eight invalid commands passed when they should have been rejected. These are edge cases where the command structure is valid and the entity check does not fire — primarily commands with ambiguous intent that the LLM maps to a plausible action without strong evidence against it. Addressing these would require either additional domain rules or a confidence threshold gate, which is outside the current scope.
+**Remaining false accepts:** two type-mismatch commands are accepted by all systems, because their entity is also the name of a laboratory procedure in the NCI Thesaurus (a name collision, see `docs/findings.md`, Finding 2). Llama 3.3 accepts six more, which are ambiguous or out-of-domain requests that it maps to an action.
 
 ---
 
 ## How the Pipeline Compares to Baseline
 
-| Scenario | Ludyga Baseline | Our Pipeline |
+Examples from the evaluation dataset. All six systems give the same outcome on these commands in all three repetitions.
+
+| Command | Ludyga's grammar | Pipeline |
 |---|---|---|
-| `"start hemodialysis"` | Returns "undefined"; not in grammar tokens | ACCEPTED via NCIt exact match |
-| `"illustrate medical history"` | Fails; "illustrate" not a token | ACCEPTED via LLM synonym mapping |
-| `"diagnosis hemodialysis"` (ASR error for hemolysis) | Returns "undefined" or wrong result | REJECTED; Stage 5 type mismatch (procedure vs diagnosis) |
-| `"note: on examination... I'm done"` | Fails; "I'm done" not a FINISH token | ACCEPTED via LLM end_signal detection |
-| `"set medication aspirin... finish medication"` | Handled; has exact FINISH MEDICATION token | Handled; LLM end_signal detection |
-| `"code red initiate immediately"` | Fails; "code red" not a token | ACCEPTED; LLM maps to emergency |
-| `"diagnosis hemolysis"` (correct) | Fails; "hemolysis" not a grammar token | ACCEPTED via DOID exact match |
+| `Activate display` | rejected | accepted: turn on the display |
+| `Illustrate the patient's medical history` | rejected | accepted: show, medical history |
+| `Pull up the lab results` | rejected | accepted: show, lab results |
+| `Stand down from emergency` | rejected | accepted: leave emergency mode |
+| `Move to patient Robert Chen` | rejected | accepted: change patient, Robert Chen |
+| `diagnosis HTN` | rejected | accepted: diagnosis, hypertension (disease) |
+| `start HD` | rejected | accepted: start, hemodialysis (procedure) |
+| `diagnosis hemodialysis` | rejected | clarification: a procedure is not a diagnosis |
+| `diagnosis peritoneal dialysis` | rejected | clarification: a procedure is not a diagnosis |
 
 ---
 
@@ -1116,6 +1011,6 @@ Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md), as 
 4. **Stage 4 patterns**: two UML class diagrams (entity strategies and ontology loaders; `_STRATEGIES` and `_FORMAT_LOADERS` act as registries)
 
 ---
-*Document version 2.0, August 2026*
+*Document version 3.0, November 2026*
 *Master Thesis: Improving Intent Recognition in Grammar-Based Voice Interfaces*
 *Anushka Joshi, TU Dresden, Chair of Software Technology*
