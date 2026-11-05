@@ -184,12 +184,13 @@ python src/run_pipeline.py --save
 │   └── annotated_commands.json     # Combined + annotated (auto-generated)
 │
 ├── docs/
-│   ├── uml_diagrams.md            # UML: component flow, Stage 4 class diagram,
-│   │                              #   domain independence boundary
-│   └── pipeline_evolution.md      # Mermaid diagram: Ludyga baseline vs enhanced pipeline
+│   ├── uml_diagrams.md            # Current architecture diagrams (UML component, sequence and
+│   │                              #   class diagrams, data-flow figures), images in docs/figures/
+│   ├── pipeline_evolution.md      # Ludyga baseline vs enhanced pipeline
+│   └── findings.md                # Development log of false accepts, with a status table
 │
 ├── ontologies/
-│   ├── vital_signs.json            # 25 vital sign + lab result terms (curated)
+│   ├── vital_signs.json            # 43 vital sign + lab result terms (curated)
 │   └── ONTOLOGY_SOURCES.md        # Rationale for every ontology choice
 │
 ├── results/

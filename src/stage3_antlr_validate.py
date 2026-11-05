@@ -29,7 +29,7 @@ from MedicalSmartGlassesParser import MedicalSmartGlassesParser
 
 
 # ── Canonical string reconstruction ──────────────────────────────────────────
-# Each action maps to a template that produces a string the grammar can parse.
+# Each action's template (stage3_template in domain_config.yaml) produces a string the grammar can parse.
 # ANTLR then validates the structural correctness of the full command.
 
 def _sanitize(entity: str) -> str:
@@ -39,36 +39,59 @@ def _sanitize(entity: str) -> str:
     For structure checking we only care about words/numbers, not punctuation.
     """
     import re
-    # Normalise "o clock" → "oclock" (grammar expects single OCLOCK token)
-    entity = re.sub(r'\bo\s+clock\b', 'oclock', entity, flags=re.IGNORECASE)
+    # Decimals ('2.5 mg') would otherwise split into two INT tokens
+    entity = re.sub(r"(?<=\d)[.,](?=\d)", "", entity)
     # Replace chars outside [a-zA-Z0-9 ] with a space (hyphens/apostrophes handled by Stage 1)
     entity = re.sub(r"[^a-zA-Z0-9 ]", ' ', entity)
+    # Normalise "o clock" / "o'clock" → "oclock" (grammar expects single OCLOCK token);
+    # must run after the punctuation step so "o'clock" is already "o clock"
+    entity = re.sub(r'\bo\s+clock\b', 'oclock', entity, flags=re.IGNORECASE)
     return re.sub(r' +', ' ', entity).strip()
 
 
+# ── Entity views for the structure check ─────────────────────────────────────
+# Stage 3 only checks the command FRAME. The entity handed to the parser is a
+# copy; the original entity continues unchanged to Stages 4-6. Which view an
+# action uses is declared in domain_config.yaml (stage3_entity_view).
+
+def _medication_core(entity: str) -> str:
+    """Keep 'drug dose unit' per drug and drop trailing instructions
+    ('2 puffs every 4 hours as needed', 'once daily'), which the grammar
+    cannot express. An optional 'at <time>' suffix is kept (rule u17).
+    A missing dose or unit is left untouched so the parser still rejects it."""
+    import re
+    tail = ""
+    m = re.search(r"\s+at\s+\d+\s*(oclock|pm|am)\s*$", entity, flags=re.IGNORECASE)
+    if m:
+        tail, entity = m.group(0), entity[:m.start()]
+    core = []
+    for seg in re.split(r"\s+and\s+", entity, flags=re.IGNORECASE):
+        toks = seg.split()
+        idx = next((i for i, tok in enumerate(toks) if tok.isdigit()), None)
+        if idx is not None and idx > 0 and idx + 1 < len(toks):
+            toks = toks[:idx + 2]
+        core.append(" ".join(toks))
+    return " and ".join(core) + tail
+
+
+def _structure_view(action: str, entity: str) -> str:
+    mode = _get_domain_cfg()["action_config"].get(action, {}).get("stage3_entity_view")
+    if mode == "medication_core":
+        return _medication_core(entity)
+    return entity
+
+
 def _canonical(action: str, entity: str, recipient: str = "") -> str:
-    e = _sanitize(entity.strip())
+    domain = _get_domain_cfg()
+    e = _structure_view(action, _sanitize(entity.strip()))
     r = _sanitize(recipient.strip())
-    templates = {
-        "show":             f"ok glasses show {e}",
-        "diagnosis":        f"ok glasses diagnosis {e}",
-        "start":            f"ok glasses start {e}",
-        "stop":             f"ok glasses stop {e}" if e else "ok glasses stop",
-        "continue":         "ok glasses continue",
-        # turn_on/turn_off: entity may be "display" (valid grammar keyword) or empty
-        "turn_on":          f"ok glasses turn on {e}" if e else "ok glasses turn on",
-        "turn_off":         f"ok glasses turn off {e}" if e else "ok glasses turn off",
-        "emergency":        "ok glasses start emergency",
-        "accept_emergency": "ok glasses accept emergency",
-        "leave_emergency":  "ok glasses leave emergency",
-        "change_patient":   f"ok glasses change patient to {e}",
-        # Restored Ludyga original: START [NEW] MESSAGE note FINISH [NEW] MESSAGE [AND] SEND IT TO patient_name
-        "send_message":     f"ok glasses start message {e} finish message and send it to {r}",
-        # set_medication: entity must be "medicine INT unit" e.g. "paracetamol 100 mg"
-        "set_medication":   f"ok glasses set medication {e} finish medication",
-        "set_note":         f"ok glasses set note {e} finish note",
-    }
-    return templates.get(action, f"ok glasses {action} {e}").strip()
+    template = domain["action_config"].get(action, {}).get("stage3_template")
+    if template is None:  # unknown action: keep the raw form for the error message
+        template = "{trigger} " + action + " {entity}"
+    return (template
+            .replace("{trigger}", domain["trigger_phrase"])
+            .replace("{entity}", e)
+            .replace("{recipient}", r)).strip()
 
 
 # ── Silent error listener ─────────────────────────────────────────────────────

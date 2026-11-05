@@ -52,7 +52,7 @@ Together, these two patterns mean that **adding a new action or a new ontology s
 | `src/domain_loader.py` | Wires grammar + config + template at startup; validates consistency; builds LLM prompt |
 | `src/stage4_ontology_lookup.py` | Ontology lookup; Registry + Strategy patterns; routing, loaders, and cutoffs all read from `domain_config.yaml` |
 | `abbreviations.json` | Abbreviation expansion (Stage 1); sourced from Wikipedia, not manually extended |
-| `docs/uml_diagrams.md` | UML diagrams (pipeline flow, Stage 4 patterns, domain independence boundary), rendered in GitHub/GitLab |
+| `docs/uml_diagrams.md` | Current architecture diagrams of the thesis (UML component, sequence and class diagrams, data-flow figures), images in `docs/figures/` |
 
 ---
 
@@ -190,6 +190,23 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  Driven entirely by Stage 1-5 results + domain_config.yaml  │
 │  action metadata (passthrough_type, allowed_slot_types);    │
 │  no action names hardcoded in src/stage6_intent_output.py   │
+│                                                             │
+│  rejected + reason=invalid_structure gets its own          │
+│  actionable clarification_message when the action/entity    │
+│  WERE understood but the grammar rejected it as             │
+│  structurally incomplete (e.g. "set medication              │
+│  paracetamol" — missing dose/unit). Built from the action's │
+│  structure_hint in domain_config.yaml, not hardcoded per     │
+│  action — e.g. "I understood you want to set medication     │
+│  'paracetamol', but the command is structurally incomplete: │
+│  needs a drug name followed by a numeric dose and unit,     │
+│  e.g. 'paracetamol 100 mg'. Please repeat with the missing   │
+│  detail." This replaces the raw, unreadable ANTLR parser     │
+│  error that used to be the only explanation (still shown     │
+│  underneath, for debugging). Other rejected reasons          │
+│  (non_speech_input, unrecognized_command) get no such        │
+│  message — there's no partial understanding to build one     │
+│  from when the system has no idea what action was meant.     │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
@@ -200,6 +217,18 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  from the Stage 6 payload (accepted slots or the             │
 │  clarification_message):                                    │
 │    "Diagnosis: Hemolysis. Correct?"                         │
+│                                                             │
+│  Design decision: rejected + invalid_structure's             │
+│  clarification_message (above) does NOT go through this      │
+│  stage's confirm/reject dialogue, even though it's shown     │
+│  right alongside it. Confirm/reject only makes sense when    │
+│  the system proposes a specific resolved interpretation to   │
+│  accept or deny — a structural failure means nothing         │
+│  concrete was resolved (e.g. no dose was ever extracted),    │
+│  so there's nothing to confirm or deny, just a specific      │
+│  "repeat with X" instruction. The pipeline still prompts     │
+│  the user to repeat the command in --interactive/--voice     │
+│  mode either way.                                            │
 │                                                             │
 │  User responds:                                             │
 │    "ok glasses, correct" → CONFIRMED → command executed     │
@@ -427,8 +456,8 @@ LLM: SUCCEEDS; maps action synonym, entity extracted as spoken
 
 **Stage 3: ANTLR Frame Validation**
 ```
-Reconstruct canonical: "ok glasses start intravenous infusion"
-Rule matched: treatment -> u22: START entity
+Reconstruct canonical: "ok glasses start treatment intravenous infusion"
+Rule matched: treatment -> u22: START TREATMENT any_text
 entity "intravenous infusion" is non-empty
 command_type = "treatment"
 Frame: VALID
@@ -483,7 +512,7 @@ Result: ACCEPTED
   },
   "explanation": {
     "llm_extraction":      "'Begin' mapped to action 'start'. 'IV' expanded to 'intravenous' by Stage 1. Entity extracted as spoken.",
-    "grammar_validation":  "START entity frame valid. command_type=treatment.",
+    "grammar_validation":  "Frame valid. command_type=treatment.",
     "ontology_evidence":   "'intravenous infusion' matched NCIt C21088 via synonym at score 0.90.",
     "semantic_validation": "Action 'start' permits slot type 'procedure'. Accepted."
   }
@@ -724,6 +753,82 @@ is disabled by default. Explicit verbal confirmation is always required.
 
 ---
 
+## Example 4: `"set medication paracetamol"`
+*No dose or unit given. Shows that a Stage 3 structural rejection isn't a dead end — Stage 6 explains specifically what's missing, built from config, not a raw parser error.*
+
+---
+
+**Stage 1: Preprocessing**
+```
+Result: "set medication paracetamol"
+```
+
+**Stage 2: LLM Structured Extraction**
+```
+{
+  "action":     "set_medication",
+  "entity":     "paracetamol",
+  "end_signal": false,
+  "confidence": 0.9
+}
+Action and drug name correctly identified. The LLM has no way to know a
+dose is required — that's Stage 3's job, not Stage 2's (per the generic
+rule: don't judge entity type or completeness, just extract what was said).
+```
+
+**Stage 3: ANTLR Frame Validation**
+```
+Canonical: "ok glasses set medication paracetamol finish medication"
+Rule: medication: medicine INT unit | INT unit OF medicine
+No INT (dose) or unit token found -> PARSE_ERROR
+Frame: INVALID
+```
+
+**Stage 6: Intent JSON**
+```json
+{
+  "status": "rejected",
+  "reason": "invalid_structure",
+  "action": "set_medication",
+  "original_command": "set medication paracetamol",
+  "explanation": {
+    "llm_extraction":     "Action 'set_medication' extracted with confidence 0.9.",
+    "grammar_validation":  "Frame invalid: PARSE_ERROR: col 55: no viable alternative at input 'setmedicationparacetamolfinishmedication'."
+  },
+  "clarification_message": "I understood you want to set medication 'paracetamol', but the command is structurally incomplete: needs a drug name followed by a numeric dose and unit, e.g. 'paracetamol 100 mg'. Please repeat with the missing detail."
+}
+```
+`clarification_message` is built from `set_medication`'s `structure_hint` field
+in `domain_config.yaml` — not hardcoded in `stage6_intent_output.py` — so a
+new domain adapting this pipeline supplies its own hints per action rather
+than editing code.
+
+**Stage 7: User Confirmation**
+```
+[Glasses display] I understood you want to set medication 'paracetamol',
+but the command is structurally incomplete: needs a drug name followed by
+a numeric dose and unit, e.g. 'paracetamol 100 mg'. Please repeat with the
+missing detail.
+
+No confirm/reject prompt is issued -- there is nothing resolved to confirm
+or deny (no dose was ever extracted). The pipeline (--interactive/--voice)
+still prompts: "Please repeat the command."
+
+Doctor says: "ok glasses set medication paracetamol 100 mg"
+-> Pipeline re-runs -> Stage 3 passes -> proceeds to Stage 4/5/6/7 normally
+```
+
+**Why this is better than the previous behaviour:** before this, any Stage 3
+failure surfaced only the raw ANTLR diagnostic (e.g. `"no viable alternative
+at input 'setmedicationparacetamolfinishmedication'"`) with no indication of
+*why* or *what to do about it*. That's distinct from `unrecognized_command`
+rejections (Stage 2 returned `UNKNOWN`) and `non_speech_input` rejections
+(Stage 1), which get no such message — there, the system has no partial
+understanding of the command at all, so there's nothing specific to build a
+clarification from.
+
+---
+
 ## Supervisor's Test Cases: Hemolysis vs Hemodialysis
 
 These are the two use cases directly from the supervisor's email. This is the most important demonstration.
@@ -790,7 +895,7 @@ start + treatment → allowed ✓
   },
   "explanation": {
     "llm_extraction":      "Action 'start', entity 'hemodialysis' extracted with high confidence.",
-    "grammar_validation":  "START entity frame valid.",
+    "grammar_validation":  "Frame valid. command_type=treatment.",
     "ontology_evidence":   "'Hemodialysis' matched NCIt concept C15248 as a clinical procedure.",
     "semantic_validation": "Action 'start' permits slot type 'treatment'. Accepted."
   }
@@ -1003,11 +1108,12 @@ Eight invalid commands passed when they should have been rejected. These are edg
 
 ## UML Diagrams
 
-Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md) (renders in GitHub/GitLab). Three diagrams:
+Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md), as images exported from the thesis figures:
 
-1. **Pipeline Architecture**: seven-stage component flow (Stages 1–7 implemented)
-2. **Stage 4 Design Patterns**: class diagram showing `_STRATEGIES` (Strategy pattern) and `_FORMAT_LOADERS` (Registry pattern) and their relationship to `domain_config.yaml`
-3. **Domain Independence Boundary**: component diagram separating domain-independent core from domain-specific artefacts
+1. **Data flow and the seven stages** (informal figures)
+2. **Domain independence**: UML component diagram of the pipeline and the domain package
+3. **Worked example**: UML sequence diagram of "start HD"
+4. **Stage 4 patterns**: two UML class diagrams (entity strategies and ontology loaders; `_STRATEGIES` and `_FORMAT_LOADERS` act as registries)
 
 ---
 *Document version 2.0, August 2026*

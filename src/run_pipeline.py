@@ -361,11 +361,22 @@ def _print_stages(r: dict):
           + (f"  (expected {exp!r})" if exp else ""))
 
 
-def _run_confirmation(r: dict):
-    """Run Stage 7 for a single pipeline result and print its outcome."""
-    result = confirm_intent(r['s6_payload'], r['action'])
+def _run_confirmation(r: dict, respond=None):
+    """Run Stage 7 for a single pipeline result and print its outcome.
+
+    respond — optional callable(prompt) -> str. Pass this to gather the
+    confirmation response the same way the rest of that mode works (e.g.
+    via the mic in --voice mode) instead of the default keyboard input()."""
+    result = confirm_intent(r['s6_payload'], r['action'], respond=respond)
     print(f"  ── Stage 7: User Confirmation")
     if not result.needs_confirmation:
+        # Stage 3 structural failures (invalid_structure) carry an actionable
+        # clarification_message even though there's nothing for Stage 7 to
+        # confirm/reject — surface it here rather than leaving it buried in
+        # the raw Stage 6 JSON above.
+        clarification = r['s6_payload'].get('clarification_message')
+        if clarification:
+            print(f"     [Glasses display] {clarification}")
         print(f"     n/a        : nothing to confirm ({result.final_message})")
     else:
         print(f"     outcome    : {result.outcome}")
@@ -393,7 +404,13 @@ def _interactive_loop(client, model: str):
         _print_stages(r)
         result = _run_confirmation(r)
 
-        if result.outcome == "rejected" or result.outcome == "unclear":
+        # Stage 7 reject/unclear needs a repeat; so does a Stage 6-level
+        # structural rejection with an actionable clarification_message,
+        # even though Stage 7 itself reports "not_applicable" for it.
+        needs_repeat = (result.outcome in ("rejected", "unclear")
+                        or (r['s6_payload'].get('status') == 'rejected'
+                            and r['s6_payload'].get('clarification_message')))
+        if needs_repeat:
             print("\n  Please repeat the command.\n")
         print()
 
@@ -454,9 +471,27 @@ def _voice_loop(client, model: str):
                "category": "voice", "action_source": "voice"}
         r = run_command(client, cmd, model)
         _print_stages(r)
-        result = _run_confirmation(r)
 
-        if result.outcome in ("rejected", "unclear"):
+        # Gather the confirmation response via the mic too — same modality as
+        # the rest of this mode, instead of falling back to keyboard input().
+        # Note: push-to-talk has no ambient listening, so a confirmation_timeout_sec
+        # "auto-confirm after N idle seconds" has no voice equivalent here — every
+        # confirmable action explicitly asks via mic in --voice mode, except
+        # confirmation_timeout_sec=0 actions (e.g. emergency), which still skip
+        # the prompt and auto-confirm instantly, same as in --text/--interactive.
+        def _voice_respond(prompt: str, _client=client) -> str:
+            print("  Speak your response now.")
+            return _record_and_transcribe(_client)
+
+        result = _run_confirmation(r, respond=_voice_respond)
+
+        # Stage 7 reject/unclear needs a repeat; so does a Stage 6-level
+        # structural rejection with an actionable clarification_message,
+        # even though Stage 7 itself reports "not_applicable" for it.
+        needs_repeat = (result.outcome in ("rejected", "unclear")
+                        or (r['s6_payload'].get('status') == 'rejected'
+                            and r['s6_payload'].get('clarification_message')))
+        if needs_repeat:
             print("\n  Please repeat the command.\n")
         print()
 

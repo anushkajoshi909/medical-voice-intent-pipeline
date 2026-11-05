@@ -43,3 +43,7 @@ data/audio/
 
 # Model selection cache
 .selected_model
+
+# Thesis LaTeX template
+latex-template-cgv-2/
+latex-template-cgv-2.zip

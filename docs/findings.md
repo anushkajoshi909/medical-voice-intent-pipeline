@@ -1,7 +1,21 @@
 # Findings: Pipeline False Accepts
 
-> Diagnostic notes from investigating specific false accepts. Not yet fixed —
-> for reference when we pick these up.
+> Development log from October 2026: diagnostic notes from investigating false
+> accepts. The text of the findings is kept as it was written at the time. The
+> table below shows what is still true after the final evaluation (November
+> 2026) and where each finding appears in the thesis.
+
+## Status (November 2026)
+
+| # | Finding | Status now | Relevant for the thesis? | Where in the thesis |
+|---|---|---|---|---|
+| 1 | False accepts via `passthrough_fallback` (`show` accepts any term as an EHR record) and the unused confidence value | **Open.** No fix except the few-shot examples of Finding 6. Out-of-domain commands that look like a data request are accepted if the language model maps them to `show`. | Yes, as a limit | Section 5.8 (only the language model decides whether a command belongs to the domain); Chapter 7 (Llama 3.3 accepts "Look into whatever that is") |
+| 2 | NCIt synonym collision: "hemolysis" is a synonym of the laboratory term "Hemolytic Index" | **Open, on purpose.** A dataset-specific exclusion was tried and removed (`evaluation/evaluation.md`, section 14). It is the reason why "start hemolysis" and "stop hemolysis" are accepted. The wrong reference `DOID:3680` is still in `Final_Pipeline_Complete.md` (an old document). | Yes | Chapter 7: entity resolution (name collisions) and the table of type-mismatch commands |
+| 3 | Unreadable ANTLR messages; `set medication hypertension` tests the structure check, not the type check | **Resolved.** Stage 6 builds a readable message from `structure_hint` in `domain_config.yaml` (`_structure_clarification`). | Yes, as the description of Stage 6 | Section 5.3 (Stage 6); Chapter 7: type-mismatch table |
+| 4 | Manual re-test: the confidence value is not reproducible; `send_message` has the same free-text flaw as `set_note` | **Confirmed again.** A second complete run gave other answers at temperature 0 (accuracy within 1.2 points). The free-text flaw is open. | Yes, for reproducibility | Section 6.1 (three repetitions); Chapter 7: paragraph on the second run |
+| 5 | Fresh full run: the confidence gate has no separation; two kinds of language-model failure; a crash of `--save` | **Crash fixed.** Confidence is shown in the explanation and is not used for any decision. | Yes | Section 5.8; Chapter 9 (use the confidence value) |
+| 6 | Few-shot examples as a fix; 11 of 18 old examples were verbatim commands of the evaluation set | **Done.** Four examples added and eleven reworded. No example is a command of the dataset (substring check). | Yes, for the integrity of the evaluation | Comment in `domain_config.yaml`; Chapter 8 (threats to validity) |
+| – | "Candidate fixes": confidence redefinition, self-consistency vote, ontology grounding of the free-text fallback | **Not pursued.** The thesis makes no dataset-specific fixes. | As future work | Chapter 9 |
 
 ---
 
@@ -371,10 +385,18 @@ worse a clinician via Stage 7, it would be actively unhelpful.
 
 ## Open items
 
-- Add a translation layer in `stage3_antlr_validate.py` that maps common
-  ANTLR failure patterns (missing `INT`/unit token for `medication`, empty
-  message body for `send_message`, etc.) to human-readable reasons, instead
-  of passing `listener.errors` through verbatim.
+- ~~Add a translation layer... to human-readable reasons~~ **Done** — not in
+  `stage3_antlr_validate.py` itself (the raw ANTLR message is still kept
+  there, for debugging), but in `stage6_intent_output.py`'s new
+  `_structure_clarification()`: for `invalid_structure` rejections where the
+  action/entity were understood, builds a `clarification_message` from the
+  action's new `structure_hint` field in `domain_config.yaml` (added for
+  `set_medication` and `send_message` so far — config-driven, not
+  hardcoded per action in code). Deliberately does **not** route through
+  Stage 7's confirm/reject dialogue — discussed and decided this needs an
+  informative message, not a yes/no prompt, since nothing concrete was
+  resolved to confirm or deny. See `Final_Pipeline_Complete.md`'s Example 4
+  for the worked example.
 - Consider whether `ext_type_04` (and similar dual-failure-mode dataset
   entries) should be revised to isolate the semantic check they're meant to
   test, or whether it's fine to leave them ambiguous and document the
@@ -763,39 +785,23 @@ means" candidate fix.
 
 ---
 
-# Status / next steps
+# Status / next steps (updated November 2026)
 
-- **Pipeline stages**: **1–7 all implemented.** `src/stage7_confirmation.py`
-  presents a Stage 6 payload as a human-readable glasses prompt and requires
-  (or, per-action, times out to auto-confirm) an explicit "correct"/"wrong"
-  response — driven by a new `confirmation_timeout_sec` field added to each
-  action in `domain_config.yaml` (`null`=always block, e.g. `diagnosis`/
-  `set_medication`/`start`/`stop`/`change_patient`/`send_message`; `<int>`
-  seconds=auto-confirm for low-risk actions, e.g. `show`=5, `set_note`=6,
-  `turn_on`/`turn_off`/`continue`=3; `0`=confirm instantly, e.g.
-  `emergency`/`accept_emergency`). Run via `python src/run_pipeline.py
-  --text "..."` (single command) or `--interactive` (REPL, repeats the
-  command on reject). Docs (`README.md`, `Final_Pipeline_Complete.md`,
-  `docs/uml_diagrams.md`, `docs/pipeline_evolution.md`) updated accordingly.
-- **Candidate fix #1 (few-shot examples) applied** (Finding 6) — 4 new
-  examples added, 3/5 known false accepts flipped to correct. Also fixed
-  train/test contamination: 11 of 18 pre-existing few-shot examples,
-  including both flagship type-mismatch test cases, were verbatim eval-set
-  commands. All reworded; zero exact matches remain. A fresh full eval run
-  is needed next to see the effect at dataset scale.
-- **Fresh full eval run: done** (Finding 5, before the fixes above). Confirmed
-  the instability holds at full-dataset scale, not just on a hand-picked
-  batch, and definitively killed the confidence-gate idea. Also fixed a real
-  `--save` crash
-  (`DrugResult` not JSON-serializable) found in the process.
-- **Plan**: (1) decide which candidate fix to try first — current read is
-  the few-shot-example and confidence-redefinition fixes (both one-line
-  prompt/config changes, no hardcoded lists) are the cheapest next
-  experiments; (2) re-run the full eval after any prompt change to see if it
-  actually moves the numbers, given documented instruction-following gaps;
-  (3) separately look at `c172` (medication order bypassing the dose/unit
-  safety check) and `c105` (grammar rejecting
-  a valid baseline command) — both flagged as higher-priority than the
-  confidence/passthrough cluster.
-- None of the candidate fixes above have been implemented. Revisit this file
-  before deciding which to pick up.
+- **Pipeline:** all seven stages are implemented. Stage 7 was implemented and
+  tried, but it is not part of the evaluation.
+- **Evaluation:** done. Two complete runs on the 243 commands with six systems
+  (four models, two token budgets for DeepSeek and gpt-oss), the baseline B0,
+  and the entity-resolution set E3. The reports are in
+  `evaluation/reports/final/` (first run: `*_2026-11-03.*`, second run:
+  `*_2026-11-05.*`). The decisions are the same in both runs, and the response
+  times differ with the load of the model service.
+- **Grammar:** the keyword workaround of Stage 3 is gone. The rule for a
+  treatment has a fixed keyword (`START TREATMENT any_text`), and diagnosis and
+  stop accept any words. This also removed the grammar rejection of "Stop now
+  frame" that Finding 5 describes under `c105`. The command now parses, and it
+  is sent to clarification in some runs because "frame" is not in an ontology.
+- **`c172`** ("Activate drug regimen for Mr. Johnson: Start with 50 micrograms
+  of Levothyroxine"): still depends on the model. It was accepted in 15 of the 18
+  repetitions of the first run and rejected in 3.
+- **Candidate fixes:** not pursued beyond the few-shot examples (Finding 6).
+  The thesis makes no dataset-specific fixes. The ideas stay as future work.

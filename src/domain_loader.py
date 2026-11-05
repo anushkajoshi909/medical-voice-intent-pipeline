@@ -104,6 +104,14 @@ def load() -> dict:
                 f"Known grammar rules: {sorted(grammar_types)}"
             )
 
+    # Validate: every action needs the text template Stage 3 feeds to the grammar
+    for action, info in cfg["actions"].items():
+        if not info.get("stage3_template"):
+            raise ValueError(
+                f"Action '{action}' in domain_config.yaml has no stage3_template "
+                f"(text the grammar parses, e.g. \"{{trigger}} show {{entity}}\")."
+            )
+
     template      = prompt_path.read_text()
     system_prompt = (
         template

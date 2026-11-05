@@ -1,6 +1,6 @@
 // MedicalSmartGlassesParser.g4
 // Extended from Ludyga (baseline_ludyga/MedicalSmartGlassesParser.g4).
-// Adds: diagnosis (u21), start_treatment (u22). u20 reverted to Ludyga original.
+// Adds: diagnosis (u21), start_treatment (u22; fixed keyword TREATMENT after START). u20 reverted to Ludyga original.
 // Retains: command type hierarchy, medication structure enforcement.
 //
 // Stage 3 reconstructs a canonical string from LLM {action, entity} output
@@ -34,7 +34,7 @@ emergency_acceptation : u11 | u12 ;
 show_messages : u19 ;
 
 // ── Individual use cases ─────────────────────────────────────────────────────
-u01 : STOP entity? ;                             // stop [entity]
+u01 : STOP any_text? ;                           // stop [entity]
 u02 : CONTINUE (FRAME)? ;                        // continue [frame]
 u03 : TURN OFF (DISPLAY)? ;                      // turn off [display]
 u04 : TURN ON (DISPLAY)? ;                       // turn on [display]
@@ -51,15 +51,15 @@ u17 : trig_medication MEDICATION medications AT timestamp FINISH MEDICATION ;
 u18 : CHANGE PATIENT TO patient_name ;           // change patient to <name>
 u19 : trig_message MESSAGES ;                    // show messages / switch to messages
 u20 : START (NEW)? MESSAGE note FINISH (NEW)? MESSAGE (AND)? SEND IT TO patient_name ; // compose and send to recipient
-u21 : DIAGNOSIS entity ;                         // diagnosis <entity>
-u22 : START entity ;                             // start <treatment/procedure>
+u21 : DIAGNOSIS any_text ;                       // diagnosis <entity>
+u22 : START TREATMENT any_text ;                 // start treatment <entity>; the fixed keyword keeps it apart from the other START commands
 
 // ── Sub-rules ─────────────────────────────────────────────────────────────────
 data         : . (.)*? ;
 interval     : OF LAST time ;
 time         : INT TIME_UNIT ;
 note         : . (.)*? ;
-entity       : (WORD | INT)+ ;
+any_text     : . (.)*? ;                          // one or more tokens of any kind
 trig_medication : SET | START ;
 medications  : medication (AND medication)* ;
 medication   : medicine INT unit

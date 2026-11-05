@@ -28,6 +28,14 @@
 # │      passthrough_type:       Stage 4 — semantic_type to assign when        │
 # │                              ontology_index is null and entity has meaning  │
 # │                              omit for system commands with no entity        │
+# │      stage3_template:        Stage 3 — text the grammar parses for this action; placeholders
+# │                              {trigger} {entity} {recipient}; must match a command form of the .g4
+# │      stage3_entity_view:     Stage 3 — which copy of the entity the ANTLR frame check sees
+# │                              "medication_core" (keep drug+dose+unit per drug, drop frequency
+# │                              text); omit = entity as-is. Stages 4-6 always get the
+# │                              original entity.
+# │      entity_optional:        true = the action is valid without an entity (e.g. bare "stop");
+# │                              Stage 5 then returns "skipped" instead of entity_not_found
 # │      confirmation_timeout_sec: Stage 7 — null=always block for an explicit │
 # │                              "correct"/"wrong" response (high-risk action).│
 # │                              <int>=auto-confirm after N idle seconds       │
@@ -54,6 +62,7 @@ trigger_phrase: "ok glasses"
 actions:
   start:
     grammar_command_type: treatment
+    stage3_template: "{trigger} start treatment {entity}"
     description: "Initiate a treatment, procedure, or medication"
     allowed_slot_types: [treatment, procedure, medication, shared_session, emergency]
     ontology_index: procedure       # try NCIt Thesaurus first
@@ -64,6 +73,7 @@ actions:
 
   show:
     grammar_command_type: request_data
+    stage3_template: "{trigger} show {entity}"
     description: "Display patient data, test results, vital signs, records, or messages"
     allowed_slot_types: [vital_sign, lab_result, ehr_record]
     ontology_index: show              # vital_signs.json only
@@ -74,6 +84,7 @@ actions:
 
   diagnosis:
     grammar_command_type: diagnosis
+    stage3_template: "{trigger} diagnosis {entity}"
     description: "Record a clinical diagnosis"
     allowed_slot_types: [disease, symptom, condition, finding]
     ontology_index: [doid, hp]      # search disease ontology first, then symptom
@@ -82,15 +93,21 @@ actions:
 
   set_medication:
     grammar_command_type: set_medication
+    stage3_template: "{trigger} set medication {entity} finish medication"
     description: "Prescribe or record a medication — entity MUST include drug name, dose, and unit (e.g. 'paracetamol 100 mg')"
     allowed_slot_types: [medication]
     ontology_index: medication      # RXNCONSO.RRF
     fallback_index: null
     entity_extractor: medication    # strips dose/unit before lookup
+    stage3_entity_view: medication_core
     confirmation_timeout_sec: null  # high-criticality — always explicit
+    # Shown in the rejection message when Stage 3 fails (Stage 6 reads this directly;
+    # keeps the human-readable hint config-driven rather than hardcoded in code).
+    structure_hint: "needs a drug name followed by a numeric dose and unit, e.g. 'paracetamol 100 mg'"
 
   set_note:
     grammar_command_type: protocol
+    stage3_template: "{trigger} set note {entity} finish note"
     description: "Dictate a free-text clinical note"
     allowed_slot_types: [free_text]
     ontology_index: null            # entity is free text — no lookup
@@ -99,16 +116,19 @@ actions:
 
   stop:
     grammar_command_type: stop_cmd
+    stage3_template: "{trigger} stop {entity}"
     description: "Discontinue a treatment, medication, or session"
     allowed_slot_types: [treatment, procedure, medication, shared_session, emergency, system]
     ontology_index: procedure       # try NCIt first
     fallback_index: medication      # if not a procedure, try RXNORM
     entity_extractor: default
     fallback_extractor: medication  # strip dose/unit before RxNorm lookup
+    entity_optional: true           # bare "stop" is valid (grammar u01: STOP entity?)
     confirmation_timeout_sec: null  # discontinuing treatment/medication — explicit only
 
   turn_on:
     grammar_command_type: glasses_command
+    stage3_template: "{trigger} turn on {entity}"
     description: "Activate a display or system feature"
     allowed_slot_types: [system]
     ontology_index: null            # system command — no ontology lookup
@@ -117,6 +137,7 @@ actions:
 
   turn_off:
     grammar_command_type: glasses_command
+    stage3_template: "{trigger} turn off {entity}"
     description: "Deactivate a display or system feature"
     allowed_slot_types: [system]
     ontology_index: null
@@ -125,6 +146,7 @@ actions:
 
   continue:
     grammar_command_type: glasses_command
+    stage3_template: "{trigger} continue"
     description: "Resume a paused display or operation"
     allowed_slot_types: [system]
     ontology_index: null
@@ -133,6 +155,7 @@ actions:
 
   change_patient:
     grammar_command_type: request_patient
+    stage3_template: "{trigger} change patient to {entity}"
     description: "Switch the active patient context — requires explicit patient name"
     allowed_slot_types: [patient_identifier]
     ontology_index: null            # entity IS the patient identifier — no lookup
@@ -141,6 +164,7 @@ actions:
 
   send_message:
     grammar_command_type: message
+    stage3_template: "{trigger} start message {entity} finish message and send it to {recipient}"
     # Ludyga's u20 grammar rule requires both a message body (note) and a named
     # recipient (patient_name): START [NEW] MESSAGE note FINISH [NEW] MESSAGE [AND] SEND IT TO patient_name
     # Stage 2 (LLM) extracts two fields to feed this rule:
@@ -153,9 +177,11 @@ actions:
     ontology_index: null
     passthrough_type: free_text
     confirmation_timeout_sec: null  # avoid misfired clinical communication — explicit only
+    structure_hint: "needs both message content and a named recipient, e.g. 'send message to Dr Smith: patient is stable'"
 
   emergency:
     grammar_command_type: glasses_command
+    stage3_template: "{trigger} start emergency"
     description: "Trigger emergency protocol immediately"
     allowed_slot_types: []
     ontology_index: null
@@ -164,6 +190,7 @@ actions:
 
   accept_emergency:
     grammar_command_type: glasses_command
+    stage3_template: "{trigger} accept emergency"
     description: "Accept or acknowledge an incoming emergency alert"
     allowed_slot_types: []
     ontology_index: null
@@ -172,6 +199,7 @@ actions:
 
   leave_emergency:
     grammar_command_type: glasses_command
+    stage3_template: "{trigger} leave emergency"
     description: "Exit emergency mode"
     allowed_slot_types: []
     ontology_index: null

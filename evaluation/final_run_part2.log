@@ -1,0 +1,75 @@
+243 items from 1 file(s)
+cold-start ontology index build: 0.889s
+== deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000  rep 1/3
+    25/243  (31s)
+    50/243  (64s)
+    75/243  (84s)
+    100/243  (114s)
+    125/243  (144s)
+    150/243  (177s)
+    175/243  (214s)
+    200/243  (242s)
+    225/243  (288s)
+    243/243  (335s)
+  2026-10-28_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r1: valid recall 89.2%  FAR 1.8%  clarif 3.8%  median 0.9452s  p95 3.7983s
+== deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000  rep 2/3
+    25/243  (24s)
+    50/243  (68s)
+    75/243  (91s)
+    100/243  (116s)
+    125/243  (138s)
+    150/243  (174s)
+    175/243  (205s)
+    200/243  (270s)
+    225/243  (302s)
+    243/243  (339s)
+  2026-10-28_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r2: valid recall 88.5%  FAR 1.8%  clarif 4.6%  median 0.933s  p95 3.7104s
+== deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000  rep 3/3
+    25/243  (38s)
+    50/243  (85s)
+    75/243  (117s)
+    100/243  (153s)
+    125/243  (193s)
+    150/243  (215s)
+    175/243  (251s)
+    200/243  (278s)
+    225/243  (324s)
+    243/243  (338s)
+  2026-10-28_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r3: valid recall 86.2%  FAR 1.8%  clarif 6.9%  median 0.9414s  p95 3.5468s
+== openai/gpt-oss-120b__maxtok4000  rep 1/3
+    25/243  (91s)
+    50/243  (184s)
+    75/243  (275s)
+    100/243  (366s)
+    125/243  (516s)
+    150/243  (615s)
+    175/243  (707s)
+    200/243  (805s)
+    225/243  (958s)
+    243/243  (1041s)
+  2026-10-28_openai_gpt-oss-120b__maxtok4000_final_r1: valid recall 93.8%  FAR 2.7%  clarif 3.1%  median 1.0746s  p95 4.7365s
+== openai/gpt-oss-120b__maxtok4000  rep 2/3
+    25/243  (96s)
+    50/243  (196s)
+    75/243  (285s)
+    100/243  (377s)
+    125/243  (522s)
+    150/243  (623s)
+    175/243  (729s)
+    200/243  (822s)
+    225/243  (978s)
+    243/243  (1006s)
+  2026-10-28_openai_gpt-oss-120b__maxtok4000_final_r2: valid recall 93.8%  FAR 2.7%  clarif 3.1%  median 1.0915s  p95 5.5306s
+== openai/gpt-oss-120b__maxtok4000  rep 3/3
+    25/243  (168s)
+    50/243  (262s)
+    75/243  (355s)
+    100/243  (455s)
+    125/243  (622s)
+    150/243  (724s)
+    175/243  (827s)
+    200/243  (926s)
+    225/243  (1090s)
+    243/243  (1112s)
+  2026-10-28_openai_gpt-oss-120b__maxtok4000_final_r3: valid recall 93.1%  FAR 2.7%  clarif 3.1%  median 1.2429s  p95 8.142s
+overview -> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/tables/overview_2026-10-28_final.csv

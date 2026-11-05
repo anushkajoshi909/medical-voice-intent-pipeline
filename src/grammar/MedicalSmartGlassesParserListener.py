@@ -350,12 +350,12 @@ class MedicalSmartGlassesParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by MedicalSmartGlassesParser#entity.
-    def enterEntity(self, ctx:MedicalSmartGlassesParser.EntityContext):
+    # Enter a parse tree produced by MedicalSmartGlassesParser#any_text.
+    def enterAny_text(self, ctx:MedicalSmartGlassesParser.Any_textContext):
         pass
 
-    # Exit a parse tree produced by MedicalSmartGlassesParser#entity.
-    def exitEntity(self, ctx:MedicalSmartGlassesParser.EntityContext):
+    # Exit a parse tree produced by MedicalSmartGlassesParser#any_text.
+    def exitAny_text(self, ctx:MedicalSmartGlassesParser.Any_textContext):
         pass
 
 

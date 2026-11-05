@@ -1,0 +1,238 @@
+
+$ /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/scripts/run_eval.py --tag final500
+line 1:11 token recognition error at: '_'
+243 items from 1 file(s)
+== B0 Ludyga baseline
+  2026-11-04_B0-ludyga_final500_r1: valid recall 46.2%  FAR 0.9%
+cold-start ontology index build: 0.911s
+== meta-llama/Llama-3.3-70B-Instruct  rep 1/3
+    25/243  (27s)
+    50/243  (53s)
+    75/243  (74s)
+    100/243  (104s)
+    125/243  (130s)
+    150/243  (157s)
+    175/243  (185s)
+    200/243  (216s)
+    225/243  (241s)
+    243/243  (258s)
+  2026-11-04_meta-llama_Llama-3.3-70B-Instruct_final500_r1: valid recall 96.2%  FAR 8.0%  clarif 3.1%  median 0.9497s  p95 1.7703s
+== meta-llama/Llama-3.3-70B-Instruct  rep 2/3
+    25/243  (27s)
+    50/243  (53s)
+    75/243  (77s)
+    100/243  (105s)
+    125/243  (127s)
+    150/243  (156s)
+    175/243  (184s)
+    200/243  (211s)
+    225/243  (238s)
+    243/243  (259s)
+  2026-11-04_meta-llama_Llama-3.3-70B-Instruct_final500_r2: valid recall 97.7%  FAR 7.1%  clarif 1.5%  median 1.0213s  p95 1.5983s
+== meta-llama/Llama-3.3-70B-Instruct  rep 3/3
+    25/243  (25s)
+    50/243  (50s)
+    75/243  (75s)
+    100/243  (107s)
+    125/243  (135s)
+    150/243  (164s)
+    175/243  (193s)
+    200/243  (223s)
+    225/243  (251s)
+    243/243  (271s)
+  2026-11-04_meta-llama_Llama-3.3-70B-Instruct_final500_r3: valid recall 97.7%  FAR 7.1%  clarif 1.5%  median 1.0042s  p95 2.0921s
+== google/gemma-4-26B-A4B-it  rep 1/3
+    25/243  (20s)
+    50/243  (40s)
+    75/243  (139s)
+    100/243  (169s)
+    125/243  (191s)
+    150/243  (214s)
+    175/243  (340s)
+    200/243  (362s)
+    225/243  (378s)
+    243/243  (453s)
+  2026-11-04_google_gemma-4-26B-A4B-it_final500_r1: valid recall 93.8%  FAR 1.8%  clarif 4.6%  median 0.7889s  p95 1.7636s
+== google/gemma-4-26B-A4B-it  rep 2/3
+    25/243  (19s)
+    50/243  (61s)
+    75/243  (97s)
+    100/243  (117s)
+    125/243  (135s)
+    150/243  (152s)
+    175/243  (235s)
+    200/243  (255s)
+    225/243  (289s)
+    243/243  (307s)
+  2026-11-04_google_gemma-4-26B-A4B-it_final500_r2: valid recall 93.8%  FAR 1.8%  clarif 4.6%  median 0.7675s  p95 1.6651s
+== google/gemma-4-26B-A4B-it  rep 3/3
+    25/243  (25s)
+    50/243  (124s)
+    75/243  (199s)
+    100/243  (223s)
+    125/243  (241s)
+    150/243  (257s)
+    175/243  (309s)
+    200/243  (333s)
+    225/243  (351s)
+    243/243  (440s)
+  2026-11-04_google_gemma-4-26B-A4B-it_final500_r3: valid recall 93.1%  FAR 1.8%  clarif 4.6%  median 0.7629s  p95 3.3562s
+== openai/gpt-oss-120b  rep 1/3
+    25/243  (99s)
+    50/243  (199s)
+    75/243  (293s)
+    100/243  (396s)
+    125/243  (560s)
+    150/243  (670s)
+    175/243  (774s)
+    200/243  (879s)
+    225/243  (1042s)
+    243/243  (1074s)
+  2026-11-04_openai_gpt-oss-120b_final500_r1: valid recall 90.8%  FAR 2.7%  clarif 1.5%  median 1.4518s  p95 5.046s
+== openai/gpt-oss-120b  rep 2/3
+    25/243  (165s)
+    50/243  (272s)
+    75/243  (366s)
+    100/243  (473s)
+    125/243  (634s)
+    150/243  (736s)
+    175/243  (849s)
+    200/243  (953s)
+    225/243  (1063s)
+    243/243  (1155s)
+  2026-11-04_openai_gpt-oss-120b_final500_r2: valid recall 91.5%  FAR 2.7%  clarif 1.5%  median 1.5365s  p95 5.5807s
+== openai/gpt-oss-120b  rep 3/3
+    25/243  (175s)
+    50/243  (283s)
+    75/243  (384s)
+    100/243  (489s)
+    125/243  (593s)
+    150/243  (759s)
+    175/243  (866s)
+    200/243  (962s)
+    225/243  (1072s)
+    243/243  (1167s)
+  2026-11-04_openai_gpt-oss-120b_final500_r3: valid recall 88.5%  FAR 2.7%  clarif 1.5%  median 1.5376s  p95 5.308s
+== deepseek-ai/DeepSeek-V4.1-Flash  rep 1/3
+    25/243  (30s)
+    50/243  (72s)
+    75/243  (96s)
+    100/243  (127s)
+    125/243  (163s)
+    150/243  (195s)
+    175/243  (221s)
+    200/243  (252s)
+    225/243  (285s)
+    243/243  (307s)
+  2026-11-04_deepseek-ai_DeepSeek-V4.1-Flash_final500_r1: valid recall 81.5%  FAR 0.0%  clarif 3.8%  median 1.0371s  p95 2.7537s
+== deepseek-ai/DeepSeek-V4.1-Flash  rep 2/3
+    25/243  (38s)
+    50/243  (67s)
+    75/243  (96s)
+    100/243  (124s)
+    125/243  (149s)
+    150/243  (177s)
+    175/243  (203s)
+    200/243  (237s)
+    225/243  (265s)
+    243/243  (286s)
+  2026-11-04_deepseek-ai_DeepSeek-V4.1-Flash_final500_r2: valid recall 83.1%  FAR 1.8%  clarif 3.8%  median 1.0135s  p95 2.4772s
+== deepseek-ai/DeepSeek-V4.1-Flash  rep 3/3
+    25/243  (31s)
+    50/243  (60s)
+    75/243  (86s)
+    100/243  (120s)
+    125/243  (150s)
+    150/243  (183s)
+    175/243  (216s)
+    200/243  (250s)
+    225/243  (286s)
+    243/243  (312s)
+  2026-11-04_deepseek-ai_DeepSeek-V4.1-Flash_final500_r3: valid recall 83.8%  FAR 1.8%  clarif 3.8%  median 1.0686s  p95 2.6404s
+overview -> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/tables/overview_2026-11-04_final500.csv
+
+$ /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/scripts/run_eval.py --models openai/gpt-oss-120b deepseek-ai/DeepSeek-V4.1-Flash --max-tokens 4000 --no-baseline --tag final4000
+243 items from 1 file(s)
+cold-start ontology index build: 0.831s
+== openai/gpt-oss-120b__maxtok4000  rep 1/3
+    25/243  (99s)
+    50/243  (206s)
+    75/243  (309s)
+    100/243  (424s)
+    125/243  (596s)
+    150/243  (706s)
+    175/243  (810s)
+    200/243  (915s)
+    225/243  (1073s)
+    243/243  (1098s)
+  2026-11-05_openai_gpt-oss-120b__maxtok4000_final4000_r1: valid recall 93.1%  FAR 2.7%  clarif 2.3%  median 1.5324s  p95 5.4054s
+== openai/gpt-oss-120b__maxtok4000  rep 2/3
+    25/243  (177s)
+    50/243  (287s)
+    75/243  (393s)
+    100/243  (497s)
+    125/243  (658s)
+    150/243  (768s)
+    175/243  (880s)
+    200/243  (984s)
+    225/243  (1084s)
+    243/243  (1178s)
+  2026-11-05_openai_gpt-oss-120b__maxtok4000_final4000_r2: valid recall 92.3%  FAR 3.5%  clarif 2.3%  median 1.5367s  p95 6.9191s
+== openai/gpt-oss-120b__maxtok4000  rep 3/3
+    25/243  (167s)
+    50/243  (271s)
+    75/243  (368s)
+    100/243  (469s)
+    125/243  (574s)
+    150/243  (741s)
+    175/243  (844s)
+    200/243  (947s)
+    225/243  (1056s)
+    243/243  (1151s)
+  2026-11-05_openai_gpt-oss-120b__maxtok4000_final4000_r3: valid recall 90.0%  FAR 2.7%  clarif 3.1%  median 1.5364s  p95 4.5697s
+== deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000  rep 1/3
+    25/243  (33s)
+    50/243  (95s)
+    75/243  (125s)
+    100/243  (167s)
+    125/243  (203s)
+    150/243  (245s)
+    175/243  (284s)
+    200/243  (322s)
+    225/243  (356s)
+    243/243  (383s)
+  2026-11-05_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final4000_r1: valid recall 89.2%  FAR 1.8%  clarif 4.6%  median 1.0814s  p95 3.7477s
+== deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000  rep 2/3
+    25/243  (34s)
+    50/243  (77s)
+    75/243  (105s)
+    100/243  (138s)
+    125/243  (168s)
+    150/243  (209s)
+    175/243  (248s)
+    200/243  (300s)
+    225/243  (336s)
+    243/243  (373s)
+  2026-11-05_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final4000_r2: valid recall 88.5%  FAR 1.8%  clarif 4.6%  median 1.0884s  p95 3.9844s
+== deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000  rep 3/3
+    25/243  (31s)
+    50/243  (66s)
+    75/243  (94s)
+    100/243  (134s)
+    125/243  (172s)
+    150/243  (207s)
+    175/243  (241s)
+    200/243  (279s)
+    225/243  (321s)
+    243/243  (344s)
+  2026-11-05_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final4000_r3: valid recall 88.5%  FAR 1.8%  clarif 5.4%  median 1.1002s  p95 3.599s
+overview -> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/tables/overview_2026-11-05_final4000.csv
+
+$ /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/scripts/run_e3.py
+wrote /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/runs/2026-11-05_E3_entity-resolution
+{"n": 98, "status_acc_pct": 92.9, "full_acc_pct": 86.7, "incorrect_acceptance": 1, "incorrect_rejection": 5, "wrong_concept": 6, "wrong_status": 1, "coverage_pct": 93.3, "n_expected_accepted": 75}
+
+$ /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/scripts/build_final_report.py
+-> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/final/all_results_2026-11-05.json
+-> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/final/main_results_2026-11-05.md
+-> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/final/per_command_2026-11-05.csv  (1458 rows)

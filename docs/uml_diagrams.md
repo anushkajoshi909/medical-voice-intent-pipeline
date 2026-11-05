@@ -1,168 +1,70 @@
-# Pipeline Architecture: UML Diagrams
+# Architecture Diagrams
 
 > Master Thesis · TU Dresden · Software Technology  
 > *Improving Intent Recognition in Grammar-Based Voice Interfaces*
 
-Diagrams render in GitLab, GitHub, and VS Code with the Markdown Preview Mermaid Support extension.
+These are the diagrams of the thesis (Chapter 5 Design, Chapter 6 Implementation, Appendix A). They are exported from the TikZ sources in `latex-template-cgv-2/fig/` and replace the earlier Mermaid diagrams, which did not follow UML (for example, the component diagram had no interfaces and mixed the domain model with a class diagram).
+
+Three figures are **UML**: the sequence diagram, the component diagram, and the two class diagrams. The other figures are informal data-flow figures, and they are not called UML in the thesis. The detail figures of Stage 4, Stage 6, and the command tree are only in the thesis.
+
+| Figure | Type | Thesis | File |
+|---|---|---|---|
+| Data flow of the system | data flow | Section 5.2 | `figures/dataflow_system.png` |
+| The seven stages | informal | Section 5.2 | `figures/pipeline_architecture.png` |
+| Design alternatives A to E | data flow | Section 5.1 | `figures/flow_alternatives.png` |
+| Pipeline and domain package | **UML component diagram** | Section 5.6 | `figures/component_domain.png` |
+| Worked example "start HD" | **UML sequence diagram** | Section 5.7 | `figures/sequence_example.png` |
+| Preparation of the entity (Stage 4) | **UML class diagram** | Section 6.3 | `figures/class_entity_strategy.png` |
+| Loading of the ontology sources (Stage 4) | **UML class diagram** | Section 6.3 | `figures/class_loader_registry.png` |
 
 ---
 
-## Figure 1 · Pipeline Architecture (Component Flow)
+## Data Flow of the System
 
-Seven-stage pipeline from raw voice input to a confirmed, executable command.
-Stages 1-7 implemented.
+The language model, the grammar, and the ontologies serve the pipeline. The user talks only to the speech recognition and to the confirmation.
 
-```mermaid
-graph TD
-    IN([Voice Input]) --> S1
+![Data flow of the system](figures/dataflow_system.png)
 
-    S1["Stage 1 · Preprocessing\nstage1_preprocess.py"]:::impl
-    S2["Stage 2 · LLM Extraction\nstage2_llm_extract.py"]:::impl
-    S3["Stage 3 · ANTLR Validation\nstage3_antlr_validate.py"]:::impl
-    S4["Stage 4 · Ontology Lookup\nstage4_ontology_lookup.py"]:::impl
-    S5["Stage 5 · Semantic Validation\nstage5_type_validate.py"]:::impl
-    S6["Stage 6 · Intent Output\nstage6_intent_output.py"]:::impl
-    S7["Stage 7 · User Confirmation\nstage7_confirmation.py"]:::impl
+## The Seven Stages
 
-    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
-    S7 -->|confirmed / auto-confirmed| OUT([Command Executed]):::src
-    S7 -->|rejected / unclear| RPT([Repeat Command]):::rej
-    RPT -.-> S1
+![The seven stages and the three possible outcomes](figures/pipeline_architecture.png)
 
-    ABB([abbreviations.json]):::cfg --> S1
-    DC([domain_config.yaml]):::cfg --> S2
-    DC --> S4
-    DC -->|confirmation_timeout_sec| S7
-    GR([ANTLR Grammar\n.g4 + compiled]):::cfg --> S3
-    ONT([Ontologies\nDOID · HP · NCIt · RXNORM]):::cfg --> S4
+## Design Alternatives
 
-    classDef impl fill:#3B72B0,color:#fff,stroke:#2A5A90
-    classDef cfg fill:#EBF2FA,color:#1C2438,stroke:#3B72B0
-    classDef src fill:#1e293b,color:#fff,stroke:#334155
-    classDef rej fill:#ef4444,color:#fff,stroke:#b91c1c
-```
+Alternative A is the grammar of Ludyga (the baseline). Alternative E is this thesis.
+
+![Design alternatives](figures/flow_alternatives.png)
 
 ---
 
-## Figure 2 · Stage 4 Design Patterns (Class Diagram)
+## Domain Independence: UML Component Diagram
 
-Stage 4 applies the **Strategy pattern** (pluggable entity extraction) and the **Registry pattern** (pluggable format loaders).
-`domain_config.yaml` is the single source of truth for all routing decisions.
+Everything that changes with the domain is in the **domain package**: the configuration, the grammar, the ontology data, and the abbreviations. The stages read it through the domain loader and directly. Notation: a ball is a provided interface, a socket is a required interface, a small square is a port, and a dashed arrow is a usage dependency.
 
-```mermaid
-classDiagram
-    direction TB
-
-    class OntologyResult {
-        <<dataclass>>
-        +bool found
-        +str raw_entity
-        +str canonical
-        +str semantic_type
-        +str ontology_id
-        +str match_method
-        +float score
-        +str source
-    }
-
-    class lookup {
-        <<entry point>>
-        +lookup(action, entity) OntologyResult
-        -_ensure_action_config_loaded()
-        -_ensure_loaded()
-        -_match(query, index) OntologyResult
-        -_norm(s) str
-        -_build_maps(entries) tuple
-    }
-
-    class _STRATEGIES {
-        <<Strategy Registry>>
-        +default : _strategy_default
-        +medication : _strategy_medication
-    }
-
-    class _FORMAT_LOADERS {
-        <<Loader Registry>>
-        +json_labels : _load_json_labels
-        +obo : _load_obo
-        +ncit : _load_ncit
-        +rxnorm : _load_rxnorm
-        +domain_config_canonical : _load_domain_config_show
-    }
-
-    class domain_config_yaml {
-        <<Single Source of Truth>>
-        +actions[].ontology_index
-        +actions[].entity_extractor
-        +actions[].fallback_index
-        +actions[].passthrough_type
-        +ontology_sources[].type
-        +ontology_sources[].file
-        +ontology_sources[].fuzzy_cutoff
-    }
-
-    lookup --> OntologyResult : returns
-    lookup --> _STRATEGIES : dispatches extraction via
-    lookup --> _FORMAT_LOADERS : populates cache via _ensure_loaded
-    lookup --> domain_config_yaml : reads action routing from
-    _FORMAT_LOADERS --> domain_config_yaml : parameterised by ontology_sources
-```
-
-**Patterns applied:**
-
-| Pattern | Where | Extensibility benefit |
-|---------|--------|-----------------------|
-| Strategy | `_STRATEGIES` dispatch table | New entity extraction logic = new function + one YAML key |
-| Registry | `_FORMAT_LOADERS` dict | New ontology file format = new loader function + register |
-| Single Source of Truth | `domain_config.yaml` | Action routing, file paths, cutoffs; all in one place; zero hardcoding in routing code |
-
----
-
-## Figure 3 · Domain Independence Boundary (Component Diagram)
-
-Separates the **domain-independent core** (unchanged for any new domain) from **domain-specific parts** (replaced when adapting to industry, transportation, tourism, etc.).  
-Satisfies the *Domain Independence* non-functional requirement.
-
-```mermaid
-graph LR
-    subgraph GENERIC["Domain-Independent Core: zero changes for a new domain"]
-        direction TB
-        LU["lookup()"]
-        MT["_match() · _norm() · _build_maps()"]
-        STR["_STRATEGIES Registry"]
-        FLR["_FORMAT_LOADERS Registry"]
-        EL["_ensure_loaded(): generic loop"]
-        DL["domain_loader.py: validation + prompt builder"]
-        S1C["Stage 1 core: preprocess.py"]
-        S2C["Stage 2 core: llm_extract.py"]
-        S3C["Stage 3 runner: antlr_validate.py"]
-    end
-
-    subgraph DOMAIN["Domain-Specific: replaced for a new domain"]
-        direction TB
-        DC["domain_config.yaml\nactions + ontology_sources"]
-        LD["Loader functions\n_load_obo / _load_ncit / _load_rxnorm"]
-        ONT["Ontology files\ndoid.obo · hp.obo · Thesaurus.txt · RXNCONSO.RRF"]
-        GR["ANTLR grammar\nMedicalSmartGlasses*.g4"]
-        AB["abbreviations.json"]
-    end
-
-    DC --> EL
-    DC --> DL
-    ONT --> LD
-    LD --> FLR
-    FLR --> EL
-    EL --> MT
-    MT --> LU
-    STR --> LU
-    GR --> S3C
-    AB --> S1C
-```
+![UML component diagram: pipeline stages, domain loader, and domain package](figures/component_domain.png)
 
 **Adapting to a new domain requires:**
-1. New `domain_config.yaml`: actions, descriptions, ontology sources, rules, examples
-2. New ANTLR grammar `.g4` + recompile
-3. New ontology data files + loader functions for any new file formats (registered in `_FORMAT_LOADERS`)
-4. New `abbreviations.json` for domain abbreviations
+1. a new `domain_config.yaml` with the actions, the allowed entity types, the grammar templates, the prompt rules and examples, and the ontology sources;
+2. a new ANTLR grammar and a new parser generated from it;
+3. new ontology files, and one loader function (registered in `_FORMAT_LOADERS`) for each file format that the code does not read yet;
+4. a new `abbreviations.json`.
 
-Everything else reuses unchanged.
+The seven stages and the prompt template are the same for every domain. A few domain-specific details are still in the code (see Section 4.2, NFR4, of the thesis).
+
+## Worked Example: UML Sequence Diagram
+
+The command "start HD" through the pipeline. The numbers are the stages.
+
+![UML sequence diagram of the command "start HD"](figures/sequence_example.png)
+
+## Stage 4: UML Class Diagrams (Strategy Pattern)
+
+These are the design view. In the code, the strategies and the loaders are plain functions that are stored in the dictionaries `_STRATEGIES` and `_FORMAT_LOADERS`, which act as registries.
+
+![UML class diagram: preparation of the entity](figures/class_entity_strategy.png)
+
+![UML class diagram: loading of the ontology sources](figures/class_loader_registry.png)
+
+---
+
+*Sources: `latex-template-cgv-2/fig/*.tex`. To export a figure again, compile it with the `standalone` class and convert the PDF with `pdftoppm`.*

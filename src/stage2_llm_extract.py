@@ -64,7 +64,8 @@ def _parse_response(text: str) -> dict:
     return json.loads(text.strip())
 
 
-def extract(client: OpenAI, clean_text: str, model: str = DEFAULT_MODEL) -> LLMResult:
+def extract(client: OpenAI, clean_text: str, model: str = DEFAULT_MODEL,
+            max_tokens: int = 500) -> LLMResult:
     """Call the LLM with the system prompt and return a structured LLMResult."""
     try:
         resp = client.chat.completions.create(
@@ -73,7 +74,7 @@ def extract(client: OpenAI, clean_text: str, model: str = DEFAULT_MODEL) -> LLMR
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": clean_text},
             ],
-            max_tokens=500,
+            max_tokens=max_tokens,   # reasoning models spend this budget on thinking: 500 can cut them off
             temperature=0,
             response_format={"type": "json_object"},  # constrained decoding server-side
         )

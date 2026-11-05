@@ -6,7 +6,15 @@ handed to the backend / Stage 7 confirmation UI.
 
 Statuses produced:
   rejected              — Stage 1 format rejection, Stage 2 UNKNOWN, or
-                           Stage 3 structural failure
+                           Stage 3 structural failure. For Stage 3 failures
+                           where the action/entity were understood (just
+                           structurally incomplete, e.g. medication missing
+                           dose/unit), includes an actionable
+                           clarification_message built from the action's
+                           structure_hint in domain_config.yaml — but this
+                           does NOT go through Stage 7's confirm/reject
+                           dialogue, since nothing concrete was resolved to
+                           confirm or deny (see docs/findings.md Finding 3).
   accepted              — Stage 5 status "accepted" or "skipped", end_signal
                            true (or action has no end-of-dictation concept)
   accepted_partial      — free-text action (set_note, send_message) still
@@ -101,6 +109,43 @@ def _ontology_explanation(stage4, action_info: dict) -> str:
     return f"{stage4.raw_entity!r} was not found in any configured ontology index."
 
 
+def _structure_clarification(stage2, stage3, action_info: dict) -> str | None:
+    """Turn a Stage 3 structural failure into an actionable message, when
+    there's enough known (action + entity) to say something specific.
+
+    PARSE_ERROR: the action/entity were understood but the command is
+    structurally incomplete (e.g. medication missing dose/unit) — uses the
+    action's structure_hint from domain_config.yaml, so the wording stays
+    config-driven rather than hardcoded per action here.
+
+    UNEXPECTED_ENTITY: the action takes no entity at all, but one was
+    extracted — this needs no per-action hint, it's a generic structural
+    fact about the action regardless of domain.
+
+    Other reasons (e.g. INVALID_ACTION) return None — Stage 2 already
+    filters those out before this is ever reached, but it's a fallback
+    in case stage3.reason doesn't match a known pattern.
+    """
+    label = stage2.action.replace("_", " ")
+
+    if stage3.reason.startswith("PARSE_ERROR"):
+        hint = action_info.get("structure_hint")
+        if not hint:
+            return None
+        return (
+            f"I understood you want to {label} '{stage2.entity}', but the command "
+            f"is structurally incomplete: {hint}. Please repeat with the missing detail."
+        )
+
+    if stage3.reason == "UNEXPECTED_ENTITY":
+        return (
+            f"The '{label}' command doesn't take any additional details. "
+            f"Please repeat it on its own, without extra content."
+        )
+
+    return None
+
+
 def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_config: dict) -> IntentResult:
     """Assemble the Stage 6 intent payload.
 
@@ -128,7 +173,7 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
         })
 
     if not stage3.valid:
-        return IntentResult("rejected", {
+        payload = {
             "status": "rejected",
             "reason": "invalid_structure",
             "action": action,
@@ -137,7 +182,11 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
                 "llm_extraction":     _llm_explanation(stage1, stage2),
                 "grammar_validation": _grammar_explanation(stage3),
             },
-        })
+        }
+        clarification = _structure_clarification(stage2, stage3, action_info)
+        if clarification:
+            payload["clarification_message"] = clarification
+        return IntentResult("rejected", payload)
 
     urgency = stage1.urgency
 

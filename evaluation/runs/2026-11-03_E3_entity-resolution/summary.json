@@ -1,0 +1,149 @@
+{
+  "overall": {
+    "n": 98,
+    "status_acc_pct": 92.9,
+    "full_acc_pct": 86.7,
+    "incorrect_acceptance": 1,
+    "incorrect_rejection": 5,
+    "wrong_concept": 6,
+    "wrong_status": 1,
+    "coverage_pct": 93.3,
+    "n_expected_accepted": 75
+  },
+  "by_category": {
+    "collision": {
+      "n": 7,
+      "status_acc_pct": 57.1,
+      "full_acc_pct": 0.0,
+      "incorrect_acceptance": 1,
+      "incorrect_rejection": 1,
+      "wrong_concept": 4,
+      "wrong_status": 1,
+      "coverage_pct": 80.0,
+      "n_expected_accepted": 5
+    },
+    "exact": {
+      "n": 39,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 97.4,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 1,
+      "wrong_status": 0,
+      "coverage_pct": 100.0,
+      "n_expected_accepted": 39
+    },
+    "misspelling": {
+      "n": 14,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 100.0,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 0,
+      "wrong_status": 0,
+      "coverage_pct": 100.0,
+      "n_expected_accepted": 14
+    },
+    "not_in_ontology": {
+      "n": 9,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 100.0,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 0,
+      "wrong_status": 0,
+      "coverage_pct": null,
+      "n_expected_accepted": 0
+    },
+    "synonym": {
+      "n": 11,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 100.0,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 0,
+      "wrong_status": 0,
+      "coverage_pct": 100.0,
+      "n_expected_accepted": 11
+    },
+    "unseen_synonym": {
+      "n": 6,
+      "status_acc_pct": 33.3,
+      "full_acc_pct": 16.7,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 4,
+      "wrong_concept": 1,
+      "wrong_status": 0,
+      "coverage_pct": 33.3,
+      "n_expected_accepted": 6
+    },
+    "wrong_type": {
+      "n": 12,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 100.0,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 0,
+      "wrong_status": 0,
+      "coverage_pct": null,
+      "n_expected_accepted": 0
+    }
+  },
+  "by_action": {
+    "diagnosis": {
+      "n": 34,
+      "status_acc_pct": 88.2,
+      "full_acc_pct": 85.3,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 3,
+      "wrong_concept": 1,
+      "wrong_status": 1,
+      "coverage_pct": 87.5,
+      "n_expected_accepted": 24
+    },
+    "set_medication": {
+      "n": 18,
+      "status_acc_pct": 88.9,
+      "full_acc_pct": 88.9,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 2,
+      "wrong_concept": 0,
+      "wrong_status": 0,
+      "coverage_pct": 86.7,
+      "n_expected_accepted": 15
+    },
+    "show": {
+      "n": 16,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 93.8,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 1,
+      "wrong_status": 0,
+      "coverage_pct": 100.0,
+      "n_expected_accepted": 16
+    },
+    "start": {
+      "n": 22,
+      "status_acc_pct": 95.5,
+      "full_acc_pct": 81.8,
+      "incorrect_acceptance": 1,
+      "incorrect_rejection": 0,
+      "wrong_concept": 3,
+      "wrong_status": 0,
+      "coverage_pct": 100.0,
+      "n_expected_accepted": 15
+    },
+    "stop": {
+      "n": 8,
+      "status_acc_pct": 100.0,
+      "full_acc_pct": 87.5,
+      "incorrect_acceptance": 0,
+      "incorrect_rejection": 0,
+      "wrong_concept": 1,
+      "wrong_status": 0,
+      "coverage_pct": 100.0,
+      "n_expected_accepted": 5
+    }
+  }
+}

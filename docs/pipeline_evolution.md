@@ -3,100 +3,48 @@
 > Master Thesis · TU Dresden · Software Technology  
 > *Improving Intent Recognition in Grammar-Based Voice Interfaces*
 
-Diagrams render in GitLab, GitHub, and VS Code with the Markdown Preview Mermaid Support extension. The interactive HTML version is at `docs/pipeline_evolution.html`.
+This page compares the baseline of Ludyga (2024) with the pipeline of this thesis. The figures are the thesis figures (see `uml_diagrams.md`).
 
 ---
 
-## Ludyga's Baseline (2021)
+## Ludyga's Baseline (2024)
 
-Ludyga's system was a two-stage pipeline: basic text normalisation followed by ANTLR grammar matching that did both action identification and structural validation in one step. It achieved 100% precision on invalid commands but only 50% recall on valid ones -- the grammar was too strict to handle anything spoken informally.
+Ludyga's system is a grammar-based speech control with two steps. A preprocessing step checks that the input is usable and normalises the text (lower case, no punctuation, number words as digits, text before the trigger removed). A context-free grammar in ANTLR then parses the text, in one step that identifies the action and validates the structure. A command that matches the grammar becomes a JSON object. Any other input is rejected.
 
-```mermaid
-graph TD
-    BIN([Voice Input]):::src --> B1
-    B1["Stage 1: Preprocessing\nText normalisation · abbreviation expansion"]:::baseline
-    B2["Stage 2: ANTLR Grammar\nAction identification + structural validation\n(combined in one step)"]:::baseline
-    BOUT["Output\n'undefined' for any unrecognised command"]:::baseline
-    B1 --> B2 --> BOUT
-
-    classDef baseline fill:#475569,color:#fff,stroke:#334155
-    classDef src fill:#1e293b,color:#fff,stroke:#334155
-```
-
----
+Ludyga evaluated the grammar on 100 valid and 100 invalid sample commands. Its language validation accuracy was 75.5 %, and the average response time was 195 ms. Only about half of the valid commands were accepted, because every wording that is not in the grammar is rejected. In this thesis the grammar is the baseline B0 (alternative A in the figure below).
 
 ## Enhanced Pipeline (This Thesis)
 
-The enhanced pipeline keeps ANTLR as the structural authority but splits its responsibilities. A new LLM extraction stage (Stage 2) sits between preprocessing and grammar validation, handling the parts a lexer cannot: filler words, synonym variation, and natural phrasing. ANTLR (Stage 3) then validates the LLM's output against the same grammar rules and remains the gatekeeping step it always was.
+The enhanced pipeline keeps ANTLR for the structure and splits the work of the original single step:
 
-Stages 4 and 5 are entirely new. Stage 4 resolves the extracted entity against real medical ontologies and flags type mismatches. Stage 5 enforces the semantic constraint for each action and generates a human-readable clarification message. Stage 6 (Intent JSON) assembles everything into the final structured payload, and Stage 7 (User Confirmation) presents it to the doctor for an explicit "correct"/"wrong" before anything executes — closing the loop back to a repeat if rejected.
+- **Stage 1 Preprocessing:** normalisation, trigger, abbreviations, urgency flags, rejection of non-speech.
+- **Stage 2 Language model:** reads the free wording and returns the action and the entity. This replaces the closed vocabulary.
+- **Stage 3 Grammar:** checks the structure of the command that is rebuilt from the action and the entity.
+- **Stage 4 Ontology lookup:** finds the entity in DOID, HPO, the NCI Thesaurus, or RxNorm.
+- **Stage 5 Type check:** compares the type of the entity with the types that the action allows.
+- **Stage 6 Intent:** the structured result with an explanation that the pipeline builds itself.
+- **Stage 7 Confirmation:** shows the interpretation to the user before it is acted on.
 
-```mermaid
-graph TD
-    IN([Voice Input]):::src --> S1
+![Design alternatives: A is Ludyga's grammar, E is this thesis](figures/flow_alternatives.png)
 
-    S1["Stage 1: Preprocessing\nAbbreviation expansion + urgency detection"]:::updated
-    S2["Stage 2: LLM Extraction\nLlama 3.3 70B -- action identification,\nsynonym handling, filler removal"]:::new_stage
-    S3["Stage 3: ANTLR Validation\nStructural validation only\ncommand_type returned for backend routing"]:::updated
-    S4["Stage 4: Ontology Lookup\nNCIt · RxNorm · DOID · HP\nTwo-pass: primary index + global clarification"]:::new_stage
-    S5["Stage 5: Semantic Validation\nallowed_slot_types enforcement\ntype_mismatch clarification message"]:::new_stage
-    S6["Stage 6: Intent JSON\nAction + canonical entity + semantic type\n+ urgency flag from Stage 1"]:::new_stage
-    S7["Stage 7: User Confirmation\nGlasses display + 'correct'/'wrong'\nper-action confirmation_timeout_sec"]:::new_stage
+![The seven stages and the three possible outcomes](figures/pipeline_architecture.png)
 
-    S1 --> S2
-    S2 -->|action=UNKNOWN| R1([Rejected]):::rej
-    S2 --> S3
-    S3 -->|PARSE_ERROR| R2([Rejected]):::rej
-    S3 --> S4
-    S4 --> S5
-    S5 -->|type_mismatch| CL([Clarification]):::rej
-    S5 --> S6
-    S6 --> S7
-    S7 -->|confirmed / auto-confirmed| OUT([Intent JSON]):::src
-    S7 -->|rejected / unclear| RPT([Repeat Command]):::rej
+## What Moved Where
 
-    ABB([abbreviations.json]):::cfg --> S1
-    DC([domain_config.yaml]):::cfg --> S2
-    DC --> S4
-    DC -->|confirmation_timeout_sec| S7
-    GR(["ANTLR Grammar (.g4 + compiled)"]):::cfg --> S3
-    ONT([Ontologies\nDOID · HP · NCIt · RxNorm]):::cfg --> S4
+- **Moved to Stage 2 (language model):** the identification of the action, synonyms, filler words, and abbreviations of the wording. A grammar cannot generalise over these.
+- **Stayed in Stage 3 (ANTLR):** the check of the structure. Does a medication have a drug, a dose, and a unit? Does a message have a recipient? A formal grammar expresses this exactly.
+- **New (Stages 4 and 5):** the grounding of the entity and the type check. The language model extracts "hemodialysis"; Stages 4 and 5 find that hemodialysis is a procedure and that a diagnosis expects a disease or a symptom.
+- **New (Stage 7):** the confirmation.
 
-    classDef updated  fill:#d97706,color:#fff,stroke:#b45309
-    classDef new_stage fill:#0d9488,color:#fff,stroke:#0f766e
-    classDef pending  fill:#9ca3af,color:#fff,stroke:#6b7280,stroke-dasharray:6 4
-    classDef src      fill:#1e293b,color:#fff,stroke:#334155
-    classDef cfg      fill:#eff6ff,color:#1e3a5f,stroke:#3b82f6
-    classDef rej      fill:#ef4444,color:#fff,stroke:#b91c1c
-```
-
----
-
-## Colour Coding
-
-| Colour | Meaning |
-|--------|---------|
-| Slate | Original Ludyga stage, unchanged in role |
-| Amber | Stage existed before but was updated or repurposed |
-| Teal | New stage added in this thesis |
-| Grey dashed | Pending implementation |
-| Red | Rejection / clarification path |
-| Blue (light) | Configuration inputs (not stages) |
-
----
-
-## What the Diagram Shows
-
-The key architectural change is the **separation of concerns** in what was originally a single ANTLR step:
-
-- **What moved to Stage 2 (LLM)**: action identification, synonym normalisation, filler word removal, natural language understanding. These are things ANTLR lexer rules can never generalise over.
-- **What stayed in Stage 3 (ANTLR)**: structural validation -- does the entity have the required format? Is the command type correct? These are things a formal grammar expresses precisely and permanently.
-- **What is new (Stages 4 and 5)**: semantic grounding. The LLM extracts "hemodialysis" as an entity; Stages 4 and 5 determine whether hemodialysis is the right *type* of thing for the requested action.
-
-Stage 1 is largely unchanged from Ludyga, with urgency detection added. `domain_config.yaml` is new and drives Stages 2, 4, and 5 with no hardcoded action names in code.
-
----
+`domain_config.yaml` is new. It drives the prompt, the lookup, and the confirmation, so that no action names are fixed in the code.
 
 ## Result
 
-Across 243 test commands (130 valid, 113 invalid), the enhanced pipeline raises binary accuracy from 75.3% to 95.9%, valid recall from 50.0% to 98.5% (128/130), and invalid precision from 100% to 92.9% (105/113). The drop in invalid precision is deliberate: Ludyga's 100% was achieved by rejecting almost everything, including valid commands. The enhanced pipeline accepts borderline valid commands that the grammar could not handle, which naturally lowers precision slightly while making the system practically usable.
+On 243 commands (130 valid, 113 invalid), with three repetitions for each model (first run):
+
+| System | Accuracy | Valid accepted | Invalid wrongly accepted |
+|---|---|---|---|
+| B0, Ludyga's grammar | 70.8 % | 46.2 % | 0.9 % |
+| Pipeline, six systems (four models, two token budgets) | 90.1 to 95.9 % | 83.1 to 96.9 % | 1.8 to 7.1 % |
+
+Gemma 4 has the highest accuracy, 95.9 %, and the lowest median response time, 0.37 s in the first run and 0.77 s in a second run (the time depends on the load of the model service). The full results, the response times, and the analysis are in Chapter 7 of the thesis and in `evaluation/reports/final/`.

@@ -1,0 +1,75 @@
+243 items from 1 file(s)
+cold-start ontology index build: 0.832s
+== meta-llama/Llama-3.3-70B-Instruct  rep 1/3
+    25/243  (16s)
+    50/243  (35s)
+    75/243  (52s)
+    100/243  (69s)
+    125/243  (88s)
+    150/243  (112s)
+    175/243  (129s)
+    200/243  (146s)
+    225/243  (162s)
+    243/243  (174s)
+  2026-10-28_meta-llama_Llama-3.3-70B-Instruct_final_r1: valid recall 96.9%  FAR 7.1%  clarif 2.3%  median 0.6153s  p95 1.0843s
+== meta-llama/Llama-3.3-70B-Instruct  rep 2/3
+    25/243  (15s)
+    50/243  (33s)
+    75/243  (54s)
+    100/243  (133s)
+    125/243  (149s)
+    150/243  (168s)
+    175/243  (190s)
+    200/243  (209s)
+    225/243  (230s)
+    243/243  (244s)
+  2026-10-28_meta-llama_Llama-3.3-70B-Instruct_final_r2: valid recall 96.9%  FAR 7.1%  clarif 2.3%  median 0.6566s  p95 1.0906s
+== meta-llama/Llama-3.3-70B-Instruct  rep 3/3
+    25/243  (17s)
+    50/243  (36s)
+    75/243  (54s)
+    100/243  (74s)
+    125/243  (90s)
+    150/243  (110s)
+    175/243  (133s)
+    200/243  (152s)
+    225/243  (172s)
+    243/243  (186s)
+  2026-10-28_meta-llama_Llama-3.3-70B-Instruct_final_r3: valid recall 96.9%  FAR 7.1%  clarif 2.3%  median 0.654s  p95 1.108s
+== google/gemma-4-26B-A4B-it  rep 1/3
+    25/243  (7s)
+    50/243  (15s)
+    75/243  (84s)
+    100/243  (94s)
+    125/243  (162s)
+    150/243  (172s)
+    175/243  (185s)
+    200/243  (255s)
+    225/243  (265s)
+    243/243  (275s)
+  2026-10-28_google_gemma-4-26B-A4B-it_final_r1: valid recall 93.8%  FAR 1.8%  clarif 4.6%  median 0.3202s  p95 1.0007s
+== google/gemma-4-26B-A4B-it  rep 2/3
+    25/243  (76s)
+    50/243  (92s)
+    75/243  (168s)
+    100/243  (184s)
+    125/243  (200s)
+    150/243  (278s)
+    175/243  (295s)
+    200/243  (370s)
+    225/243  (387s)
+    243/243  (398s)
+  2026-10-28_google_gemma-4-26B-A4B-it_final_r2: valid recall 93.8%  FAR 1.8%  clarif 4.6%  median 0.5203s  p95 1.8136s
+== google/gemma-4-26B-A4B-it  rep 3/3
+    25/243  (73s)
+    50/243  (85s)
+    75/243  (154s)
+    100/243  (162s)
+    125/243  (169s)
+    150/243  (237s)
+    175/243  (245s)
+    200/243  (315s)
+    225/243  (322s)
+    243/243  (327s)
+  2026-10-28_google_gemma-4-26B-A4B-it_final_r3: valid recall 93.8%  FAR 1.8%  clarif 4.6%  median 0.2831s  p95 0.7424s
+overview -> /Users/anushkajoshi/Desktop/Master Thesis/Thesis_Code/evaluation/reports/tables/overview_2026-10-28_final.csv

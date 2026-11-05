@@ -64,16 +64,24 @@ def _action_cfg() -> dict:
 
 def _summarize_slot(name: str, slot) -> str:
     if isinstance(slot, list):
-        parts = [d.get("drug_label") or d.get("raw") for d in slot]
-        return ", ".join(p for p in parts if p)
+        # several drugs: each is shown with its dose and unit, so the user confirms the amount as well
+        parts = []
+        for d in slot:
+            label = d.get("drug_label") or d.get("raw")
+            dose = " ".join(x for x in (d.get("dose"), d.get("dose_unit")) if x)
+            if label:
+                parts.append(f"{label} {dose}".strip())
+        return ", ".join(parts)
     if isinstance(slot, dict):
         if "content" in slot:
             content = slot["content"]
             return content[:60] + ("..." if len(content) > 60 else "")
         canonical = slot.get("canonical")
         if canonical:
-            oid = slot.get("ontology_id")
-            return f"{canonical} ({oid})" if oid else canonical
+            # the concept identifier stays in the Stage 6 payload (audit trail) but is not shown to the user
+            if slot.get("semantic_type") == "medication" and slot.get("raw_entity"):
+                return slot["raw_entity"]   # a medication is confirmed with its dose, unit and timing as extracted
+            return canonical
         return slot.get("raw_entity", name)
     return str(slot)
 

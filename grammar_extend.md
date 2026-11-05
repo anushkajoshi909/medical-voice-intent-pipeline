@@ -81,7 +81,8 @@ This enforces that `set_medication` always requires a drug name, a numeric dose,
 ```antlr
 // Parser
 diagnosis : u21 ;
-u21       : DIAGNOSIS entity ;
+u21       : DIAGNOSIS any_text ;
+any_text  : . (.)*? ;       // one or more tokens of any kind
 
 // Lexer
 DIAGNOSIS : 'diagnosis' ;
@@ -99,7 +100,7 @@ DIAGNOSIS : 'diagnosis' ;
 
 There was no rule for "start hemodialysis" as a treatment/procedure.
 
-**We added a separate `treatment` command type:**
+**We added a separate `treatment` command type, with a fixed keyword:**
 ```antlr
 // Parser: new top-level command type, separate from protocol
 command
@@ -107,12 +108,19 @@ command
 
 protocol  : u15 ;          // set_note (documentation); unchanged from Ludyga
 treatment : u22 ;          // start treatment/procedure (new)
-u22       : START entity ;
+u22       : START TREATMENT any_text ;
+
+// Lexer
+TREATMENT : 'treatment' ;
 ```
+
+**Why a fixed keyword:** each of Ludyga's `START` commands (emergency, documentation, message, medication) is recognised by a second keyword, and the open text of a message or documentation lies between fixed keywords. A rule `START any_text` has no such keyword and overlaps with all of them. Because `treatment` is tried before `set_medication` and `message`, it would accept a message without a recipient and a medication without a dose as a treatment, and the parser would never check them (tested with a temporary grammar). Placing it last does not help: complete messages would parse as messages, but incomplete ones would fall through to the treatment rule. The same happens with a strict rule `entity : (WORD | INT)+`, which also refuses entities that contain a grammar keyword (`at`, `of`, `frame`) and needed a replacement of keywords by `x`.
+
+**The user never says "treatment".** Stage 3 rebuilds the command from the template of the action in `domain_config.yaml` (`"{trigger} start treatment {entity}"`); the keyword exists only in the rebuilt command. The entity itself may contain any words.
 
 **Why separate from `protocol`:** In clinical language, `protocol` means documentation (set_note, start documentation). "Start hemodialysis" is initiating a procedure -- a different backend action. Keeping them separate means `command_type` correctly returns `treatment` (not `protocol`) for "start haemodialysis", allowing the backend to route it correctly.
 
-ANTLR4's LL(*) prediction resolves the `START` ambiguity: `glasses_command` (which includes `START EMERGENCY`) is tried before `treatment` in the `command` alternatives, so "start emergency" still routes to `glasses_command`.
+ANTLR4 tries the alternatives of `command` in order and uses the first that matches the whole command: `glasses_command` (which includes `START EMERGENCY`) and `protocol` (`START DOCUMENTATION`) come before `treatment`, so "start emergency" and "start documentation" still route to them.
 
 ---
 
@@ -127,7 +135,7 @@ u01: STOP (FRAME)?;
 **We changed to:**
 ```antlr
 stop_cmd : u01 ;
-u01      : STOP entity? ;
+u01      : STOP any_text? ;
 ```
 
 **Why:** The pipeline needs `stop hemodialysis`, `stop vasopressors`, `stop infusion`. These are free-text entities, not grammar keywords. Making entity optional also preserves "stop" bare (stop current display).

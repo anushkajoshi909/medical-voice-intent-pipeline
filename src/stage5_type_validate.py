@@ -55,6 +55,11 @@ def validate(action: str, stage4) -> Stage5Result:
     ont_index   = action_info.get("ontology_index")
     pass_type   = action_info.get("passthrough_type")
 
+    # Action valid without an entity (e.g. bare "stop"): nothing to validate
+    if action_info.get("entity_optional") and not (stage4.raw_entity or "").strip():
+        return Stage5Result("skipped", None, allowed,
+                            "optional entity absent — nothing to validate")
+
     # System commands (emergency, turn_on/off …): no entity slot, nothing to validate
     if ont_index is None and not pass_type:
         return Stage5Result("skipped", None, allowed,

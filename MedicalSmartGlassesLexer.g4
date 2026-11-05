@@ -39,6 +39,7 @@ S        : 's' ;
 SET      : 'set' ;
 NOTE     : 'note' ;
 DOCUMENTATION: 'documentation' ;
+TREATMENT: 'treatment' ;   // fixed second keyword of 'start treatment <entity>' (u22); only in the rebuilt command of Stage 3
 
 // set_medication
 MEDICATION: 'medication' ;
