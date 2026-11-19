@@ -1,0 +1,16 @@
+# Python packages of the pipeline and the evaluation (install: pip install -r requirements.txt)
+# Versions are the ones the reported runs and the tests were made with.
+
+# pipeline (src/)
+openai==1.96.1                  # OpenAI-compatible client for the ScaDS.AI LLM and Whisper endpoints
+PyYAML==6.0.2                   # domain_config.yaml
+antlr4-python3-runtime==4.13.2  # must match the ANTLR version that generated src/grammar/ (4.13.2)
+pydantic==2.11.7                # strict schema of the Stage 2 answer (stage2_llm_extract.ExtractionSchema)
+
+# voice mode only (python src/run_pipeline.py --voice)
+numpy==2.2.1
+sounddevice
+soundfile
+
+# evaluation figures only (evaluation/scripts/make_figures.py, make_extraction_figure.py)
+matplotlib

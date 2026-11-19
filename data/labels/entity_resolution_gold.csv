@@ -1,0 +1,99 @@
+id,category,action,entity,expected_status,expected_type,expected_concept,expected_id,note
+e3_001,exact,diagnosis,pneumonia,accepted,disease,pneumonia,DOID:552,
+e3_002,exact,diagnosis,hypertension,accepted,disease,hypertension,DOID:10763,
+e3_003,exact,diagnosis,myocardial infarction,accepted,disease,myocardial infarction,DOID:5844,
+e3_004,exact,diagnosis,atrial fibrillation,accepted,disease,atrial fibrillation,DOID:0060224,
+e3_005,exact,diagnosis,headache,accepted,symptom,Headache,HP:0002315,
+e3_006,exact,diagnosis,chest pain,accepted,symptom,Chest pain,HP:0100749,
+e3_007,exact,diagnosis,hypotension,accepted,symptom,Hypotension,HP:0002615,
+e3_008,exact,diagnosis,common cold,accepted,disease,common cold,DOID:10459,
+e3_009,synonym,diagnosis,heart attack,accepted,disease,myocardial infarction,DOID:5844,
+e3_010,synonym,diagnosis,type 2 diabetes,accepted,disease,type 2 diabetes mellitus,DOID:9352,
+e3_011,synonym,diagnosis,flu,accepted,disease,influenza,DOID:8469,
+e3_012,synonym,diagnosis,high blood pressure,accepted,symptom,Hypertension,HP:0000822,
+e3_013,synonym,diagnosis,shortness of breath,accepted,symptom,Dyspnea,HP:0002094,
+e3_014,synonym,diagnosis,throwing up,accepted,symptom,Vomiting,HP:0002013,
+e3_015,synonym,diagnosis,low blood pressure,accepted,symptom,Hypotension,HP:0002615,
+e3_016,synonym,diagnosis,heart failure,accepted,symptom,Congestive heart failure,HP:0001635,
+e3_017,misspelling,diagnosis,pnuemonia,accepted,disease,pneumonia,DOID:552,
+e3_018,misspelling,diagnosis,hypertention,accepted,disease,hypertension,DOID:10763,
+e3_019,misspelling,diagnosis,atrial fibrilation,accepted,disease,atrial fibrillation,DOID:0060224,
+e3_020,misspelling,diagnosis,diabetis mellitus,accepted,disease,diabetes mellitus,DOID:9351,
+e3_021,unseen_synonym,diagnosis,stomach ache,accepted,symptom,Abdominal pain,HP:0002027,"colloquial wording; concept exists, wording is not a label or synonym"
+e3_022,unseen_synonym,diagnosis,belly pain,accepted,symptom,Abdominal pain,HP:0002027,"colloquial wording; concept exists, wording is not a label or synonym"
+e3_023,unseen_synonym,diagnosis,covid,accepted,disease,COVID-19,DOID:0080600,"short form; concept exists, wording is not a label or synonym"
+e3_024,not_in_ontology,diagnosis,purple elephant,entity_not_found,,,,
+e3_025,not_in_ontology,diagnosis,tuesday afternoon,entity_not_found,,,,
+e3_026,not_in_ontology,diagnosis,glasses syndrome,entity_not_found,,,,
+e3_027,collision,diagnosis,cold,accepted,disease,common cold,DOID:10459,DOID lists COLD as a synonym of chronic obstructive pulmonary disease (DOID:3083)
+e3_028,collision,diagnosis,hemolysis,entity_not_found,,,,bare term absent from DOID and HP; only an NCIt synonym of Hemolytic Index (docs/findings.md Finding 2)
+e3_029,wrong_type,diagnosis,hemodialysis,type_mismatch,procedure,Hemodialysis,NCIt:C15248,
+e3_030,wrong_type,diagnosis,appendectomy,type_mismatch,procedure,Appendectomy,NCIt:C51687,
+e3_031,wrong_type,diagnosis,magnetic resonance imaging,type_mismatch,procedure,Magnetic Resonance Imaging,NCIt:C16809,
+e3_032,wrong_type,diagnosis,aspirin,type_mismatch,medication,aspirin,RXCUI:1191,
+e3_033,wrong_type,diagnosis,metformin,type_mismatch,medication,metformin,RXCUI:6809,
+e3_034,wrong_type,diagnosis,blood pressure,type_mismatch,vital_sign,Blood Pressure,,
+e3_035,exact,start,hemodialysis,accepted,procedure,Hemodialysis,NCIt:C15248,
+e3_036,exact,start,dialysis,accepted,procedure,Dialysis,NCIt:C15221,
+e3_037,exact,start,mechanical ventilation,accepted,procedure,Mechanical Ventilation,NCIt:C70909,
+e3_038,exact,start,chemotherapy,accepted,procedure,Chemotherapy,NCIt:C15632,
+e3_039,exact,start,blood transfusion,accepted,procedure,Blood Transfusion,NCIt:C15192,
+e3_040,exact,start,oxygen therapy,accepted,procedure,Oxygen Therapy,NCIt:C94624,
+e3_041,exact,start,aspirin,accepted,medication,aspirin,RXCUI:1191,
+e3_042,synonym,start,radiotherapy,accepted,procedure,Radiation Therapy,NCIt:C15313,
+e3_043,synonym,start,intravenous infusion,accepted,procedure,Parenteral Infusion Procedure,NCIt:C21088,
+e3_044,synonym,start,blood draw,accepted,procedure,Phlebotomy,NCIt:C28221,
+e3_045,misspelling,start,hemodialisis,accepted,procedure,Hemodialysis,NCIt:C15248,
+e3_046,misspelling,start,chemotheraphy,accepted,procedure,Chemotherapy,NCIt:C15632,
+e3_047,misspelling,start,asprin,accepted,medication,aspirin,RXCUI:1191,
+e3_048,not_in_ontology,start,intubation,entity_not_found,,,,"valid clinical procedure, but not in the NCIt types loaded"
+e3_049,not_in_ontology,start,cardiopulmonary resuscitation,entity_not_found,,,,"valid clinical procedure, but not in the NCIt types loaded"
+e3_050,not_in_ontology,start,defibrillation,entity_not_found,,,,"valid clinical procedure, but not in the NCIt types loaded"
+e3_051,collision,start,heparin,accepted,medication,heparin,RXCUI:5224,NCIt lists heparin as a synonym of the laboratory procedure Heparin Measurement (C165967)
+e3_052,collision,start,acetaminophen,accepted,medication,acetaminophen,RXCUI:161,NCIt lists acetaminophen as a synonym of the laboratory procedure Acetaminophen Measurement (C135398)
+e3_053,collision,start,hemolysis,type_mismatch,condition,,,"a clinical condition, not a procedure or medication; only an NCIt synonym of Hemolytic Index (Finding 2); absent from DOID and HP"
+e3_054,wrong_type,start,pneumonia,type_mismatch,disease,pneumonia,DOID:552,
+e3_055,wrong_type,start,headache,type_mismatch,symptom,Headache,HP:0002315,
+e3_056,wrong_type,start,blood pressure,type_mismatch,vital_sign,Blood Pressure,,
+e3_057,exact,stop,mechanical ventilation,accepted,procedure,Mechanical Ventilation,NCIt:C70909,
+e3_058,exact,stop,chemotherapy,accepted,procedure,Chemotherapy,NCIt:C15632,
+e3_059,exact,stop,metformin,accepted,medication,metformin,RXCUI:6809,
+e3_060,misspelling,stop,dialisis,accepted,procedure,Dialysis,NCIt:C15221,
+e3_061,collision,stop,heparin,accepted,medication,heparin,RXCUI:5224,same collision as start heparin
+e3_062,not_in_ontology,stop,antibiotics,entity_not_found,,,,"drug class, not a drug name in RxNorm ingredients (dataset item ext_new_stop_01)"
+e3_063,not_in_ontology,stop,ventilator,entity_not_found,,,,"device, not a procedure in the NCIt types loaded (dataset item ext_new_stop_02)"
+e3_064,wrong_type,stop,hypertension,type_mismatch,disease,hypertension,DOID:10763,
+e3_065,exact,set_medication,aspirin 100 milligrams,accepted,medication,aspirin,RXCUI:1191,
+e3_066,exact,set_medication,metformin 500 milligrams,accepted,medication,metformin,RXCUI:6809,
+e3_067,exact,set_medication,lisinopril 10 milligrams,accepted,medication,lisinopril,RXCUI:29046,
+e3_068,exact,set_medication,atorvastatin 20 milligrams,accepted,medication,atorvastatin,RXCUI:83367,
+e3_069,exact,set_medication,levothyroxine 50 micrograms,accepted,medication,levothyroxine,RXCUI:10582,
+e3_070,exact,set_medication,ibuprofen 400 milligrams,accepted,medication,ibuprofen,RXCUI:5640,
+e3_071,exact,set_medication,tylenol 500 milligrams,accepted,medication,Tylenol,RXCUI:202433,brand name
+e3_072,exact,set_medication,lisinopril 10 milligrams once daily,accepted,medication,lisinopril,RXCUI:29046,timing after the unit
+e3_073,exact,set_medication,aspirin 100 milligrams and clopidogrel 75 milligrams,accepted,medication,aspirin; clopidogrel,RXCUI:1191; RXCUI:32968,two drugs
+e3_074,unseen_synonym,set_medication,albuterol inhaler 2 puffs,accepted,medication,albuterol,RXCUI:435,drug name followed by a form word; RxNorm term is albuterol
+e3_075,collision,set_medication,paracetamol 500 milligrams,accepted,medication,acetaminophen,RXCUI:161,"international name of acetaminophen, not an RxNorm ingredient term; NCIt lists it as a synonym of Acetaminophen Measurement (C135398); paracetamol is the example in the pipeline prompt"
+e3_076,exact,set_medication,panadol 500 milligrams,accepted,medication,Panadol,RXCUI:202432,brand name
+e3_077,misspelling,set_medication,metformine 500 milligrams,accepted,medication,metformin,RXCUI:6809,
+e3_078,misspelling,set_medication,ibuprofin 400 milligrams,accepted,medication,ibuprofen,RXCUI:5640,
+e3_079,misspelling,set_medication,lisinopirl 10 milligrams,accepted,medication,lisinopril,RXCUI:29046,
+e3_080,not_in_ontology,set_medication,zorblax 10 milligrams,entity_not_found,,,,
+e3_081,wrong_type,set_medication,pneumonia,type_mismatch,disease,pneumonia,DOID:552,
+e3_082,wrong_type,set_medication,hemodialysis,type_mismatch,procedure,Hemodialysis,NCIt:C15248,
+e3_083,exact,show,blood pressure,accepted,vital_sign,Blood Pressure,,closed list vital_signs.json
+e3_084,exact,show,heart rate,accepted,vital_sign,Heart Rate,,closed list vital_signs.json
+e3_085,exact,show,oxygen saturation,accepted,vital_sign,Oxygen Saturation,,closed list vital_signs.json
+e3_086,exact,show,temperature,accepted,vital_sign,Temperature,,closed list vital_signs.json
+e3_087,exact,show,complete blood count,accepted,lab_result,Complete Blood Count,,closed list vital_signs.json
+e3_088,exact,show,creatinine,accepted,lab_result,Creatinine,,closed list vital_signs.json
+e3_089,exact,show,blood glucose,accepted,lab_result,Blood Glucose,,closed list vital_signs.json
+e3_090,exact,show,patient history,accepted,ehr_record,patient history,,not a vital sign or lab value in the list: record category
+e3_091,exact,show,discharge summary,accepted,ehr_record,discharge summary,,not a vital sign or lab value in the list: record category
+e3_092,exact,show,lab results,accepted,ehr_record,lab results,,not a vital sign or lab value in the list: record category
+e3_093,exact,show,medication history,accepted,ehr_record,medication history,,not a vital sign or lab value in the list: record category
+e3_094,misspelling,show,blood presure,accepted,vital_sign,Blood Pressure,,
+e3_095,misspelling,show,haert rate,accepted,vital_sign,Heart Rate,,
+e3_096,misspelling,show,creatinin,accepted,lab_result,Creatinine,,
+e3_097,unseen_synonym,show,body temperature,accepted,vital_sign,Temperature,,wording not in the list
+e3_098,unseen_synonym,show,pulse,accepted,vital_sign,Heart Rate,,"wording not in the list, no string overlap"

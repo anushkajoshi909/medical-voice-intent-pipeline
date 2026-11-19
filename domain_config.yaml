@@ -1,0 +1,370 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOMAIN CONFIGURATION
+#
+# How to adapt this file for a NEW DOMAIN:
+#
+# ┌─ REPLACE (domain-specific content) ────────────────────────────────────────┐
+# │  domain, domain_description, trigger_phrase                                │
+# │  All action names and their descriptions                                   │
+# │  grammar_command_type values  (must match rules in your .g4 parser file)   │
+# │  allowed_slot_types values    (choose names meaningful to your domain)     │
+# │  ontology_index values        (must match loaders in stage4_ontology_lookup│
+# │                                .py — add a new _load_X() + _cache key)     │
+# │  canonical_entities           (your domain's closed-set entity lists)      │
+# │  domain_rules, few_shot_examples                                           │
+# └────────────────────────────────────────────────────────────────────────────┘
+# ┌─ KEEP (structural keys the pipeline reads — rename breaks things) ──────────┐
+# │  actions:                                                                   │
+# │    <action_name>:                                                           │
+# │      grammar_command_type:   validated vs .g4 at startup by domain_loader  │
+# │      description:            injected into LLM system prompt               │
+# │      allowed_slot_types:     Stage 5 validates entity semantic type here   │
+# │      ontology_index:         Stage 4 — which index to search (null=skip)   │
+# │      fallback_index:         Stage 4 — retry index if primary misses       │
+# │      entity_extractor:       Stage 4 — extraction strategy before lookup   │
+# │                              "default" (use entity as-is)                  │
+# │                              "medication" (strip dose/unit before lookup)   │
+# │                              add new strategies in stage4_ontology_lookup  │
+# │      passthrough_type:       Stage 4 — semantic_type to assign when        │
+# │                              ontology_index is null and entity has meaning  │
+# │                              omit for system commands with no entity        │
+# │      stage3_template:        Stage 3 — text the grammar parses for this action; placeholders
+# │                              {trigger} {entity} {recipient}; must match a command form of the .g4
+# │      stage3_entity_view:     Stage 3 — which copy of the entity the ANTLR frame check sees
+# │                              "medication_core" (keep drug+dose+unit per drug, drop frequency
+# │                              text); omit = entity as-is. Stages 4-6 always get the
+# │                              original entity.
+# │      entity_optional:        true = the action is valid without an entity (e.g. bare "stop");
+# │                              Stage 5 then returns "skipped" instead of entity_not_found
+# │      confirmation_timeout_sec: Stage 7 — null=always block for an explicit │
+# │                              "correct"/"wrong" response (high-risk action).│
+# │                              <int>=auto-confirm after N idle seconds       │
+# │                              (low-risk action). 0=skip the prompt entirely │
+# │                              and confirm immediately (delay unacceptable,  │
+# │                              e.g. emergency).                              │
+# │  domain_rules:               injected into LLM prompt as numbered list     │
+# │  few_shot_examples:          injected into LLM prompt                      │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+domain: healthcare
+domain_description: "medical voice interface running on smart glasses worn by clinicians"
+trigger_phrase: "ok glasses"
+
+# ── Interaction (src/interaction.py; not used by the LLM prompt) ──────────────
+# Replies inside an active interaction (open dictation) need no trigger phrase.
+# They are matched as whole utterances (case and punctuation ignored), so the
+# same words inside dictated text stay content. No LLM call is made for them.
+interaction:
+  dictation_reminder_sec: 5          # user inactivity before the completion question (initial value, not evaluated with users)
+  dictation_discard_sec: 60          # no answer this long after the question: the open dictation is discarded (never saved or sent)
+  dictation_reminder:
+    set_note: "I did not hear an end phrase for this note. Is the note finished, or would you like to continue?"
+    send_message: "I did not hear an end phrase for this message. Is the message finished, or would you like to continue?"
+  dictation_replies:
+    finish: ["finish", "finished", "done", "i am done", "i am finished", "im done", "im finished", "yes finished",
+             "that is all", "thats all", "finish note", "finish the note", "finish message", "finish the message",
+             "end of note", "end of message", "send it"]
+    continue: ["continue", "keep going", "not finished", "not yet", "i want to continue", "continue dictation"]
+    cancel: ["cancel", "discard", "cancel note", "cancel message", "discard note", "discard message", "delete it"]
+
+# ── Actions ────────────────────────────────────────────────────────────────────
+# grammar_command_type : must match a rule name in MedicalSmartGlassesParser.g4
+#                        (validated at startup — mismatch raises ValueError)
+# ontology_index       : index name in Stage 4 cache, or null for passthrough
+# fallback_index       : secondary index tried when ontology_index yields nothing
+# entity_extractor     : extraction strategy applied before ontology lookup
+# passthrough_type     : semantic_type assigned for null-index actions that
+#                        carry meaningful entities (patient names, free text)
+
+actions:
+  start:
+    grammar_command_type: treatment
+    stage3_template: "{trigger} start treatment {entity}"
+    description: "Initiate a treatment, procedure, or medication"
+    allowed_slot_types: [treatment, procedure, medication, shared_session, emergency]
+    ontology_index: procedure       # try NCIt Thesaurus first
+    fallback_index: medication      # if not a procedure, try RXNORM (drug start)
+    entity_extractor: default
+    fallback_extractor: medication  # strip dose/unit before RxNorm lookup
+    confirmation_timeout_sec: null  # initiating treatment/procedure/medication — explicit only
+
+  show:
+    grammar_command_type: request_data
+    stage3_template: "{trigger} show {entity}"
+    description: "Display patient data, test results, vital signs, records, or messages"
+    allowed_slot_types: [vital_sign, lab_result, ehr_record]
+    ontology_index: show              # vital_signs.json only
+    fallback_index: null
+    entity_extractor: default
+    passthrough_fallback_type: ehr_record  # anything not in vital_signs → ehr_record
+    confirmation_timeout_sec: 5     # read-only — safe to auto-confirm
+
+  diagnosis:
+    grammar_command_type: diagnosis
+    stage3_template: "{trigger} diagnosis {entity}"
+    description: "Record a clinical diagnosis"
+    allowed_slot_types: [disease, symptom, condition, finding]
+    ontology_index: [doid, hp]      # search disease ontology first, then symptom
+    entity_extractor: default
+    confirmation_timeout_sec: null  # clinical diagnosis — explicit only
+
+  set_medication:
+    grammar_command_type: set_medication
+    stage3_template: "{trigger} set medication {entity} finish medication"
+    description: "Prescribe or record a medication — entity MUST include drug name, dose, and unit (e.g. 'paracetamol 100 mg')"
+    allowed_slot_types: [medication]
+    ontology_index: medication      # RXNCONSO.RRF
+    fallback_index: null
+    entity_extractor: medication    # strips dose/unit before lookup
+    stage3_entity_view: medication_core
+    confirmation_timeout_sec: null  # high-criticality — always explicit
+    # Shown in the rejection message when Stage 3 fails (Stage 6 reads this directly;
+    # keeps the human-readable hint config-driven rather than hardcoded in code).
+    structure_hint: "needs a drug name followed by a numeric dose and unit, e.g. 'paracetamol 100 mg'"
+
+  set_note:
+    grammar_command_type: protocol
+    stage3_template: "{trigger} set note {entity} finish note"
+    description: "Dictate a free-text clinical note"
+    allowed_slot_types: [free_text]
+    ontology_index: null            # entity is free text — no lookup
+    passthrough_type: free_text
+    confirmation_timeout_sec: 6     # dictation — low risk, easily amended
+
+  stop:
+    grammar_command_type: stop_cmd
+    stage3_template: "{trigger} stop {entity}"
+    description: "Discontinue a treatment, medication, or session"
+    allowed_slot_types: [treatment, procedure, medication, shared_session, emergency, system]
+    ontology_index: procedure       # try NCIt first
+    fallback_index: medication      # if not a procedure, try RXNORM
+    entity_extractor: default
+    fallback_extractor: medication  # strip dose/unit before RxNorm lookup
+    entity_optional: true           # bare "stop" is valid (grammar u01: STOP entity?)
+    confirmation_timeout_sec: null  # discontinuing treatment/medication — explicit only
+
+  turn_on:
+    grammar_command_type: glasses_command
+    stage3_template: "{trigger} turn on {entity}"
+    description: "Activate a display or system feature"
+    allowed_slot_types: [system]
+    ontology_index: null            # system command — no ontology lookup
+    entity_slot: false              # grammar enforces no entity; pipeline strips any LLM extractions
+    confirmation_timeout_sec: 3     # trivial UI control
+
+  turn_off:
+    grammar_command_type: glasses_command
+    stage3_template: "{trigger} turn off {entity}"
+    description: "Deactivate a display or system feature"
+    allowed_slot_types: [system]
+    ontology_index: null
+    entity_slot: false
+    confirmation_timeout_sec: 3
+
+  continue:
+    grammar_command_type: glasses_command
+    stage3_template: "{trigger} continue"
+    description: "Resume a paused display or operation"
+    allowed_slot_types: [system]
+    ontology_index: null
+    entity_slot: false
+    confirmation_timeout_sec: 3
+
+  change_patient:
+    grammar_command_type: request_patient
+    stage3_template: "{trigger} change patient to {entity}"
+    description: "Switch the active patient context — requires explicit patient name"
+    allowed_slot_types: [patient_identifier]
+    ontology_index: null            # entity IS the patient identifier — no lookup
+    passthrough_type: patient_identifier
+    confirmation_timeout_sec: null  # mixing up patient context is dangerous — explicit only
+
+  send_message:
+    grammar_command_type: message
+    stage3_template: "{trigger} start message {entity} finish message and send it to {recipient}"
+    # Ludyga's u20 grammar rule requires both a message body (note) and a named
+    # recipient (patient_name): START [NEW] MESSAGE note FINISH [NEW] MESSAGE [AND] SEND IT TO patient_name
+    # Stage 2 (LLM) extracts two fields to feed this rule:
+    #   entity    — the message body
+    #   recipient — the person or role the message is addressed to (e.g. "Dr. Smith")
+    # Stage 3 reconstructs: "ok glasses start message {entity} finish message and send it to {recipient}"
+    # A missing recipient causes a PARSE_ERROR — correct: an unsent message is invalid.
+    description: "Compose and send a message to a clinical team member — entity is the message body, recipient is the named addressee (required by grammar)"
+    allowed_slot_types: [free_text]
+    ontology_index: null
+    passthrough_type: free_text
+    confirmation_timeout_sec: null  # avoid misfired clinical communication — explicit only
+    structure_hint: "needs both message content and a named recipient, e.g. 'send message to Dr Smith: patient is stable'"
+
+  emergency:
+    grammar_command_type: glasses_command
+    stage3_template: "{trigger} start emergency"
+    description: "Trigger emergency protocol immediately"
+    allowed_slot_types: []
+    ontology_index: null
+    entity_slot: false
+    confirmation_timeout_sec: 0     # any delay is unacceptable — confirm instantly
+
+  accept_emergency:
+    grammar_command_type: glasses_command
+    stage3_template: "{trigger} accept emergency"
+    description: "Accept or acknowledge an incoming emergency alert"
+    allowed_slot_types: []
+    ontology_index: null
+    entity_slot: false
+    confirmation_timeout_sec: 0     # any delay is unacceptable — confirm instantly
+
+  leave_emergency:
+    grammar_command_type: glasses_command
+    stage3_template: "{trigger} leave emergency"
+    description: "Exit emergency mode"
+    allowed_slot_types: []
+    ontology_index: null
+    entity_slot: false
+    confirmation_timeout_sec: null  # standing down a real emergency should be deliberate
+
+# ── Domain-specific LLM rules (healthcare only) ────────────────────────────────
+# Generic rules (don't judge entity type, raw JSON only, etc.) live in the
+# prompt template (llm_system_prompt.txt).
+
+domain_rules:
+  - "This is a MEDICAL clinical interface. If the command is clearly unrelated to clinical work (e.g. home appliances, vehicles, vague commands with no medical content), return action=UNKNOWN."
+  - "change_patient requires both an explicit patient name AND a clear intent to switch patient context (e.g. 'change patient', 'switch to', 'new patient', 'transfer to'). A command that merely mentions a patient name but has a vague or unrelated verb (e.g. 'do the needful for patient X', 'help patient X') should return UNKNOWN."
+  - "If 'start', 'begin', 'trigger', or 'initiate' appears before or near 'emergency', the action is ALWAYS 'emergency' — NOT 'start'. The action 'start' is only for treatments, procedures, or medications."
+  - "If 'stop', 'finish', 'terminate', 'end', or 'cancel' appears with 'emergency', the action is 'leave_emergency' — NOT 'stop'."
+  - "For set_medication, the entity MUST contain the drug name, dose number, and unit (e.g. 'paracetamol 100 mg'). If dose or unit is missing, still extract what was said but mark confidence low."
+  - "For show commands, extract the data type exactly as spoken (e.g. 'blood pressure', 'patient history', 'lab results'). Do not rename or normalise. If the requested data has no plausible clinical meaning (e.g. 'show movie', 'show my emails'), return UNKNOWN."
+  - "turn_on and turn_off apply ONLY to features of the smart glasses system itself (AR display, overlays, notifications, recording). Physical environment controls (lights, volume, external devices) are not glasses features — return UNKNOWN."
+  - "send_message is for clinical communication with medical team members only (doctors, nurses, colleagues). Non-clinical messages → UNKNOWN. For send_message, entity is the message body only. recipient is the name or role of the person the message is addressed to (e.g. 'Dr. Smith', 'the nurse', 'the team'). Extract recipient separately from entity."
+
+# ── Ontology sources ──────────────────────────────────────────────────────────
+# Declares what data files feed each Stage 4 index.
+#
+# ┌─ REPLACE for a new domain ──────────────────────────────────────────────────┐
+# │  index names (must match ontology_index values declared in actions above)   │
+# │  file paths, semantic_type, source_name, and format-specific filter params  │
+# │  fuzzy_cutoff per index (higher = stricter matching)                        │
+# └────────────────────────────────────────────────────────────────────────────┘
+# ┌─ KEEP (structural keys Stage 4 reads) ──────────────────────────────────────┐
+# │  ontology_sources:                                                           │
+# │    <index_name>:                                                             │
+# │      fuzzy_cutoff: <float>    0.0–1.0; higher = stricter                   │
+# │      sources:                                                                │
+# │        - type: <loader_type>  must be registered in _FORMAT_LOADERS         │
+# │          file: <path>         relative to project root                      │
+# │          semantic_type: <str> assigned to matched entries                   │
+# │          source_name: <str>   label in OntologyResult.source                │
+# │          <extra params>       loader-specific (filter_semantic_types, etc.) │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+ontology_sources:
+  show:
+    fuzzy_cutoff: 0.72          # loose — for vital sign label matching only
+    sources:
+      - type: json_labels       # vital signs only — short, stable ontology
+        file: ontologies/vital_signs.json
+        source_name: vital_signs
+      # EHR record categories are NOT a closed list here — the LLM gates validity
+      # via domain rules; anything not a vital sign becomes semantic_type=ehr_record
+
+  doid:
+    fuzzy_cutoff: 0.90          # strict — hemolysis vs hemoptysis differ at 0.84
+    sources:
+      - type: obo
+        file: ontologies/doid.obo
+        semantic_type: disease
+        source_name: doid
+
+  hp:
+    fuzzy_cutoff: 0.88
+    sources:
+      - type: obo
+        file: ontologies/hp.obo
+        semantic_type: symptom
+        source_name: hp
+
+  procedure:
+    fuzzy_cutoff: 0.86
+    sources:
+      - type: ncit
+        file: ontologies/Thesaurus.txt
+        semantic_type: procedure
+        source_name: ncit
+        filter_semantic_types:
+          - "Therapeutic or Preventive Procedure"
+          - "Laboratory Procedure"
+          - "Diagnostic Procedure"
+
+  medication:
+    fuzzy_cutoff: 0.88
+    sources:
+      - type: rxnorm
+        file: ontologies/RXNCONSO.RRF
+        semantic_type: medication
+        source_name: rxnorm
+        term_types: [IN, BN, PIN, MIN]
+
+# ── Healthcare few-shot examples ───────────────────────────────────────────────
+# NOTE: none of these inputs should be verbatim matches to any command in
+# data/annotated_commands.json — these teach the model a pattern to
+# generalise from, not the exact eval-set answer. Reword rather than reuse
+# eval-set phrasing if you add new examples (checked via a substring scan
+# against the eval set; see docs/findings.md Finding 6).
+few_shot_examples:
+  - input: "kick off the emergency protocol right away"
+    output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
+
+  - input: "please begin our emergency response plan"
+    output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
+
+  - input: "a crisis is unfolding, trigger the emergency protocol"
+    output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'
+
+  - input: "we're all clear now, please finish the emergency response"
+    output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "the situation is resolved, stop the emergency alert"
+    output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "it's safe now, please cancel the emergency status"
+    output: '{"action":"leave_emergency","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "please halt the ongoing animation sequence"
+    output: '{"action":"stop","entity":"","end_signal":false,"confidence":0.95}'
+
+  - input: "diagnosis appendectomy"
+    output: '{"action":"diagnosis","entity":"appendectomy","end_signal":false,"confidence":0.97}'
+
+  - input: "set medication migraine"
+    output: '{"action":"set_medication","entity":"migraine","end_signal":false,"confidence":0.95}'
+
+  - input: "show the patient's clinical history"
+    output: '{"action":"show","entity":"clinical history","end_signal":false,"confidence":0.97}'
+
+  - input: "pull up the discharge letter"
+    output: '{"action":"show","entity":"discharge letter","end_signal":false,"confidence":0.96}'
+
+  - input: "sort out the stuff for the patient"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  # These four are well-formed, professional-sounding sentences about real
+  # (non-medical) topics — not vague filler. They teach that a command can be
+  # grammatically valid and still be UNKNOWN if the subject matter isn't
+  # clinical; the rule alone under-fires without this pattern represented.
+  - input: "display the quarterly financial summary for the board meeting"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "assess the durability of the new packaging design"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "outline the maintenance schedule for the office elevators"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "start the quarterly budget review process"
+    output: '{"action":"UNKNOWN","entity":"","end_signal":false,"confidence":0.1}'
+
+  - input: "send message patient is stable to Dr Smith"
+    output: '{"action":"send_message","entity":"patient is stable","recipient":"Dr Smith","end_signal":false,"confidence":0.97}'
+
+  - input: "message the nurse that I need assistance"
+    output: '{"action":"send_message","entity":"I need assistance","recipient":"the nurse","end_signal":false,"confidence":0.95}'

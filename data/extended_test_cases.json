@@ -1,0 +1,406 @@
+[
+  {
+    "id": "ext_abbr_01",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show BP",
+    "expected_action": "show",
+    "expected_entity_expanded": "blood pressure",
+    "note": "Abbreviation: BP → blood pressure. Ludyga grammar has no abbreviation expansion; expects full token."
+  },
+  {
+    "id": "ext_abbr_02",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show SpO2",
+    "expected_action": "show",
+    "expected_entity_expanded": "oxygen saturation",
+    "note": "Abbreviation: SpO2 → oxygen saturation."
+  },
+  {
+    "id": "ext_abbr_03",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show ECG results",
+    "expected_action": "show",
+    "expected_entity_expanded": "electrocardiogram results",
+    "note": "Abbreviation: ECG → electrocardiogram."
+  },
+  {
+    "id": "ext_abbr_04",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show CBC",
+    "expected_action": "show",
+    "expected_entity_expanded": "complete blood count",
+    "note": "Abbreviation: CBC → complete blood count."
+  },
+  {
+    "id": "ext_abbr_05",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "start HD",
+    "expected_action": "start",
+    "expected_entity_expanded": "hemodialysis",
+    "note": "Abbreviation: HD → hemodialysis. Critical abbreviation given the hemodialysis/hemolysis thesis use case."
+  },
+  {
+    "id": "ext_abbr_06",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show MRI results",
+    "expected_action": "show",
+    "expected_entity_expanded": "magnetic resonance imaging results",
+    "note": "Abbreviation: MRI → magnetic resonance imaging."
+  },
+  {
+    "id": "ext_abbr_07",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "diagnosis HTN",
+    "expected_action": "diagnosis",
+    "expected_entity_expanded": "hypertension",
+    "note": "Abbreviation: HTN → hypertension. Common clinical shorthand for a diagnosis."
+  },
+  {
+    "id": "ext_abbr_08",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "diagnosis MI",
+    "expected_action": "diagnosis",
+    "expected_entity_expanded": "myocardial infarction",
+    "note": "Abbreviation: MI → myocardial infarction."
+  },
+  {
+    "id": "ext_abbr_09",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show INR",
+    "expected_action": "show",
+    "expected_entity_expanded": "international normalised ratio",
+    "note": "Abbreviation: INR → international normalised ratio. Common lab value."
+  },
+  {
+    "id": "ext_abbr_10",
+    "category": "abbreviation_gap",
+    "valid": true,
+    "expected_failure_mode": "abbreviation_gap",
+    "text": "show HR",
+    "expected_action": "show",
+    "expected_entity_expanded": "heart rate",
+    "note": "Abbreviation: HR → heart rate."
+  },
+  {
+    "id": "ext_type_01",
+    "category": "type_mismatch",
+    "valid": false,
+    "stage2_valid": true,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis hemodialysis",
+    "expected_action": "diagnosis",
+    "expected_entity": "hemodialysis",
+    "note": "THE central thesis use case. 'diagnosis' expects [disease, symptom, condition, finding]. 'hemodialysis' is a procedure/treatment. Should trigger NEEDS_CLARIFICATION with suggestion of 'hemolysis'."
+  },
+  {
+    "id": "ext_type_02",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "start hemolysis",
+    "expected_action": "start",
+    "expected_entity": "hemolysis",
+    "note": "'start' expects [treatment, procedure, medication]. 'hemolysis' is a disease/condition, not a treatment. Should trigger NEEDS_CLARIFICATION.",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_type_03",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis aspirin",
+    "expected_action": "diagnosis",
+    "expected_entity": "aspirin",
+    "note": "'diagnosis' expects a disease; 'aspirin' is a medication. Clear semantic type mismatch.",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_type_04",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "set medication hypertension",
+    "expected_action": "set_medication",
+    "expected_entity": "hypertension",
+    "note": "'set_medication' expects [medication]; 'hypertension' is a disease. Doctor likely confused action — should clarify.",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_type_05",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "stop hemolysis",
+    "expected_action": "stop",
+    "expected_entity": "hemolysis",
+    "note": "'stop' expects [treatment, procedure, medication]; 'hemolysis' is a disease. ASR might confuse hemolysis/hemodialysis in context of a stop command too.",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_type_06",
+    "category": "type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis peritoneal dialysis",
+    "expected_action": "diagnosis",
+    "expected_entity": "peritoneal dialysis",
+    "note": "'peritoneal dialysis' is a procedure, not a diagnosis. Mirrors the hemodialysis/hemolysis use case.",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_abbr_type_01",
+    "category": "abbreviation_gap+type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "diagnosis HD",
+    "expected_action": "diagnosis",
+    "expected_entity_expanded": "hemodialysis",
+    "note": "Combined: abbreviation (HD → hemodialysis) + type mismatch (procedure used as diagnosis). Two-stage failure: expand abbreviation first, then detect type mismatch.",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_abbr_type_02",
+    "category": "abbreviation_gap+type_mismatch",
+    "valid": false,
+    "expected_failure_mode": "type_mismatch",
+    "text": "set medication HTN",
+    "expected_action": "set_medication",
+    "expected_entity_expanded": "hypertension",
+    "note": "Combined: abbreviation (HTN → hypertension) + type mismatch (disease used as medication slot).",
+    "stage2_valid": true
+  },
+  {
+    "id": "ext_new_show_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Pull up the lab results",
+    "expected_action": "show",
+    "note": "Synonym: 'pull up' → show. Not in Ludyga grammar tokens."
+  },
+  {
+    "id": "ext_new_show_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Let me see the patient's vitals",
+    "expected_action": "show",
+    "note": "Synonym: 'let me see' → show. Filler phrase + possessive."
+  },
+  {
+    "id": "ext_new_show_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Access the imaging from last week",
+    "expected_action": "show",
+    "note": "Synonym: 'access' → show. Temporal qualifier present."
+  },
+  {
+    "id": "ext_new_show_04",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Fetch the latest blood work",
+    "expected_action": "show",
+    "note": "Synonym: 'fetch' → show. Informal clinical phrasing."
+  },
+  {
+    "id": "ext_new_diag_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "I'm diagnosing this as pneumonia",
+    "expected_action": "diagnosis",
+    "note": "First-person active phrasing for diagnosis. Entity embedded mid-sentence."
+  },
+  {
+    "id": "ext_new_diag_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Record a diagnosis of type 2 diabetes",
+    "expected_action": "diagnosis",
+    "note": "Verbose phrasing with 'record a diagnosis of'. Multi-word entity."
+  },
+  {
+    "id": "ext_new_diag_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "The patient has atrial fibrillation, document it",
+    "expected_action": "diagnosis",
+    "note": "Indirect phrasing: entity stated first, action ('document it') implied. Tests LLM intent extraction."
+  },
+  {
+    "id": "ext_new_start_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Begin the IV infusion",
+    "expected_action": "start",
+    "note": "Synonym: 'begin' → start. 'IV infusion' is a treatment entity."
+  },
+  {
+    "id": "ext_new_start_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Commence dialysis",
+    "expected_action": "start",
+    "note": "Synonym: 'commence' → start. Single-word entity."
+  },
+  {
+    "id": "ext_new_stop_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Discontinue the antibiotics",
+    "expected_action": "stop",
+    "note": "Synonym: 'discontinue' → stop. Common clinical phrasing for stopping medication."
+  },
+  {
+    "id": "ext_new_stop_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Take the patient off the ventilator",
+    "expected_action": "stop",
+    "note": "Idiomatic phrasing for stopping a treatment. Filler words around entity."
+  },
+  {
+    "id": "ext_new_emrg_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Initiate emergency response",
+    "expected_action": "emergency",
+    "note": "Synonym: 'initiate' → emergency action. Different from 'start emergency' pattern."
+  },
+  {
+    "id": "ext_new_emrg_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "We have an emergency",
+    "expected_action": "emergency",
+    "note": "Declarative phrasing — no explicit action verb, context implies emergency trigger."
+  },
+  {
+    "id": "ext_new_emrg_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Stand down from emergency",
+    "expected_action": "leave_emergency",
+    "note": "Military/medical idiom for leaving emergency state. Tests leave_emergency synonyms."
+  },
+  {
+    "id": "ext_new_emrg_04",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "All clear, end emergency protocol",
+    "expected_action": "leave_emergency",
+    "note": "Composite phrase: 'all clear' + 'end emergency'. Tests multi-cue leave_emergency."
+  },
+  {
+    "id": "ext_new_pt_01",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Next patient is Emma Wilson",
+    "expected_action": "change_patient",
+    "note": "Declarative patient switch — no 'change' verb, entity is the patient name."
+  },
+  {
+    "id": "ext_new_pt_02",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "Move to patient Robert Chen",
+    "expected_action": "change_patient",
+    "note": "Synonym: 'move to patient' → change_patient."
+  },
+  {
+    "id": "ext_new_pt_03",
+    "category": "synonym_variation",
+    "valid": true,
+    "text": "New patient: James Murphy",
+    "expected_action": "change_patient",
+    "note": "Minimal phrasing: label + name. No explicit action verb."
+  },
+  {
+    "id": "ext_new_inv_01",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "Order more supplies from the pharmacy",
+    "expected_action": null,
+    "note": "Medical context but system-level logistics command — no matching action in domain."
+  },
+  {
+    "id": "ext_new_inv_02",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "Call Dr. Patel",
+    "expected_action": null,
+    "note": "Medical but no matching action (no 'call' action). Tests LLM domain boundary."
+  },
+  {
+    "id": "ext_new_inv_03",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "What time is it",
+    "expected_action": null,
+    "note": "Completely off-domain query. Should return UNKNOWN."
+  },
+  {
+    "id": "ext_new_inv_04",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "Do something for this patient",
+    "expected_action": null,
+    "note": "Vague command with patient mention — similar failure mode to c047-c053 false accepts."
+  },
+  {
+    "id": "ext_ont_01",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show blood pressure",
+    "expected_action": "show",
+    "note": "Stage 4 exact match: vital_signs.json. Full term, no abbreviation — tests direct vital_sign lookup."
+  },
+  {
+    "id": "ext_ont_02",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show patient history",
+    "expected_action": "show",
+    "note": "Stage 4 synonym match: patient_info_terms.json. 'patient history' is a synonym of 'Medical History' → semantic_type=patient_info."
+  },
+  {
+    "id": "ext_ont_03",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show discharge summary",
+    "expected_action": "show",
+    "note": "Stage 4 exact match: patient_info_terms.json → semantic_type=document. Tests document-type entity lookup."
+  },
+  {
+    "id": "ext_ont_04",
+    "category": "ontology_lookup",
+    "valid": true,
+    "text": "show messages",
+    "expected_action": "show",
+    "note": "Stage 4 exact match: patient_info_terms.json → semantic_type=messaging. Tests messaging slot type."
+  },
+  {
+    "id": "ext_ont_05",
+    "category": "invalid_domain",
+    "valid": false,
+    "text": "show movie",
+    "expected_action": null,
+    "note": "Stage 4 returns ENTITY_NOT_FOUND — 'movie' not in any medical ontology. Tests out-of-domain entity rejection via ontology coverage."
+  }
+]

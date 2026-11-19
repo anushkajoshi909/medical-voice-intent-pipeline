@@ -1,0 +1,1190 @@
+[
+  {
+    "id": "c001",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "RandomString12345"
+  },
+  {
+    "id": "c002",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "xy#&@!2345G#$"
+  },
+  {
+    "id": "c003",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{unintelligible mumble}"
+  },
+  {
+    "id": "c004",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Test, test, this is a test"
+  },
+  {
+    "id": "c005",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "[inaudible sounds]"
+  },
+  {
+    "id": "c006",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Lorem Ipsum sit amet"
+  },
+  {
+    "id": "c007",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "What is the thing?"
+  },
+  {
+    "id": "c008",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "asdkfjwenvn"
+  },
+  {
+    "id": "c009",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "😀😂👍"
+  },
+  {
+    "id": "c010",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "null"
+  },
+  {
+    "id": "c011",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{\"data\": \"value\"}"
+  },
+  {
+    "id": "c012",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "/restart"
+  },
+  {
+    "id": "c013",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "if x then y"
+  },
+  {
+    "id": "c014",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "just keep talking about nothing in particular and see where it goes, maybe to the store or just around the corner or possibly nowhere at all"
+  },
+  {
+    "id": "c015",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "12345abcdef"
+  },
+  {
+    "id": "c016",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "!@#$%^&*()_"
+  },
+  {
+    "id": "c017",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "murmuring under breath"
+  },
+  {
+    "id": "c018",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Is this thing on?"
+  },
+  {
+    "id": "c019",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "noise noise noise"
+  },
+  {
+    "id": "c020",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "dolor sit amet consectetur"
+  },
+  {
+    "id": "c021",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Who said that?"
+  },
+  {
+    "id": "c022",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "qwertyuiop"
+  },
+  {
+    "id": "c023",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "🚀🌟🎉"
+  },
+  {
+    "id": "c024",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "undefined"
+  },
+  {
+    "id": "c025",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{\"error\": \"not found\"}"
+  },
+  {
+    "id": "c026",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "/help"
+  },
+  {
+    "id": "c027",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "while true do nothing"
+  },
+  {
+    "id": "c028",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "wandering through thoughts without a clear destination"
+  },
+  {
+    "id": "c029",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Blue over green"
+  },
+  {
+    "id": "c030",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Fish swims south"
+  },
+  {
+    "id": "c031",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Shiny object on the horizon"
+  },
+  {
+    "id": "c032",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "Never there when you call"
+  },
+  {
+    "id": "c033",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "zero division error"
+  },
+  {
+    "id": "c034",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "redirect output"
+  },
+  {
+    "id": "c035",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "?"
+  },
+  {
+    "id": "c036",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "{user: 'anonymous'}"
+  },
+  {
+    "id": "c037",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "execute order 66"
+  },
+  {
+    "id": "c038",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "recursive loop initiated"
+  },
+  {
+    "id": "c039",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "A quick brown fox"
+  },
+  {
+    "id": "c040",
+    "category": "invalid_garbage",
+    "valid": false,
+    "text": "none"
+  },
+  {
+    "id": "c041",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Work on it, you know what I mean"
+  },
+  {
+    "id": "c042",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Get the stuff for patient"
+  },
+  {
+    "id": "c043",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Help with the, uh, problem"
+  },
+  {
+    "id": "c044",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the usual for subject"
+  },
+  {
+    "id": "c045",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Get that thing"
+  },
+  {
+    "id": "c046",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check the thing, we need the stuff"
+  },
+  {
+    "id": "c047",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the needful and proceed with the medical thing for patient Victor Stone"
+  },
+  {
+    "id": "c048",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check the medical thing"
+  },
+  {
+    "id": "c049",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Proceed with the thing and do the usual check"
+  },
+  {
+    "id": "c050",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Proceed with the medical"
+  },
+  {
+    "id": "c051",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Continue with the thing for patient Bruce Wayne"
+  },
+  {
+    "id": "c052",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do the needful for patient Peter Parker"
+  },
+  {
+    "id": "c053",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Patient Stephen Strange needs the thing done"
+  },
+  {
+    "id": "c054",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Check that there"
+  },
+  {
+    "id": "c055",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle the usual stuff for the case"
+  },
+  {
+    "id": "c056",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Sort that usual thing out"
+  },
+  {
+    "id": "c057",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Deal with that thing for patient"
+  },
+  {
+    "id": "c058",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle what’s required"
+  },
+  {
+    "id": "c059",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do something about it"
+  },
+  {
+    "id": "c060",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Do what's necessary, you know"
+  },
+  {
+    "id": "c061",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Deal with whatever comes up"
+  },
+  {
+    "id": "c062",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Figure out the stuff for him"
+  },
+  {
+    "id": "c063",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Handle the thing you know"
+  },
+  {
+    "id": "c064",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Look into whatever that is"
+  },
+  {
+    "id": "c065",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Address whatever you think it is"
+  },
+  {
+    "id": "c066",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "I don't know what to do"
+  },
+  {
+    "id": "c067",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Organize the usual, you know"
+  },
+  {
+    "id": "c068",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Evaluate that certain thing"
+  },
+  {
+    "id": "c069",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Adjust what needs fixing"
+  },
+  {
+    "id": "c070",
+    "category": "invalid_ambiguous",
+    "valid": false,
+    "text": "Finish up with the usual, maybe"
+  },
+  {
+    "id": "c071",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Adjust the thermostat to 22 degrees"
+  },
+  {
+    "id": "c072",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Water the plants in the office"
+  },
+  {
+    "id": "c073",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Update the website banner"
+  },
+  {
+    "id": "c074",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Check the stock market trends"
+  },
+  {
+    "id": "c075",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Book a flight to Tokyo"
+  },
+  {
+    "id": "c076",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Organize the quarterly sales data"
+  },
+  {
+    "id": "c077",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Send the monthly newsletter"
+  },
+  {
+    "id": "c078",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Review the new software update"
+  },
+  {
+    "id": "c079",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Configure the network settings"
+  },
+  {
+    "id": "c080",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Archive old project files"
+  },
+  {
+    "id": "c081",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Evaluate the efficiency of solar panels in low-light conditions"
+  },
+  {
+    "id": "c082",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Plan a corporate retreat for next summer"
+  },
+  {
+    "id": "c083",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Launch a social media campaign for the new clothing line"
+  },
+  {
+    "id": "c084",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Compile a list of potential investors for the new venture"
+  },
+  {
+    "id": "c085",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Update the privacy policy on the website"
+  },
+  {
+    "id": "c086",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Organize a workshop on digital photography techniques"
+  },
+  {
+    "id": "c087",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Optimize the supply chain for faster delivery times"
+  },
+  {
+    "id": "c088",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Negotiate a new lease agreement for the office space"
+  },
+  {
+    "id": "c089",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Lock the front door"
+  },
+  {
+    "id": "c090",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Conduct a survey on consumer preferences for electronic goods"
+  },
+  {
+    "id": "c091",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Restore the vintage car collection"
+  },
+  {
+    "id": "c092",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Draft a proposal for urban green spaces"
+  },
+  {
+    "id": "c093",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Turn on the coffee machine"
+  },
+  {
+    "id": "c094",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Increase the volume"
+  },
+  {
+    "id": "c095",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Start the dishwasher"
+  },
+  {
+    "id": "c096",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Open the garage door"
+  },
+  {
+    "id": "c097",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Dim the lights"
+  },
+  {
+    "id": "c098",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Reset the router"
+  },
+  {
+    "id": "c099",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Print the document"
+  },
+  {
+    "id": "c100",
+    "category": "invalid_out_of_domain",
+    "valid": false,
+    "text": "Start engine"
+  },
+  {
+    "id": "c101",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "stop"
+  },
+  {
+    "id": "c102",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "stop frame"
+  },
+  {
+    "id": "c103",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Freeze frame"
+  },
+  {
+    "id": "c104",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Halt animation"
+  },
+  {
+    "id": "c105",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Stop now frame"
+  },
+  {
+    "id": "c106",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Stop frame"
+  },
+  {
+    "id": "c107",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue"
+  },
+  {
+    "id": "c108",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue frame"
+  },
+  {
+    "id": "c109",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Continue frame, start now"
+  },
+  {
+    "id": "c110",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "continue"
+  },
+  {
+    "id": "c111",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn on"
+  },
+  {
+    "id": "c112",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Activate display"
+  },
+  {
+    "id": "c113",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Display on"
+  },
+  {
+    "id": "c114",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Turn on the display"
+  },
+  {
+    "id": "c115",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn the display on"
+  },
+  {
+    "id": "c116",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "Turn off display"
+  },
+  {
+    "id": "c117",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "disable the screen"
+  },
+  {
+    "id": "c118",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn it off"
+  },
+  {
+    "id": "c119",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "turn off"
+  },
+  {
+    "id": "c120",
+    "category": "valid_u01_u04",
+    "valid": true,
+    "text": "please turn on"
+  },
+  {
+    "id": "c121",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "start emergency"
+  },
+  {
+    "id": "c122",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "finish emergency"
+  },
+  {
+    "id": "c123",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept emergency"
+  },
+  {
+    "id": "c124",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave emergency mode"
+  },
+  {
+    "id": "c125",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "start the emergency"
+  },
+  {
+    "id": "c126",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "I need help! Start emergency"
+  },
+  {
+    "id": "c127",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Emergency in the kitchen! Start emergency"
+  },
+  {
+    "id": "c128",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Code red, initiate immediately"
+  },
+  {
+    "id": "c129",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Begin emergency"
+  },
+  {
+    "id": "c130",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Trigger emergency situation"
+  },
+  {
+    "id": "c131",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Deactivate emergency mode"
+  },
+  {
+    "id": "c132",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Disable emergency mode"
+  },
+  {
+    "id": "c133",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Stop emergency"
+  },
+  {
+    "id": "c134",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Terminate the emergency"
+  },
+  {
+    "id": "c135",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept emergency mode"
+  },
+  {
+    "id": "c136",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave the emergency mode now"
+  },
+  {
+    "id": "c137",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "leave emergency"
+  },
+  {
+    "id": "c138",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Cancel emergency mode"
+  },
+  {
+    "id": "c139",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "Leave crisis mode"
+  },
+  {
+    "id": "c140",
+    "category": "valid_u09_u12",
+    "valid": true,
+    "text": "accept catastrophe accident mode"
+  },
+  {
+    "id": "c141",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show age"
+  },
+  {
+    "id": "c142",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Display blood pressure"
+  },
+  {
+    "id": "c143",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show patient records"
+  },
+  {
+    "id": "c144",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "show medical charts"
+  },
+  {
+    "id": "c145",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show vital signs"
+  },
+  {
+    "id": "c146",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Display diagnostic information"
+  },
+  {
+    "id": "c147",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show medication history"
+  },
+  {
+    "id": "c148",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Illustrate the insights"
+  },
+  {
+    "id": "c149",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Illustrate the patient's medical history"
+  },
+  {
+    "id": "c150",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the MRI scan results"
+  },
+  {
+    "id": "c151",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Present the blood test findings for the last month"
+  },
+  {
+    "id": "c152",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Bring up the medication history of the past week"
+  },
+  {
+    "id": "c153",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Exhibit the surgical procedure details from the last three days"
+  },
+  {
+    "id": "c154",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Demonstrate the pathology reports for the last 24 hours"
+  },
+  {
+    "id": "c155",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the vaccination records of last 2 months"
+  },
+  {
+    "id": "c156",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Bring up the chemotherapy regimen recorded in the past six hours"
+  },
+  {
+    "id": "c157",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Show the genetic testing results over the past 48 hours"
+  },
+  {
+    "id": "c158",
+    "category": "valid_u13_u14",
+    "valid": true,
+    "text": "Reveal the immunization history of the last 10 days"
+  },
+  {
+    "id": "c159",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note: Patient presented with persistent cough and fever for the past week, finish note"
+  },
+  {
+    "id": "c160",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Note: Upon examination, there was tenderness in the lower abdomen and a palpable mass"
+  },
+  {
+    "id": "c161",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Record note: Patient's blood pressure was elevated at 160/90 mmHg during today's visit"
+  },
+  {
+    "id": "c162",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Add note: Patient reports experiencing shortness of breath and chest pain upon exertion"
+  },
+  {
+    "id": "c163",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Log note: Radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis, finish note"
+  },
+  {
+    "id": "c164",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Start documentation: Chief complaint is abdominal pain, rated 7 out of 10, located in the lower right quadrant. Vital signs stable, temperature 37.2 degrees Celsius. Finish documentation"
+  },
+  {
+    "id": "c165",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Patient presented with acute chest pain, vital signs stable, ECG shows sinus rhythm. Finish note"
+  },
+  {
+    "id": "c166",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Admitted for suspected appendicitis, abdominal pain started 12 hours ago, rebound tenderness present. Finish note"
+  },
+  {
+    "id": "c167",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Consulted for diabetic foot ulcer, wound size 2x2 cm, no signs of infection noted. Finish note"
+  },
+  {
+    "id": "c168",
+    "category": "valid_u15",
+    "valid": true,
+    "text": "Set note Follow-up for hypertension, blood pressure readings consistently elevated despite medication adherence. Finish note"
+  },
+  {
+    "id": "c169",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication regimen for patient John Doe: Begin with 10 milligrams of Lisinopril once daily, finish medication"
+  },
+  {
+    "id": "c170",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication protocol: Commence treatment with 500 milligrams of Metformin twice a day, finish medication"
+  },
+  {
+    "id": "c171",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Start medication plan for Mrs. Smith: Begin with 20 milligrams of Atorvastatin every evening, finish medication"
+  },
+  {
+    "id": "c172",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Activate drug regimen for Mr. Johnson: Start with 50 micrograms of Levothyroxine in the morning"
+  },
+  {
+    "id": "c173",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Start medication aspirin 100 milligrams and clopidogrel 75 milligrams, finish medication"
+  },
+  {
+    "id": "c174",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication metformin 500 milligrams at 10 am, finish medication"
+  },
+  {
+    "id": "c175",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication lisinopril 10 milligrams at 4 pm, finish medication"
+  },
+  {
+    "id": "c176",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily, finish medication"
+  },
+  {
+    "id": "c177",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication albuterol inhaler 2 puffs every 4 hours as needed, finish medication"
+  },
+  {
+    "id": "c178",
+    "category": "valid_u16_u17",
+    "valid": true,
+    "text": "Set medication lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o'clock, finish medication"
+  },
+  {
+    "id": "c179",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Change patient to John Smith"
+  },
+  {
+    "id": "c180",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch patient to Mary Johnson"
+  },
+  {
+    "id": "c181",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Update patient to Sarah Davis"
+  },
+  {
+    "id": "c182",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Change patient to John Doe"
+  },
+  {
+    "id": "c183",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch patient to Mary Smith"
+  },
+  {
+    "id": "c184",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Switch to messages"
+  },
+  {
+    "id": "c185",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show messages view"
+  },
+  {
+    "id": "c186",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show messages"
+  },
+  {
+    "id": "c187",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Display messages"
+  },
+  {
+    "id": "c188",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Show me the messages"
+  },
+  {
+    "id": "c189",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Inform Mrs. Smith about her upcoming appointment. Finish the message and send it to Mrs. Smith"
+  },
+  {
+    "id": "c190",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Remind Mr. Johnson to take his medication as prescribed. Finish and send it to Mr. Johnson"
+  },
+  {
+    "id": "c191",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start new message: Note that Ms. Rodriguez's test results are ready for review. Finish message and send it to Ms. Rodriguez"
+  },
+  {
+    "id": "c192",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Begin message: Advise Mr. Patel to schedule a follow-up consultation. Complete the message and send it to Mr. Patel"
+  },
+  {
+    "id": "c193",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start new message: Notify Dr. Lee about the patient's allergic reaction. Finish message and send it to Dr. Lee"
+  },
+  {
+    "id": "c194",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Document the change in Mrs. Thompson's medication dosage. Finish the message and send it to Mrs. Thompson"
+  },
+  {
+    "id": "c195",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Update Mr. Nguyen on his upcoming surgery details. Finish and send it to Mr. Nguyen"
+  },
+  {
+    "id": "c196",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Begin new message: Record Ms. Garcia's recent symptoms for review. Complete the message and send it to Ms. Garcia"
+  },
+  {
+    "id": "c197",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start message: Inform Dr. Patel about the patient's discharge instructions. Finish and send it to Dr. Patel"
+  },
+  {
+    "id": "c198",
+    "category": "valid_u18_u20",
+    "valid": true,
+    "text": "Start a new message: Notify Mrs. Kim about her laboratory test scheduling. Finish the message and send it to Mrs. Kim"
+  }
+]

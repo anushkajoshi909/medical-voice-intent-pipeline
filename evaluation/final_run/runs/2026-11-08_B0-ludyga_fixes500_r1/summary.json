@@ -1,0 +1,53 @@
+{
+  "all_items": {
+    "valid_n": 130,
+    "invalid_n": 113,
+    "valid_accepted": 60,
+    "valid_clarified": 0,
+    "valid_rejected": 70,
+    "invalid_accepted": 1,
+    "invalid_clarified": 0,
+    "invalid_rejected": 112,
+    "valid_ignored": 0,
+    "invalid_ignored": 0,
+    "valid_recall_pct": 46.2,
+    "valid_clarification_rate_pct": 0.0,
+    "false_rejection_rate_pct": 53.8,
+    "false_acceptance_rate_pct": 0.9,
+    "invalid_not_accepted_pct": 99.1,
+    "precision_pct": 98.4,
+    "f1_pct": 62.8,
+    "accuracy_strict_pct": 70.8,
+    "accuracy_lenient_pct": 70.8
+  },
+  "ludyga_198_only": {
+    "valid_n": 98,
+    "invalid_n": 100,
+    "valid_accepted": 49,
+    "valid_clarified": 0,
+    "valid_rejected": 49,
+    "invalid_accepted": 0,
+    "invalid_clarified": 0,
+    "invalid_rejected": 100,
+    "valid_ignored": 0,
+    "invalid_ignored": 0,
+    "valid_recall_pct": 50.0,
+    "valid_clarification_rate_pct": 0.0,
+    "false_rejection_rate_pct": 50.0,
+    "false_acceptance_rate_pct": 0.0,
+    "invalid_not_accepted_pct": 100.0,
+    "precision_pct": 100.0,
+    "f1_pct": 66.7,
+    "accuracy_strict_pct": 75.3,
+    "accuracy_lenient_pct": 75.3
+  },
+  "crashes": 0,
+  "latency": {
+    "end_to_end": {
+      "n": 243,
+      "median_s": 0.01609,
+      "p95_s": 0.01935,
+      "mean_s": 0.01728
+    }
+  }
+}

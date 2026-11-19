@@ -1,0 +1,93 @@
+id,text,expected_action,entity,end_signal
+c101,stop,stop,-,
+c102,stop frame,stop,-,
+c103,Freeze frame,stop,-,
+c104,Halt animation,stop,-,
+c105,Stop now frame,stop,-,
+c106,Stop frame,stop,-,
+c141,show age,show,age,
+c142,Display blood pressure,show,blood pressure,
+c143,show patient records,show,patient records,
+c144,show medical charts,show,medical charts,
+c145,Show vital signs,show,vital signs,
+c146,Display diagnostic information,show,diagnostic information,
+c147,Show medication history,show,medication history,
+c148,Illustrate the insights,show,insights,
+c149,Illustrate the patient's medical history,show,medical history,
+c150,Show the MRI scan results,show,magnetic resonance imaging scan results,
+c151,Present the blood test findings for the last month,show,blood test findings for the last month,
+c152,Bring up the medication history of the past week,show,medication history of the past week,
+c153,Exhibit the surgical procedure details from the last three days,show,surgical procedure details from the last three days,
+c154,Demonstrate the pathology reports for the last 24 hours,show,pathology reports for the last 24 hours,
+c155,Show the vaccination records of last 2 months,show,vaccination records of last 2 months,
+c156,Bring up the chemotherapy regimen recorded in the past six hours,show,chemotherapy regimen recorded in the past six hours,
+c157,Show the genetic testing results over the past 48 hours,show,genetic testing results over the past 48 hours,
+c158,Reveal the immunization history of the last 10 days,show,immunization history of the last 10 days,
+c159,"Set note: Patient presented with persistent cough and fever for the past week, finish note",set_note,patient presented with persistent cough and fever for the past week,TRUE
+c160,"Note: Upon examination, there was tenderness in the lower abdomen and a palpable mass",set_note,upon examination there was tenderness in the lower abdomen and a palpable mass,FALSE
+c161,Record note: Patient's blood pressure was elevated at 160/90 mmHg during today's visit,set_note,patient s blood pressure was elevated at 160/90 mmhg during today s visit,FALSE
+c162,Add note: Patient reports experiencing shortness of breath and chest pain upon exertion,set_note,patient reports experiencing shortness of breath and chest pain upon exertion,FALSE
+c163,"Log note: Radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis, finish note",set_note,radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis,TRUE
+c164,"Start documentation: Chief complaint is abdominal pain, rated 7 out of 10, located in the lower right quadrant. Vital signs stable, temperature 37.2 degrees Celsius. Finish documentation",set_note,chief complaint is abdominal pain rated 7 out of 10 located in the lower right quadrant vital signs stable temperature 37 2 degrees celsius,TRUE
+c165,"Set note Patient presented with acute chest pain, vital signs stable, ECG shows sinus rhythm. Finish note",set_note,patient presented with acute chest pain vital signs stable electrocardiogram shows sinus rhythm,TRUE
+c166,"Set note Admitted for suspected appendicitis, abdominal pain started 12 hours ago, rebound tenderness present. Finish note",set_note,admitted for suspected appendicitis abdominal pain started 12 hours ago rebound tenderness present,TRUE
+c167,"Set note Consulted for diabetic foot ulcer, wound size 2x2 cm, no signs of infection noted. Finish note",set_note,consulted for diabetic foot ulcer wound size 2x2 cm no signs of infection noted,TRUE
+c168,"Set note Follow-up for hypertension, blood pressure readings consistently elevated despite medication adherence. Finish note",set_note,follow up for hypertension blood pressure readings consistently elevated despite medication adherence,TRUE
+c169,"Set medication regimen for patient John Doe: Begin with 10 milligrams of Lisinopril once daily, finish medication",set_medication,lisinopril 10 milligrams once daily,
+c170,"Set medication protocol: Commence treatment with 500 milligrams of Metformin twice a day, finish medication",set_medication,metformin 500 milligrams twice a day,
+c171,"Start medication plan for Mrs. Smith: Begin with 20 milligrams of Atorvastatin every evening, finish medication",set_medication,atorvastatin 20 milligrams every evening,
+c172,Activate drug regimen for Mr. Johnson: Start with 50 micrograms of Levothyroxine in the morning,set_medication,levothyroxine 50 micrograms in the morning,
+c173,"Start medication aspirin 100 milligrams and clopidogrel 75 milligrams, finish medication",set_medication,aspirin 100 milligrams and clopidogrel 75 milligrams,
+c174,"Set medication metformin 500 milligrams at 10 am, finish medication",set_medication,metformin 500 milligrams at 10 am,
+c175,"Set medication lisinopril 10 milligrams at 4 pm, finish medication",set_medication,lisinopril 10 milligrams at 4 pm,
+c176,"Set medication levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily, finish medication",set_medication,levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily,
+c177,"Set medication albuterol inhaler 2 puffs every 4 hours as needed, finish medication",set_medication,albuterol inhaler 2 puffs every 4 hours as needed,
+c178,"Set medication lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o'clock, finish medication",set_medication,lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o clock,
+c179,Change patient to John Smith,change_patient,john smith,
+c180,Switch patient to Mary Johnson,change_patient,mary johnson,
+c181,Update patient to Sarah Davis,change_patient,sarah davis,
+c182,Change patient to John Doe,change_patient,john doe,
+c183,Switch patient to Mary Smith,change_patient,mary smith,
+c184,Switch to messages,show,messages,
+c185,Show messages view,show,messages view,
+c186,Show messages,show,messages,
+c187,Display messages,show,messages,
+c188,Show me the messages,show,messages,
+c189,Start a new message: Inform Mrs. Smith about her upcoming appointment. Finish the message and send it to Mrs. Smith,send_message,inform mrs smith about her upcoming appointment,TRUE
+c190,Start message: Remind Mr. Johnson to take his medication as prescribed. Finish and send it to Mr. Johnson,send_message,remind mr johnson to take his medication as prescribed,TRUE
+c191,Start new message: Note that Ms. Rodriguez's test results are ready for review. Finish message and send it to Ms. Rodriguez,send_message,note that ms rodriguez s test results are ready for review,TRUE
+c192,Begin message: Advise Mr. Patel to schedule a follow-up consultation. Complete the message and send it to Mr. Patel,send_message,advise mr patel to schedule a follow up consultation,TRUE
+c193,Start new message: Notify Dr. Lee about the patient's allergic reaction. Finish message and send it to Dr. Lee,send_message,notify dr lee about the patient s allergic reaction,TRUE
+c194,Start a new message: Document the change in Mrs. Thompson's medication dosage. Finish the message and send it to Mrs. Thompson,send_message,document the change in mrs thompson s medication dosage,TRUE
+c195,Start message: Update Mr. Nguyen on his upcoming surgery details. Finish and send it to Mr. Nguyen,send_message,update mr nguyen on his upcoming surgery details,TRUE
+c196,Begin new message: Record Ms. Garcia's recent symptoms for review. Complete the message and send it to Ms. Garcia,send_message,record ms garcia s recent symptoms for review,TRUE
+c197,Start message: Inform Dr. Patel about the patient's discharge instructions. Finish and send it to Dr. Patel,send_message,inform dr patel about the patient s discharge instructions,TRUE
+c198,Start a new message: Notify Mrs. Kim about her laboratory test scheduling. Finish the message and send it to Mrs. Kim,send_message,notify mrs kim about her laboratory test scheduling,TRUE
+ext_abbr_01,show BP,show,blood pressure,
+ext_abbr_02,show SpO2,show,oxygen saturation,
+ext_abbr_03,show ECG results,show,electrocardiogram results,
+ext_abbr_04,show CBC,show,complete blood count,
+ext_abbr_05,start HD,start,hemodialysis,
+ext_abbr_06,show MRI results,show,magnetic resonance imaging results,
+ext_abbr_07,diagnosis HTN,diagnosis,hypertension,
+ext_abbr_08,diagnosis MI,diagnosis,myocardial infarction,
+ext_abbr_09,show INR,show,international normalised ratio,
+ext_abbr_10,show HR,show,heart rate,
+ext_new_show_01,Pull up the lab results,show,lab results,
+ext_new_show_02,Let me see the patient's vitals,show,vitals,
+ext_new_show_03,Access the imaging from last week,show,imaging from last week,
+ext_new_show_04,Fetch the latest blood work,show,latest blood work,
+ext_new_diag_01,I'm diagnosing this as pneumonia,diagnosis,pneumonia,
+ext_new_diag_02,Record a diagnosis of type 2 diabetes,diagnosis,type 2 diabetes,
+ext_new_diag_03,"The patient has atrial fibrillation, document it",diagnosis,atrial fibrillation,
+ext_new_start_01,Begin the IV infusion,start,intravenous infusion,
+ext_new_start_02,Commence dialysis,start,dialysis,
+ext_new_stop_01,Discontinue the antibiotics,stop,antibiotics,
+ext_new_stop_02,Take the patient off the ventilator,stop,ventilator,
+ext_new_pt_01,Next patient is Emma Wilson,change_patient,emma wilson,
+ext_new_pt_02,Move to patient Robert Chen,change_patient,robert chen,
+ext_new_pt_03,New patient: James Murphy,change_patient,james murphy,
+ext_ont_01,show blood pressure,show,blood pressure,
+ext_ont_02,show patient history,show,patient history,
+ext_ont_03,show discharge summary,show,discharge summary,
+ext_ont_04,show messages,show,messages,

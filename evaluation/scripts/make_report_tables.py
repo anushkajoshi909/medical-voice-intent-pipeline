@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""Generate evaluation/reports/tables/results_summary.md from the run folders (summary.json and meta.json files).
+
+The file is an overview with text: what was evaluated, a table for each of the two runs, what the checks add, and the
+response times. All numbers are read from the run folders; the sentences are built from them.
+
+Run folders (evaluation/old_runs/runs/):
+  B0 (Ludyga's grammar)   2026-11-03_B0-ludyga*
+  first run               2026-11-03_*_final_r*
+  second run              2026-11-04_*_final500_r* (500 tokens) and 2026-11-05_*_final4000_r* (4000 tokens)
+DeepSeek and gpt-oss run with 500 and with 4000 completion tokens; Llama 3.3 and Gemma 4 with 500.
+Numbers are mean +- SD over the three repetitions.
+"""
+import glob
+import json
+import statistics as st
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+import sys  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from metric_labels import ACTION_LABEL, label_counts  # noqa: E402
+N = label_counts()
+SYSTEMS = [  # name, pattern of the first run, pattern of the second run
+    ("Llama 3.3 70B", "old_runs/runs/2026-11-03_meta-llama*_final_r*", "old_runs/runs/2026-11-04_meta-llama*_final500_r*"),
+    ("Gemma 4 26B", "old_runs/runs/2026-11-03_google*_final_r*", "old_runs/runs/2026-11-04_google*_final500_r*"),
+    ("gpt-oss-120b (500 tokens)", "old_runs/runs/2026-11-03_openai_gpt-oss-120b_final_r*", "old_runs/runs/2026-11-04_openai*_final500_r*"),
+    ("gpt-oss-120b (4000 tokens)", "old_runs/runs/2026-11-03_openai_gpt-oss-120b__maxtok4000_final_r*", "old_runs/runs/2026-11-05_openai*_final4000_r*"),
+    ("DeepSeek V4.1 Flash (500 tokens)", "old_runs/runs/2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash_final_r*", "old_runs/runs/2026-11-04_deepseek*_final500_r*"),
+    ("DeepSeek V4.1 Flash (4000 tokens)", "old_runs/runs/2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r*", "old_runs/runs/2026-11-05_deepseek*_final4000_r*"),
+]
+B0_PATTERN = "old_runs/runs/2026-11-03_B0-ludyga*"
+
+
+def load(pattern):
+    return [json.load(open(d + "/summary.json")) for d in sorted(glob.glob(str(ROOT / pattern)))]
+
+
+def mean(vals):
+    vals = [v for v in vals if v is not None]
+    return st.mean(vals) if vals else None
+
+
+def ms(vals, nd=1):
+    vals = [v for v in vals if v is not None]
+    if not vals:
+        return "n/a"
+    sd = st.stdev(vals) if len(vals) > 1 else 0.0
+    return f"{st.mean(vals):.{nd}f} ± {sd:.{nd}f}"
+
+
+def stats(runs):
+    """Mean values of one system over its repetitions."""
+    h = lambda k: mean([r["hybrid"][k] for r in runs])
+    return {
+        "acc": h("accuracy_strict_pct"), "valid_acc": h("valid_recall_pct"), "clar": h("valid_clarification_rate_pct"),
+        "rej": h("false_rejection_rate_pct"), "far": h("false_acceptance_rate_pct"),
+        "action": mean([r["action_accuracy_pct"] for r in runs]), "err": mean([r["llm_error_rate_pct"] for r in runs]),
+        "alone_valid": mean([r["llm_only_B2"]["valid_recall_pct"] for r in runs]),
+        "alone_far": mean([r["llm_only_B2"]["false_acceptance_rate_pct"] for r in runs]),
+        "alone_acc": mean([r["llm_only_B2"]["accuracy_strict_pct"] for r in runs]),
+        "median": mean([r["latency"]["end_to_end"]["median_s"] for r in runs]),
+        "p95": mean([r["latency"]["end_to_end"]["p95_s"] for r in runs]),
+        "n": len(runs), "runs": runs,
+    }
+
+
+b0 = load(B0_PATTERN)[0]["all_items"]
+b0_198 = load(B0_PATTERN)[0]["ludyga_198_only"]
+data = {"first": {}, "second": {}}
+for name, p1, p2 in SYSTEMS:
+    data["first"][name] = stats(load(p1))
+    data["second"][name] = stats(load(p2))
+
+
+def table_run(run):
+    rows = [f"| System | accuracy | valid accepted | valid → clarification | valid rejected | invalid wrongly accepted | {ACTION_LABEL} | model errors |",
+            "|---|---|---|---|---|---|---|---|",
+            f"| B0 (Ludyga's grammar) | {b0['accuracy_strict_pct']} | {b0['valid_recall_pct']} | {b0['valid_clarification_rate_pct']} | "
+            f"{b0['false_rejection_rate_pct']} | {b0['false_acceptance_rate_pct']} | n/a | n/a |"]
+    for name, _, _ in SYSTEMS:
+        runs = data[run][name]["runs"]
+        g = lambda k: ms([r["hybrid"][k] for r in runs])
+        rows.append(f"| {name} | {g('accuracy_strict_pct')} | {g('valid_recall_pct')} | {g('valid_clarification_rate_pct')} | "
+                    f"{g('false_rejection_rate_pct')} | {g('false_acceptance_rate_pct')} | "
+                    f"{ms([r['action_accuracy_pct'] for r in runs])} | {ms([r['llm_error_rate_pct'] for r in runs])} |")
+    return rows
+
+
+def best(run, key, high=True):
+    items = data[run]
+    n = max(items, key=lambda k: items[k][key]) if high else min(items, key=lambda k: items[k][key])
+    return n, items[n][key]
+
+
+def lo_hi(run, key):
+    v = [d[key] for d in data[run].values()]
+    return min(v), max(v)
+
+
+out = ["# Results Summary", "",
+       "This file summarises the evaluation of the pipeline. It is generated by `evaluation/scripts/make_report_tables.py` from the run folders in "
+       "`evaluation/old_runs/runs/`. The thesis (Chapter 7) describes the evaluation in full.", "",
+       "## What was evaluated", "",
+       f"The dataset has **{N['commands']} commands**: {N['valid']} valid commands, which the system should accept, and {N['invalid']} invalid commands, which it should not accept "
+       "(ambiguous, meaningless, out of domain, or with an entity of the wrong type). Ludyga's grammar (**B0**) is the baseline. The pipeline of this thesis runs "
+       "with four language models. DeepSeek V4.1 Flash and gpt-oss-120b run with 500 and with 4000 completion tokens, and Llama 3.3 and Gemma 4 with 500. "
+       "Each system runs the dataset **three times** at the temperature 0.", "",
+       "The whole evaluation was made **twice** with the same dataset and settings: a **first run** and a **second run**. "
+       "The second run confirms the decisions of the first, and it shows how much the response times depend on the load of the model service.", "",
+       "## How to read the tables", "",
+       f"- **accuracy** is the share of the {N['commands']} commands that are decided correctly: a valid command that is accepted, or an invalid command that is rejected or sent to a clarification request.",
+       f"- **valid accepted / valid → clarification / valid rejected** are the shares of the {N['valid']} valid commands with each outcome.",
+       f"- **invalid wrongly accepted** is the share of the {N['invalid']} invalid commands that the system accepts. Lower is better.",
+       f"- **{ACTION_LABEL}** is the share of the {N['action']} valid commands with an action label for which the language model returns the labelled action. **model errors** are the share of calls without a usable answer.",
+       "- Values are percent, as mean ± standard deviation over the three repetitions. B0 runs once.", ""]
+
+# ---- overview in words
+f_lo, f_hi = lo_hi("first", "acc"); s_lo, s_hi = lo_hi("second", "acc")
+fb, fbv = best("first", "acc"); sb, sbv = best("second", "acc")
+fw, fwv = best("first", "far"); sw, swv = best("second", "far")
+ff, ffv = best("first", "median", high=False); sf, sfv = best("second", "median", high=False)
+best_txt = (f"The best is {fb} in both runs ({fbv:.1f} % and {sbv:.1f} %)." if fb == sb
+            else f"The best is {fb} ({fbv:.1f} %) in the first run and {sb} ({sbv:.1f} %) in the second.")
+fast_txt = (f"The fastest is {ff} in both runs. " if ff == sf
+            else f"The fastest is {ff} in the first run and {sf} in the second. ")
+out += ["## In short", "",
+        f"- **Baseline:** Ludyga's grammar reaches an accuracy of {b0['accuracy_strict_pct']} % on the 243 commands ({b0_198['accuracy_strict_pct']} % on his own 198 sentences). "
+        f"It accepts only {b0['valid_recall_pct']} % of the valid commands, because every wording that is not in the grammar is rejected, and it accepts {b0['false_acceptance_rate_pct']} % of the invalid commands.",
+        f"- **Pipeline:** the six systems reach an accuracy between {f_lo:.1f} % and {f_hi:.1f} % in the first run and between {s_lo:.1f} % and {s_hi:.1f} % in the second. "
+        f"{best_txt}",
+        f"- **Cost of the flexibility:** the share of invalid commands that are wrongly accepted rises from {b0['false_acceptance_rate_pct']} % to between "
+        f"{lo_hi('first','far')[0]:.1f} % and {lo_hi('first','far')[1]:.1f} % (first run). It is highest for {fw} ({fwv:.1f} %).",
+        f"- **Response time:** the median response time is between {min(d['median'] for d in data['first'].values()):.2f} s and {max(d['median'] for d in data['first'].values()):.2f} s in the first run "
+        f"and between {min(d['median'] for d in data['second'].values()):.2f} s and {max(d['median'] for d in data['second'].values()):.2f} s in the second. "
+        f"{fast_txt}The criterion of Ludyga is one second.",
+        f"- **Both runs agree** in the decisions: the accuracy of every system differs by at most {max(abs(data['first'][n]['acc'] - data['second'][n]['acc']) for n in data['first']):.1f} points between the two runs. "
+        "The response times differ more, because the model service is shared and its time depends on its load and on the network.", ""]
+
+out += ["## First run", ""] + table_run("first") + ["", "## Second run", ""] + table_run("second") + [""]
+
+# ---- what the checks add
+out += ["## What the checks add", "",
+        "The table compares the decision of the **language model alone** (it accepts every command whose action is valid, without the grammar, the ontology lookup, and the type check) "
+        "with the **full pipeline**. The checks lower the share of invalid commands that are wrongly accepted for every system. "
+        "They also send some valid commands to a clarification request, so the share of valid commands that are accepted falls a little. The accuracy stays about the same.", "",
+        "| System | run | valid accepted: model alone | valid accepted: pipeline | wrongly accepted: model alone | wrongly accepted: pipeline | accuracy: model alone | accuracy: pipeline |",
+        "|---|---|---|---|---|---|---|---|"]
+for name, _, _ in SYSTEMS:
+    for run, label in (("first", "first"), ("second", "second")):
+        d = data[run][name]
+        out.append(f"| {name} | {label} | {d['alone_valid']:.1f} | {d['valid_acc']:.1f} | {d['alone_far']:.1f} | {d['far']:.1f} | {d['alone_acc']:.1f} | {d['acc']:.1f} |")
+out.append("")
+
+# ---- response time
+out += ["## Response time", "",
+        "The response time is the time from the text of the command to the structured result, in seconds. The call to the language model takes almost all of it. "
+        "The models run on a remote service, so the times depend on its load and on the network. This is why the two runs differ.", "",
+        "| System | median, first run | median, second run | 95th percentile, first run | 95th percentile, second run |", "|---|---|---|---|---|"]
+for name, _, _ in SYSTEMS:
+    a, b = data["first"][name], data["second"][name]
+    out.append(f"| {name} | {a['median']:.2f} | {b['median']:.2f} | {a['p95']:.2f} | {b['p95']:.2f} |")
+out += ["",
+        "Reference: Ludyga's grammar needs 195 ms on average (Ludyga 2024, Section 7.3) and about 0.1 ms in our measurement. The criterion of Ludyga is at most one second.", ""]
+
+out += ["## Where to find more", "",
+        "- `evaluation/old_runs/reports/final/` has the full reports of each run (`all_results_*.json` with all metrics, `main_results_*.md`, `per_command_*.csv` with one row for each command).",
+        "- `evaluation/old_runs/reports/tables/overview_*.csv` has one row for each run folder.",
+        "- `evaluation/old_runs/runs/` has the run folders with the result of every command.",
+        "- `data/labels/` has the labels, and `evaluation/evaluation.md` describes the dataset, the metrics, and how to run the evaluation."]
+dest = ROOT / "old_runs" / "reports" / "tables" / "results_summary.md"
+dest.write_text("\n".join(out) + "\n")
+print(f"-> {dest}")

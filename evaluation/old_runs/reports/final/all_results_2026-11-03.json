@@ -1,0 +1,1886 @@
+{
+  "_about": {
+    "written_by": "evaluation/scripts/build_final_report.py (reads run folders only)",
+    "date": "2026-11-03",
+    "dataset_tags": [
+      "keyword-replay"
+    ],
+    "run_folders": [
+      "2026-11-03_B0-ludyga_final500_r1",
+      "2026-11-03_E3_entity-resolution",
+      "2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r1",
+      "2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r2",
+      "2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final_r3",
+      "2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash_final_r1",
+      "2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash_final_r2",
+      "2026-11-03_deepseek-ai_DeepSeek-V4.1-Flash_final_r3",
+      "2026-11-03_google_gemma-4-26B-A4B-it_final_r1",
+      "2026-11-03_google_gemma-4-26B-A4B-it_final_r2",
+      "2026-11-03_google_gemma-4-26B-A4B-it_final_r3",
+      "2026-11-03_meta-llama_Llama-3.3-70B-Instruct_final_r1",
+      "2026-11-03_meta-llama_Llama-3.3-70B-Instruct_final_r2",
+      "2026-11-03_meta-llama_Llama-3.3-70B-Instruct_final_r3",
+      "2026-11-03_openai_gpt-oss-120b__maxtok4000_final_r1",
+      "2026-11-03_openai_gpt-oss-120b__maxtok4000_final_r2",
+      "2026-11-03_openai_gpt-oss-120b__maxtok4000_final_r3",
+      "2026-11-03_openai_gpt-oss-120b_final_r1",
+      "2026-11-03_openai_gpt-oss-120b_final_r2",
+      "2026-11-03_openai_gpt-oss-120b_final_r3"
+    ],
+    "git_commit": "551971a0d3075363f277d9b54229100503e8ed5f",
+    "git_dirty": true,
+    "dataset": "data/annotated_commands.json, 243 commands (130 valid, 113 invalid)",
+    "gold_labels": "data/labels/gold_labels.json (entity, end_signal) and entity_resolution_gold.csv (E3)",
+    "metrics": {
+      "valid_recall_pct": "valid commands accepted by the pipeline, % of 130",
+      "valid_clarification_rate_pct": "valid commands sent to clarification (entity could not be grounded), % of 130",
+      "false_rejection_rate_pct": "valid commands rejected, % of 130",
+      "false_acceptance_rate_pct": "invalid commands accepted, % of 113",
+      "precision_pct / f1_pct": "of all accepted commands, share that is valid / F1 of that precision with valid_recall",
+      "accuracy_strict_pct": "(valid accepted + invalid rejected or clarified) / 243",
+      "action_accuracy_pct": "valid commands whose extracted action equals expected_action",
+      "entity_accuracy_pct": "valid commands with a gold entity whose extracted entity matches it (case and punctuation ignored)",
+      "end_signal_*": "dictation commands (set_note, send_message): did the model detect the finish phrase",
+      "llm_alone": "decision from Stage 2 only (valid action = accept), without Stages 3 to 5",
+      "latency_s": "seconds per command: end to end, LLM call (stage2), slowest other stage; remote endpoint, depends on load",
+      "entity_resolution_E3": "Stages 4 and 5 on 98 (action, entity) pairs against expected status, type and concept; no LLM"
+    },
+    "reference_latency": "acceptance criterion <= 1 s (Ludyga 2024, Sect. 7.3), as quoted in make_report_tables.py"
+  },
+  "systems": {
+    "deepseek-ai/DeepSeek-V4.1-Flash": {
+      "source": "replay of 2026-10-28_deepseek-ai_DeepSeek-V4.1-Flash_full-replay: Stage 2 outputs and Stage 2 time taken from that run, Stages 1 and 3-6 re-run",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "max_tokens": 500,
+      "repetitions": 3,
+      "extraction": {
+        "action_accuracy_pct": {
+          "mean": 85.93,
+          "sd": 0.46,
+          "values": [
+            86.2,
+            86.2,
+            85.4
+          ]
+        },
+        "entity_accuracy_pct": {
+          "mean": 84.07,
+          "sd": 1.68,
+          "values": [
+            82.6,
+            83.7,
+            85.9
+          ]
+        },
+        "entity_gold_n": 92,
+        "end_signal_precision_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_recall_pct": {
+          "mean": 52.93,
+          "sd": 5.85,
+          "values": [
+            47.1,
+            58.8,
+            52.9
+          ]
+        },
+        "end_signal_f1_pct": {
+          "mean": 69.1,
+          "sd": 5.05,
+          "values": [
+            64.0,
+            74.1,
+            69.2
+          ]
+        },
+        "end_signal_n": 20,
+        "llm_error_rate_pct": {
+          "mean": 6.43,
+          "sd": 0.83,
+          "values": [
+            6.7,
+            5.5,
+            7.1
+          ]
+        }
+      },
+      "decisions_full_pipeline": {
+        "valid_recall_pct": {
+          "mean": 83.1,
+          "sd": 0.0,
+          "values": [
+            83.1,
+            83.1,
+            83.1
+          ]
+        },
+        "valid_clarification_rate_pct": {
+          "mean": 3.07,
+          "sd": 0.75,
+          "values": [
+            3.8,
+            3.1,
+            2.3
+          ]
+        },
+        "false_rejection_rate_pct": {
+          "mean": 13.83,
+          "sd": 0.75,
+          "values": [
+            13.1,
+            13.8,
+            14.6
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 1.8,
+          "sd": 0.0,
+          "values": [
+            1.8,
+            1.8,
+            1.8
+          ]
+        },
+        "precision_pct": {
+          "mean": 98.2,
+          "sd": 0.0,
+          "values": [
+            98.2,
+            98.2,
+            98.2
+          ]
+        },
+        "f1_pct": {
+          "mean": 90.0,
+          "sd": 0.0,
+          "values": [
+            90.0,
+            90.0,
+            90.0
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 90.1,
+          "sd": 0.0,
+          "values": [
+            90.1,
+            90.1,
+            90.1
+          ]
+        }
+      },
+      "llm_alone_no_stage3_to_5": {
+        "valid_recall_pct": {
+          "mean": 86.17,
+          "sd": 0.75,
+          "values": [
+            86.9,
+            86.2,
+            85.4
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 7.1,
+          "sd": 0.0,
+          "values": [
+            7.1,
+            7.1,
+            7.1
+          ]
+        },
+        "precision_pct": {
+          "mean": 93.33,
+          "sd": 0.06,
+          "values": [
+            93.4,
+            93.3,
+            93.3
+          ]
+        },
+        "f1_pct": {
+          "mean": 89.6,
+          "sd": 0.4,
+          "values": [
+            90.0,
+            89.6,
+            89.2
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 89.3,
+          "sd": 0.4,
+          "values": [
+            89.7,
+            89.3,
+            88.9
+          ]
+        }
+      },
+      "latency_s": {
+        "end_to_end_median": {
+          "mean": 1.26,
+          "sd": 0.09,
+          "values": [
+            1.368,
+            1.1842,
+            1.2351
+          ]
+        },
+        "end_to_end_p95": {
+          "mean": 3.82,
+          "sd": 0.45,
+          "values": [
+            4.3251,
+            3.7022,
+            3.4419
+          ]
+        },
+        "end_to_end_mean": {
+          "mean": 1.62,
+          "sd": 0.14,
+          "values": [
+            1.7825,
+            1.5416,
+            1.5223
+          ]
+        },
+        "llm_call_median": {
+          "mean": 1.28,
+          "sd": 0.09,
+          "values": [
+            1.3886,
+            1.2098,
+            1.2492
+          ]
+        },
+        "slowest_non_llm_stage_max_ms": {
+          "mean": 31.57,
+          "sd": 10.17,
+          "values": [
+            43.3,
+            25.3,
+            26.1
+          ]
+        },
+        "pooled_over_all_commands_and_repetitions": {
+          "n": 729,
+          "median": 1.259,
+          "p95": 3.889,
+          "share_of_commands_within_1s_pct": 27.4
+        },
+        "cold_start_ontology_index_build_s": null
+      },
+      "explainability_coverage_pct": {
+        "reason_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "explanation_block_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "provenance_coverage_pct": {
+          "mean": 41.57,
+          "sd": 0.4,
+          "values": [
+            41.8,
+            41.1,
+            41.8
+          ]
+        }
+      },
+      "first_rejecting_stage_run1": {
+        "gold_invalid": {
+          "llm": 100,
+          "stage5_type_mismatch": 4,
+          "none": 2,
+          "stage3_antlr": 2,
+          "stage1_format": 5
+        },
+        "gold_valid": {
+          "none": 108,
+          "llm": 17,
+          "stage5_entity_not_found": 5
+        }
+      }
+    },
+    "deepseek-ai/DeepSeek-V4.1-Flash__maxtok4000": {
+      "source": "replay of 2026-10-28_deepseek-ai_DeepSeek-V4.1-Flash__maxtok4000_final: Stage 2 outputs and Stage 2 time taken from that run, Stages 1 and 3-6 re-run",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "max_tokens": 4000,
+      "repetitions": 3,
+      "extraction": {
+        "action_accuracy_pct": {
+          "mean": 91.77,
+          "sd": 0.46,
+          "values": [
+            91.5,
+            91.5,
+            92.3
+          ]
+        },
+        "entity_accuracy_pct": {
+          "mean": 82.6,
+          "sd": 2.2,
+          "values": [
+            82.6,
+            84.8,
+            80.4
+          ]
+        },
+        "entity_gold_n": 92,
+        "end_signal_precision_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_recall_pct": {
+          "mean": 96.07,
+          "sd": 3.41,
+          "values": [
+            94.1,
+            100.0,
+            94.1
+          ]
+        },
+        "end_signal_f1_pct": {
+          "mean": 98.0,
+          "sd": 1.73,
+          "values": [
+            97.0,
+            100.0,
+            97.0
+          ]
+        },
+        "end_signal_n": 20,
+        "llm_error_rate_pct": {
+          "mean": 0.27,
+          "sd": 0.23,
+          "values": [
+            0.4,
+            0.0,
+            0.4
+          ]
+        }
+      },
+      "decisions_full_pipeline": {
+        "valid_recall_pct": {
+          "mean": 87.97,
+          "sd": 1.57,
+          "values": [
+            89.2,
+            88.5,
+            86.2
+          ]
+        },
+        "valid_clarification_rate_pct": {
+          "mean": 5.1,
+          "sd": 1.61,
+          "values": [
+            3.8,
+            4.6,
+            6.9
+          ]
+        },
+        "false_rejection_rate_pct": {
+          "mean": 6.9,
+          "sd": 0.0,
+          "values": [
+            6.9,
+            6.9,
+            6.9
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 1.8,
+          "sd": 0.0,
+          "values": [
+            1.8,
+            1.8,
+            1.8
+          ]
+        },
+        "precision_pct": {
+          "mean": 98.27,
+          "sd": 0.06,
+          "values": [
+            98.3,
+            98.3,
+            98.2
+          ]
+        },
+        "f1_pct": {
+          "mean": 92.8,
+          "sd": 0.89,
+          "values": [
+            93.5,
+            93.1,
+            91.8
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 92.73,
+          "sd": 0.83,
+          "values": [
+            93.4,
+            93.0,
+            91.8
+          ]
+        }
+      },
+      "llm_alone_no_stage3_to_5": {
+        "valid_recall_pct": {
+          "mean": 93.1,
+          "sd": 0.0,
+          "values": [
+            93.1,
+            93.1,
+            93.1
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 7.1,
+          "sd": 0.0,
+          "values": [
+            7.1,
+            7.1,
+            7.1
+          ]
+        },
+        "precision_pct": {
+          "mean": 93.8,
+          "sd": 0.0,
+          "values": [
+            93.8,
+            93.8,
+            93.8
+          ]
+        },
+        "f1_pct": {
+          "mean": 93.4,
+          "sd": 0.0,
+          "values": [
+            93.4,
+            93.4,
+            93.4
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 93.0,
+          "sd": 0.0,
+          "values": [
+            93.0,
+            93.0,
+            93.0
+          ]
+        }
+      },
+      "latency_s": {
+        "end_to_end_median": {
+          "mean": 0.94,
+          "sd": 0.01,
+          "values": [
+            0.9421,
+            0.9246,
+            0.9399
+          ]
+        },
+        "end_to_end_p95": {
+          "mean": 3.68,
+          "sd": 0.13,
+          "values": [
+            3.7967,
+            3.7067,
+            3.5432
+          ]
+        },
+        "end_to_end_mean": {
+          "mean": 1.39,
+          "sd": 0.01,
+          "values": [
+            1.3745,
+            1.3926,
+            1.3885
+          ]
+        },
+        "llm_call_median": {
+          "mean": 0.96,
+          "sd": 0.02,
+          "values": [
+            0.9556,
+            0.9298,
+            0.9797
+          ]
+        },
+        "slowest_non_llm_stage_max_ms": {
+          "mean": 43.03,
+          "sd": 0.06,
+          "values": [
+            43.0,
+            43.1,
+            43.0
+          ]
+        },
+        "pooled_over_all_commands_and_repetitions": {
+          "n": 729,
+          "median": 0.931,
+          "p95": 3.747,
+          "share_of_commands_within_1s_pct": 53.9
+        },
+        "cold_start_ontology_index_build_s": null
+      },
+      "explainability_coverage_pct": {
+        "reason_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "explanation_block_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "provenance_coverage_pct": {
+          "mean": 43.03,
+          "sd": 1.01,
+          "values": [
+            44.1,
+            42.1,
+            42.9
+          ]
+        }
+      },
+      "first_rejecting_stage_run1": {
+        "gold_invalid": {
+          "llm": 100,
+          "stage5_type_mismatch": 4,
+          "none": 2,
+          "stage3_antlr": 2,
+          "stage1_format": 5
+        },
+        "gold_valid": {
+          "none": 116,
+          "stage5_entity_not_found": 5,
+          "llm": 9
+        }
+      }
+    },
+    "google/gemma-4-26B-A4B-it": {
+      "source": "replay of 2026-10-28_google_gemma-4-26B-A4B-it_final: Stage 2 outputs and Stage 2 time taken from that run, Stages 1 and 3-6 re-run",
+      "model": "google/gemma-4-26B-A4B-it",
+      "max_tokens": 500,
+      "repetitions": 3,
+      "extraction": {
+        "action_accuracy_pct": {
+          "mean": 98.5,
+          "sd": 0.0,
+          "values": [
+            98.5,
+            98.5,
+            98.5
+          ]
+        },
+        "entity_accuracy_pct": {
+          "mean": 89.83,
+          "sd": 0.64,
+          "values": [
+            90.2,
+            90.2,
+            89.1
+          ]
+        },
+        "entity_gold_n": 92,
+        "end_signal_precision_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_recall_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_f1_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_n": 20,
+        "llm_error_rate_pct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "decisions_full_pipeline": {
+        "valid_recall_pct": {
+          "mean": 93.8,
+          "sd": 0.0,
+          "values": [
+            93.8,
+            93.8,
+            93.8
+          ]
+        },
+        "valid_clarification_rate_pct": {
+          "mean": 4.6,
+          "sd": 0.0,
+          "values": [
+            4.6,
+            4.6,
+            4.6
+          ]
+        },
+        "false_rejection_rate_pct": {
+          "mean": 1.5,
+          "sd": 0.0,
+          "values": [
+            1.5,
+            1.5,
+            1.5
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 1.8,
+          "sd": 0.0,
+          "values": [
+            1.8,
+            1.8,
+            1.8
+          ]
+        },
+        "precision_pct": {
+          "mean": 98.4,
+          "sd": 0.0,
+          "values": [
+            98.4,
+            98.4,
+            98.4
+          ]
+        },
+        "f1_pct": {
+          "mean": 96.1,
+          "sd": 0.0,
+          "values": [
+            96.1,
+            96.1,
+            96.1
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 95.9,
+          "sd": 0.0,
+          "values": [
+            95.9,
+            95.9,
+            95.9
+          ]
+        }
+      },
+      "llm_alone_no_stage3_to_5": {
+        "valid_recall_pct": {
+          "mean": 98.5,
+          "sd": 0.0,
+          "values": [
+            98.5,
+            98.5,
+            98.5
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 7.1,
+          "sd": 0.0,
+          "values": [
+            7.1,
+            7.1,
+            7.1
+          ]
+        },
+        "precision_pct": {
+          "mean": 94.1,
+          "sd": 0.0,
+          "values": [
+            94.1,
+            94.1,
+            94.1
+          ]
+        },
+        "f1_pct": {
+          "mean": 96.2,
+          "sd": 0.0,
+          "values": [
+            96.2,
+            96.2,
+            96.2
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 95.9,
+          "sd": 0.0,
+          "values": [
+            95.9,
+            95.9,
+            95.9
+          ]
+        }
+      },
+      "latency_s": {
+        "end_to_end_median": {
+          "mean": 0.37,
+          "sd": 0.13,
+          "values": [
+            0.3191,
+            0.523,
+            0.2785
+          ]
+        },
+        "end_to_end_p95": {
+          "mean": 1.18,
+          "sd": 0.56,
+          "values": [
+            0.9985,
+            1.813,
+            0.7357
+          ]
+        },
+        "end_to_end_mean": {
+          "mean": 1.37,
+          "sd": 0.25,
+          "values": [
+            1.1291,
+            1.6345,
+            1.3423
+          ]
+        },
+        "llm_call_median": {
+          "mean": 0.37,
+          "sd": 0.13,
+          "values": [
+            0.319,
+            0.5243,
+            0.2794
+          ]
+        },
+        "slowest_non_llm_stage_max_ms": {
+          "mean": 25.47,
+          "sd": 0.06,
+          "values": [
+            25.5,
+            25.5,
+            25.4
+          ]
+        },
+        "pooled_over_all_commands_and_repetitions": {
+          "n": 729,
+          "median": 0.336,
+          "p95": 1.115,
+          "share_of_commands_within_1s_pct": 91.2
+        },
+        "cold_start_ontology_index_build_s": null
+      },
+      "explainability_coverage_pct": {
+        "reason_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "explanation_block_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "provenance_coverage_pct": {
+          "mean": 44.8,
+          "sd": 0.0,
+          "values": [
+            44.8,
+            44.8,
+            44.8
+          ]
+        }
+      },
+      "first_rejecting_stage_run1": {
+        "gold_invalid": {
+          "llm": 100,
+          "stage5_type_mismatch": 4,
+          "none": 2,
+          "stage3_antlr": 2,
+          "stage1_format": 5
+        },
+        "gold_valid": {
+          "none": 122,
+          "stage5_entity_not_found": 6,
+          "llm": 2
+        }
+      }
+    },
+    "meta-llama/Llama-3.3-70B-Instruct": {
+      "source": "replay of 2026-10-28_meta-llama_Llama-3.3-70B-Instruct_final: Stage 2 outputs and Stage 2 time taken from that run, Stages 1 and 3-6 re-run",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "max_tokens": 500,
+      "repetitions": 3,
+      "extraction": {
+        "action_accuracy_pct": {
+          "mean": 98.5,
+          "sd": 0.0,
+          "values": [
+            98.5,
+            98.5,
+            98.5
+          ]
+        },
+        "entity_accuracy_pct": {
+          "mean": 84.07,
+          "sd": 0.64,
+          "values": [
+            83.7,
+            84.8,
+            83.7
+          ]
+        },
+        "entity_gold_n": 92,
+        "end_signal_precision_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_recall_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_f1_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_n": 20,
+        "llm_error_rate_pct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "decisions_full_pipeline": {
+        "valid_recall_pct": {
+          "mean": 96.9,
+          "sd": 0.0,
+          "values": [
+            96.9,
+            96.9,
+            96.9
+          ]
+        },
+        "valid_clarification_rate_pct": {
+          "mean": 2.3,
+          "sd": 0.0,
+          "values": [
+            2.3,
+            2.3,
+            2.3
+          ]
+        },
+        "false_rejection_rate_pct": {
+          "mean": 0.8,
+          "sd": 0.0,
+          "values": [
+            0.8,
+            0.8,
+            0.8
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 7.1,
+          "sd": 0.0,
+          "values": [
+            7.1,
+            7.1,
+            7.1
+          ]
+        },
+        "precision_pct": {
+          "mean": 94.0,
+          "sd": 0.0,
+          "values": [
+            94.0,
+            94.0,
+            94.0
+          ]
+        },
+        "f1_pct": {
+          "mean": 95.5,
+          "sd": 0.0,
+          "values": [
+            95.5,
+            95.5,
+            95.5
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 95.1,
+          "sd": 0.0,
+          "values": [
+            95.1,
+            95.1,
+            95.1
+          ]
+        }
+      },
+      "llm_alone_no_stage3_to_5": {
+        "valid_recall_pct": {
+          "mean": 99.2,
+          "sd": 0.0,
+          "values": [
+            99.2,
+            99.2,
+            99.2
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 13.3,
+          "sd": 0.0,
+          "values": [
+            13.3,
+            13.3,
+            13.3
+          ]
+        },
+        "precision_pct": {
+          "mean": 89.6,
+          "sd": 0.0,
+          "values": [
+            89.6,
+            89.6,
+            89.6
+          ]
+        },
+        "f1_pct": {
+          "mean": 94.2,
+          "sd": 0.0,
+          "values": [
+            94.2,
+            94.2,
+            94.2
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 93.4,
+          "sd": 0.0,
+          "values": [
+            93.4,
+            93.4,
+            93.4
+          ]
+        }
+      },
+      "latency_s": {
+        "end_to_end_median": {
+          "mean": 0.64,
+          "sd": 0.02,
+          "values": [
+            0.6146,
+            0.6503,
+            0.6532
+          ]
+        },
+        "end_to_end_p95": {
+          "mean": 1.09,
+          "sd": 0.01,
+          "values": [
+            1.0835,
+            1.0875,
+            1.1058
+          ]
+        },
+        "end_to_end_mean": {
+          "mean": 0.83,
+          "sd": 0.15,
+          "values": [
+            0.7112,
+            1.001,
+            0.7635
+          ]
+        },
+        "llm_call_median": {
+          "mean": 0.65,
+          "sd": 0.02,
+          "values": [
+            0.6275,
+            0.6567,
+            0.6641
+          ]
+        },
+        "slowest_non_llm_stage_max_ms": {
+          "mean": 32.3,
+          "sd": 0.1,
+          "values": [
+            32.2,
+            32.3,
+            32.4
+          ]
+        },
+        "pooled_over_all_commands_and_repetitions": {
+          "n": 729,
+          "median": 0.644,
+          "p95": 1.089,
+          "share_of_commands_within_1s_pct": 78.6
+        },
+        "cold_start_ontology_index_build_s": null
+      },
+      "explainability_coverage_pct": {
+        "reason_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "explanation_block_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "provenance_coverage_pct": {
+          "mean": 40.0,
+          "sd": 0.0,
+          "values": [
+            40.0,
+            40.0,
+            40.0
+          ]
+        }
+      },
+      "first_rejecting_stage_run1": {
+        "gold_invalid": {
+          "llm": 93,
+          "none": 8,
+          "stage3_antlr": 4,
+          "stage1_format": 5,
+          "stage5_type_mismatch": 3
+        },
+        "gold_valid": {
+          "none": 126,
+          "stage5_entity_not_found": 3,
+          "llm": 1
+        }
+      }
+    },
+    "openai/gpt-oss-120b": {
+      "source": "replay of 2026-10-28_openai_gpt-oss-120b_full-replay: Stage 2 outputs and Stage 2 time taken from that run, Stages 1 and 3-6 re-run",
+      "model": "openai/gpt-oss-120b",
+      "max_tokens": 500,
+      "repetitions": 3,
+      "extraction": {
+        "action_accuracy_pct": {
+          "mean": 93.07,
+          "sd": 1.55,
+          "values": [
+            94.6,
+            91.5,
+            93.1
+          ]
+        },
+        "entity_accuracy_pct": {
+          "mean": 85.17,
+          "sd": 1.27,
+          "values": [
+            85.9,
+            83.7,
+            85.9
+          ]
+        },
+        "entity_gold_n": 92,
+        "end_signal_precision_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_recall_pct": {
+          "mean": 80.43,
+          "sd": 3.41,
+          "values": [
+            82.4,
+            76.5,
+            82.4
+          ]
+        },
+        "end_signal_f1_pct": {
+          "mean": 89.1,
+          "sd": 2.08,
+          "values": [
+            90.3,
+            86.7,
+            90.3
+          ]
+        },
+        "end_signal_n": 20,
+        "llm_error_rate_pct": {
+          "mean": 1.8,
+          "sd": 1.05,
+          "values": [
+            0.8,
+            2.9,
+            1.7
+          ]
+        }
+      },
+      "decisions_full_pipeline": {
+        "valid_recall_pct": {
+          "mean": 89.77,
+          "sd": 1.17,
+          "values": [
+            90.8,
+            88.5,
+            90.0
+          ]
+        },
+        "valid_clarification_rate_pct": {
+          "mean": 3.33,
+          "sd": 0.4,
+          "values": [
+            3.8,
+            3.1,
+            3.1
+          ]
+        },
+        "false_rejection_rate_pct": {
+          "mean": 6.93,
+          "sd": 1.55,
+          "values": [
+            5.4,
+            8.5,
+            6.9
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 3.23,
+          "sd": 0.46,
+          "values": [
+            2.7,
+            3.5,
+            3.5
+          ]
+        },
+        "precision_pct": {
+          "mean": 96.93,
+          "sd": 0.49,
+          "values": [
+            97.5,
+            96.6,
+            96.7
+          ]
+        },
+        "f1_pct": {
+          "mean": 93.2,
+          "sd": 0.8,
+          "values": [
+            94.0,
+            92.4,
+            93.2
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 93.0,
+          "sd": 0.8,
+          "values": [
+            93.8,
+            92.2,
+            93.0
+          ]
+        }
+      },
+      "llm_alone_no_stage3_to_5": {
+        "valid_recall_pct": {
+          "mean": 93.07,
+          "sd": 1.55,
+          "values": [
+            94.6,
+            91.5,
+            93.1
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 8.53,
+          "sd": 0.46,
+          "values": [
+            8.0,
+            8.8,
+            8.8
+          ]
+        },
+        "precision_pct": {
+          "mean": 92.6,
+          "sd": 0.53,
+          "values": [
+            93.2,
+            92.2,
+            92.4
+          ]
+        },
+        "f1_pct": {
+          "mean": 92.83,
+          "sd": 1.01,
+          "values": [
+            93.9,
+            91.9,
+            92.7
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 92.33,
+          "sd": 1.01,
+          "values": [
+            93.4,
+            91.4,
+            92.2
+          ]
+        }
+      },
+      "latency_s": {
+        "end_to_end_median": {
+          "mean": 1.55,
+          "sd": 0.03,
+          "values": [
+            1.5258,
+            1.5761,
+            1.5348
+          ]
+        },
+        "end_to_end_p95": {
+          "mean": 5.9,
+          "sd": 1.04,
+          "values": [
+            4.7079,
+            6.5176,
+            6.4842
+          ]
+        },
+        "end_to_end_mean": {
+          "mean": 4.74,
+          "sd": 0.23,
+          "values": [
+            4.476,
+            4.8787,
+            4.8785
+          ]
+        },
+        "llm_call_median": {
+          "mean": 1.55,
+          "sd": 0.03,
+          "values": [
+            1.532,
+            1.5857,
+            1.5352
+          ]
+        },
+        "slowest_non_llm_stage_max_ms": {
+          "mean": 25.5,
+          "sd": 0.0,
+          "values": [
+            25.5,
+            25.5,
+            25.5
+          ]
+        },
+        "pooled_over_all_commands_and_repetitions": {
+          "n": 729,
+          "median": 1.535,
+          "p95": 5.549,
+          "share_of_commands_within_1s_pct": 8.6
+        },
+        "cold_start_ontology_index_build_s": null
+      },
+      "explainability_coverage_pct": {
+        "reason_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "explanation_block_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "provenance_coverage_pct": {
+          "mean": 42.87,
+          "sd": 1.05,
+          "values": [
+            43.9,
+            41.8,
+            42.9
+          ]
+        }
+      },
+      "first_rejecting_stage_run1": {
+        "gold_invalid": {
+          "llm": 99,
+          "stage5_type_mismatch": 4,
+          "none": 3,
+          "stage3_antlr": 2,
+          "stage1_format": 5
+        },
+        "gold_valid": {
+          "none": 118,
+          "llm": 7,
+          "stage5_entity_not_found": 5
+        }
+      }
+    },
+    "openai/gpt-oss-120b__maxtok4000": {
+      "source": "replay of 2026-10-28_openai_gpt-oss-120b__maxtok4000_final: Stage 2 outputs and Stage 2 time taken from that run, Stages 1 and 3-6 re-run",
+      "model": "openai/gpt-oss-120b",
+      "max_tokens": 4000,
+      "repetitions": 3,
+      "extraction": {
+        "action_accuracy_pct": {
+          "mean": 94.87,
+          "sd": 0.46,
+          "values": [
+            95.4,
+            94.6,
+            94.6
+          ]
+        },
+        "entity_accuracy_pct": {
+          "mean": 84.43,
+          "sd": 1.27,
+          "values": [
+            85.9,
+            83.7,
+            83.7
+          ]
+        },
+        "entity_gold_n": 92,
+        "end_signal_precision_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_recall_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_f1_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "end_signal_n": 20,
+        "llm_error_rate_pct": {
+          "mean": 0.0,
+          "sd": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "decisions_full_pipeline": {
+        "valid_recall_pct": {
+          "mean": 93.57,
+          "sd": 0.4,
+          "values": [
+            93.8,
+            93.8,
+            93.1
+          ]
+        },
+        "valid_clarification_rate_pct": {
+          "mean": 3.1,
+          "sd": 0.0,
+          "values": [
+            3.1,
+            3.1,
+            3.1
+          ]
+        },
+        "false_rejection_rate_pct": {
+          "mean": 3.33,
+          "sd": 0.4,
+          "values": [
+            3.1,
+            3.1,
+            3.8
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 2.7,
+          "sd": 0.0,
+          "values": [
+            2.7,
+            2.7,
+            2.7
+          ]
+        },
+        "precision_pct": {
+          "mean": 97.6,
+          "sd": 0.0,
+          "values": [
+            97.6,
+            97.6,
+            97.6
+          ]
+        },
+        "f1_pct": {
+          "mean": 95.57,
+          "sd": 0.23,
+          "values": [
+            95.7,
+            95.7,
+            95.3
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 95.37,
+          "sd": 0.23,
+          "values": [
+            95.5,
+            95.5,
+            95.1
+          ]
+        }
+      },
+      "llm_alone_no_stage3_to_5": {
+        "valid_recall_pct": {
+          "mean": 96.67,
+          "sd": 0.4,
+          "values": [
+            96.9,
+            96.9,
+            96.2
+          ]
+        },
+        "false_acceptance_rate_pct": {
+          "mean": 8.0,
+          "sd": 0.0,
+          "values": [
+            8.0,
+            8.0,
+            8.0
+          ]
+        },
+        "precision_pct": {
+          "mean": 93.3,
+          "sd": 0.0,
+          "values": [
+            93.3,
+            93.3,
+            93.3
+          ]
+        },
+        "f1_pct": {
+          "mean": 94.97,
+          "sd": 0.23,
+          "values": [
+            95.1,
+            95.1,
+            94.7
+          ]
+        },
+        "accuracy_strict_pct": {
+          "mean": 94.53,
+          "sd": 0.29,
+          "values": [
+            94.7,
+            94.7,
+            94.2
+          ]
+        }
+      },
+      "latency_s": {
+        "end_to_end_median": {
+          "mean": 1.13,
+          "sd": 0.1,
+          "values": [
+            1.055,
+            1.0904,
+            1.2423
+          ]
+        },
+        "end_to_end_p95": {
+          "mean": 6.13,
+          "sd": 1.78,
+          "values": [
+            4.7339,
+            5.5293,
+            8.1381
+          ]
+        },
+        "end_to_end_mean": {
+          "mean": 4.33,
+          "sd": 0.22,
+          "values": [
+            4.2786,
+            4.1358,
+            4.5727
+          ]
+        },
+        "llm_call_median": {
+          "mean": 1.16,
+          "sd": 0.13,
+          "values": [
+            1.0761,
+            1.0929,
+            1.3089
+          ]
+        },
+        "slowest_non_llm_stage_max_ms": {
+          "mean": 25.97,
+          "sd": 0.42,
+          "values": [
+            25.5,
+            26.3,
+            26.1
+          ]
+        },
+        "pooled_over_all_commands_and_repetitions": {
+          "n": 729,
+          "median": 1.097,
+          "p95": 7.134,
+          "share_of_commands_within_1s_pct": 26.9
+        },
+        "cold_start_ontology_index_build_s": null
+      },
+      "explainability_coverage_pct": {
+        "reason_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "explanation_block_coverage_pct": {
+          "mean": 100.0,
+          "sd": 0.0,
+          "values": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        },
+        "provenance_coverage_pct": {
+          "mean": 44.2,
+          "sd": 0.52,
+          "values": [
+            44.8,
+            43.9,
+            43.9
+          ]
+        }
+      },
+      "first_rejecting_stage_run1": {
+        "gold_invalid": {
+          "llm": 99,
+          "stage5_type_mismatch": 4,
+          "none": 3,
+          "stage3_antlr": 2,
+          "stage1_format": 5
+        },
+        "gold_valid": {
+          "none": 122,
+          "stage5_entity_not_found": 4,
+          "llm": 4
+        }
+      }
+    }
+  },
+  "baseline_B0_ludyga": {
+    "runs": 1,
+    "all_243_items": {
+      "valid_n": 130,
+      "invalid_n": 113,
+      "valid_accepted": 60,
+      "valid_clarified": 0,
+      "valid_rejected": 70,
+      "invalid_accepted": 1,
+      "invalid_clarified": 0,
+      "invalid_rejected": 112,
+      "valid_recall_pct": 46.2,
+      "valid_clarification_rate_pct": 0.0,
+      "false_rejection_rate_pct": 53.8,
+      "false_acceptance_rate_pct": 0.9,
+      "invalid_not_accepted_pct": 99.1,
+      "precision_pct": 98.4,
+      "f1_pct": 62.8,
+      "accuracy_strict_pct": 70.8,
+      "accuracy_lenient_pct": 70.8
+    },
+    "ludyga_198_sentences_only": {
+      "valid_n": 98,
+      "invalid_n": 100,
+      "valid_accepted": 49,
+      "valid_clarified": 0,
+      "valid_rejected": 49,
+      "invalid_accepted": 0,
+      "invalid_clarified": 0,
+      "invalid_rejected": 100,
+      "valid_recall_pct": 50.0,
+      "valid_clarification_rate_pct": 0.0,
+      "false_rejection_rate_pct": 50.0,
+      "false_acceptance_rate_pct": 0.0,
+      "invalid_not_accepted_pct": 100.0,
+      "precision_pct": 100.0,
+      "f1_pct": 66.7,
+      "accuracy_strict_pct": 75.3,
+      "accuracy_lenient_pct": 75.3
+    },
+    "end_to_end_latency_s": {
+      "n": 243,
+      "median_s": 8e-05,
+      "p95_s": 0.00046,
+      "mean_s": 0.00015
+    }
+  },
+  "entity_resolution_E3": {
+    "overall": {
+      "n": 98,
+      "status_acc_pct": 92.9,
+      "full_acc_pct": 86.7,
+      "incorrect_acceptance": 1,
+      "incorrect_rejection": 5,
+      "wrong_concept": 6,
+      "wrong_status": 1,
+      "coverage_pct": 93.3,
+      "n_expected_accepted": 75
+    },
+    "by_category": {
+      "collision": {
+        "n": 7,
+        "status_acc_pct": 57.1,
+        "full_acc_pct": 0.0,
+        "incorrect_acceptance": 1,
+        "incorrect_rejection": 1,
+        "wrong_concept": 4,
+        "wrong_status": 1,
+        "coverage_pct": 80.0,
+        "n_expected_accepted": 5
+      },
+      "exact": {
+        "n": 39,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 97.4,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 1,
+        "wrong_status": 0,
+        "coverage_pct": 100.0,
+        "n_expected_accepted": 39
+      },
+      "misspelling": {
+        "n": 14,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 100.0,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 0,
+        "wrong_status": 0,
+        "coverage_pct": 100.0,
+        "n_expected_accepted": 14
+      },
+      "not_in_ontology": {
+        "n": 9,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 100.0,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 0,
+        "wrong_status": 0,
+        "coverage_pct": null,
+        "n_expected_accepted": 0
+      },
+      "synonym": {
+        "n": 11,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 100.0,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 0,
+        "wrong_status": 0,
+        "coverage_pct": 100.0,
+        "n_expected_accepted": 11
+      },
+      "unseen_synonym": {
+        "n": 6,
+        "status_acc_pct": 33.3,
+        "full_acc_pct": 16.7,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 4,
+        "wrong_concept": 1,
+        "wrong_status": 0,
+        "coverage_pct": 33.3,
+        "n_expected_accepted": 6
+      },
+      "wrong_type": {
+        "n": 12,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 100.0,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 0,
+        "wrong_status": 0,
+        "coverage_pct": null,
+        "n_expected_accepted": 0
+      }
+    },
+    "by_action": {
+      "diagnosis": {
+        "n": 34,
+        "status_acc_pct": 88.2,
+        "full_acc_pct": 85.3,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 3,
+        "wrong_concept": 1,
+        "wrong_status": 1,
+        "coverage_pct": 87.5,
+        "n_expected_accepted": 24
+      },
+      "set_medication": {
+        "n": 18,
+        "status_acc_pct": 88.9,
+        "full_acc_pct": 88.9,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 2,
+        "wrong_concept": 0,
+        "wrong_status": 0,
+        "coverage_pct": 86.7,
+        "n_expected_accepted": 15
+      },
+      "show": {
+        "n": 16,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 93.8,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 1,
+        "wrong_status": 0,
+        "coverage_pct": 100.0,
+        "n_expected_accepted": 16
+      },
+      "start": {
+        "n": 22,
+        "status_acc_pct": 95.5,
+        "full_acc_pct": 81.8,
+        "incorrect_acceptance": 1,
+        "incorrect_rejection": 0,
+        "wrong_concept": 3,
+        "wrong_status": 0,
+        "coverage_pct": 100.0,
+        "n_expected_accepted": 15
+      },
+      "stop": {
+        "n": 8,
+        "status_acc_pct": 100.0,
+        "full_acc_pct": 87.5,
+        "incorrect_acceptance": 0,
+        "incorrect_rejection": 0,
+        "wrong_concept": 1,
+        "wrong_status": 0,
+        "coverage_pct": 100.0,
+        "n_expected_accepted": 5
+      }
+    }
+  }
+}

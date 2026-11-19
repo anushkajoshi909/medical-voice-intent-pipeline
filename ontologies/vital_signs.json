@@ -1,0 +1,174 @@
+[
+  {
+    "label": "Blood Pressure",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Heart Rate",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Respiratory Rate",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Oxygen Saturation",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Temperature",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Mean Arterial Pressure",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Glasgow Coma Scale",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Pain Score",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Weight",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Height",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "BMI",
+    "semantic_type": "vital_sign"
+  },
+  {
+    "label": "Complete Blood Count",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "International Normalised Ratio",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Glomerular Filtration Rate",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Creatinine",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Blood Glucose",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Glycated Hemoglobin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Sodium",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Potassium",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Hemoglobin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "White Blood Cell Count",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Platelet Count",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "C-Reactive Protein",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Troponin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Brain Natriuretic Peptide",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Lactate",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Prothrombin Time",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Partial Thromboplastin Time",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Lipid Panel",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Liver Function Test",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Bilirubin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Albumin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Urea",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Thyroid Stimulating Hormone",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "D-Dimer",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Ferritin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Magnesium",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Calcium",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Arterial Blood Gas",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Procalcitonin",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Urine Output",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Blood Culture",
+    "semantic_type": "lab_result"
+  },
+  {
+    "label": "Urine Analysis",
+    "semantic_type": "lab_result"
+  }
+]

@@ -1,0 +1,298 @@
+{
+  "c101": {
+    "entity": ""
+  },
+  "c102": {
+    "entity": ""
+  },
+  "c103": {
+    "entity": ""
+  },
+  "c104": {
+    "entity": ""
+  },
+  "c105": {
+    "entity": ""
+  },
+  "c106": {
+    "entity": ""
+  },
+  "c141": {
+    "entity": "age"
+  },
+  "c142": {
+    "entity": "blood pressure"
+  },
+  "c143": {
+    "entity": "patient records"
+  },
+  "c144": {
+    "entity": "medical charts"
+  },
+  "c145": {
+    "entity": "vital signs"
+  },
+  "c146": {
+    "entity": "diagnostic information"
+  },
+  "c147": {
+    "entity": "medication history"
+  },
+  "c148": {
+    "entity": "insights"
+  },
+  "c149": {
+    "entity": "medical history"
+  },
+  "c150": {
+    "entity": "magnetic resonance imaging scan results"
+  },
+  "c151": {
+    "entity": "blood test findings for the last month"
+  },
+  "c152": {
+    "entity": "medication history of the past week"
+  },
+  "c153": {
+    "entity": "surgical procedure details from the last three days"
+  },
+  "c154": {
+    "entity": "pathology reports for the last 24 hours"
+  },
+  "c155": {
+    "entity": "vaccination records of last 2 months"
+  },
+  "c156": {
+    "entity": "chemotherapy regimen recorded in the past six hours"
+  },
+  "c157": {
+    "entity": "genetic testing results over the past 48 hours"
+  },
+  "c158": {
+    "entity": "immunization history of the last 10 days"
+  },
+  "c159": {
+    "entity": "patient presented with persistent cough and fever for the past week",
+    "end_signal": true
+  },
+  "c160": {
+    "entity": "upon examination there was tenderness in the lower abdomen and a palpable mass",
+    "end_signal": false
+  },
+  "c161": {
+    "entity": "patient s blood pressure was elevated at 160/90 mmhg during today s visit",
+    "end_signal": false
+  },
+  "c162": {
+    "entity": "patient reports experiencing shortness of breath and chest pain upon exertion",
+    "end_signal": false
+  },
+  "c163": {
+    "entity": "radiology report confirms the presence of a 3 cm mass in the left lung with possible metastasis",
+    "end_signal": true
+  },
+  "c164": {
+    "entity": "chief complaint is abdominal pain rated 7 out of 10 located in the lower right quadrant vital signs stable temperature 37 2 degrees celsius",
+    "end_signal": true
+  },
+  "c165": {
+    "entity": "patient presented with acute chest pain vital signs stable electrocardiogram shows sinus rhythm",
+    "end_signal": true
+  },
+  "c166": {
+    "entity": "admitted for suspected appendicitis abdominal pain started 12 hours ago rebound tenderness present",
+    "end_signal": true
+  },
+  "c167": {
+    "entity": "consulted for diabetic foot ulcer wound size 2x2 cm no signs of infection noted",
+    "end_signal": true
+  },
+  "c168": {
+    "entity": "follow up for hypertension blood pressure readings consistently elevated despite medication adherence",
+    "end_signal": true
+  },
+  "c169": {
+    "entity": "lisinopril 10 milligrams once daily"
+  },
+  "c170": {
+    "entity": "metformin 500 milligrams twice a day"
+  },
+  "c171": {
+    "entity": "atorvastatin 20 milligrams every evening"
+  },
+  "c172": {
+    "entity": "levothyroxine 50 micrograms in the morning"
+  },
+  "c173": {
+    "entity": "aspirin 100 milligrams and clopidogrel 75 milligrams"
+  },
+  "c174": {
+    "entity": "metformin 500 milligrams at 10 am"
+  },
+  "c175": {
+    "entity": "lisinopril 10 milligrams at 4 pm"
+  },
+  "c176": {
+    "entity": "levothyroxine 50 micrograms once daily and omeprazole 20 milligrams once daily"
+  },
+  "c177": {
+    "entity": "albuterol inhaler 2 puffs every 4 hours as needed"
+  },
+  "c178": {
+    "entity": "lisinopril 10 milligrams and atorvastatin 20 milligrams at 11 o clock"
+  },
+  "c179": {
+    "entity": "john smith"
+  },
+  "c180": {
+    "entity": "mary johnson"
+  },
+  "c181": {
+    "entity": "sarah davis"
+  },
+  "c182": {
+    "entity": "john doe"
+  },
+  "c183": {
+    "entity": "mary smith"
+  },
+  "c184": {
+    "entity": "messages"
+  },
+  "c185": {
+    "entity": "messages view"
+  },
+  "c186": {
+    "entity": "messages"
+  },
+  "c187": {
+    "entity": "messages"
+  },
+  "c188": {
+    "entity": "messages"
+  },
+  "c189": {
+    "entity": "inform mrs smith about her upcoming appointment",
+    "end_signal": true
+  },
+  "c190": {
+    "entity": "remind mr johnson to take his medication as prescribed",
+    "end_signal": true
+  },
+  "c191": {
+    "entity": "note that ms rodriguez s test results are ready for review",
+    "end_signal": true
+  },
+  "c192": {
+    "entity": "advise mr patel to schedule a follow up consultation",
+    "end_signal": true
+  },
+  "c193": {
+    "entity": "notify dr lee about the patient s allergic reaction",
+    "end_signal": true
+  },
+  "c194": {
+    "entity": "document the change in mrs thompson s medication dosage",
+    "end_signal": true
+  },
+  "c195": {
+    "entity": "update mr nguyen on his upcoming surgery details",
+    "end_signal": true
+  },
+  "c196": {
+    "entity": "record ms garcia s recent symptoms for review",
+    "end_signal": true
+  },
+  "c197": {
+    "entity": "inform dr patel about the patient s discharge instructions",
+    "end_signal": true
+  },
+  "c198": {
+    "entity": "notify mrs kim about her laboratory test scheduling",
+    "end_signal": true
+  },
+  "ext_abbr_01": {
+    "entity": "blood pressure"
+  },
+  "ext_abbr_02": {
+    "entity": "oxygen saturation"
+  },
+  "ext_abbr_03": {
+    "entity": "electrocardiogram results"
+  },
+  "ext_abbr_04": {
+    "entity": "complete blood count"
+  },
+  "ext_abbr_05": {
+    "entity": "hemodialysis"
+  },
+  "ext_abbr_06": {
+    "entity": "magnetic resonance imaging results"
+  },
+  "ext_abbr_07": {
+    "entity": "hypertension"
+  },
+  "ext_abbr_08": {
+    "entity": "myocardial infarction"
+  },
+  "ext_abbr_09": {
+    "entity": "international normalised ratio"
+  },
+  "ext_abbr_10": {
+    "entity": "heart rate"
+  },
+  "ext_new_show_01": {
+    "entity": "lab results"
+  },
+  "ext_new_show_02": {
+    "entity": "vitals"
+  },
+  "ext_new_show_03": {
+    "entity": "imaging from last week"
+  },
+  "ext_new_show_04": {
+    "entity": "latest blood work"
+  },
+  "ext_new_diag_01": {
+    "entity": "pneumonia"
+  },
+  "ext_new_diag_02": {
+    "entity": "type 2 diabetes"
+  },
+  "ext_new_diag_03": {
+    "entity": "atrial fibrillation"
+  },
+  "ext_new_start_01": {
+    "entity": "intravenous infusion"
+  },
+  "ext_new_start_02": {
+    "entity": "dialysis"
+  },
+  "ext_new_stop_01": {
+    "entity": "antibiotics"
+  },
+  "ext_new_stop_02": {
+    "entity": "ventilator"
+  },
+  "ext_new_pt_01": {
+    "entity": "emma wilson"
+  },
+  "ext_new_pt_02": {
+    "entity": "robert chen"
+  },
+  "ext_new_pt_03": {
+    "entity": "james murphy"
+  },
+  "ext_ont_01": {
+    "entity": "blood pressure"
+  },
+  "ext_ont_02": {
+    "entity": "patient history"
+  },
+  "ext_ont_03": {
+    "entity": "discharge summary"
+  },
+  "ext_ont_04": {
+    "entity": "messages"
+  }
+}
