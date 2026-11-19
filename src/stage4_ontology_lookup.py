@@ -45,6 +45,7 @@ class DrugResult:
     match_method: str
     score: float
     found: bool
+    semantic_type: str | None = None   # type of the matched concept (checked per drug by Stage 5)
 
 
 @dataclass
@@ -400,9 +401,13 @@ def _lookup_medication(raw_entity: str) -> OntologyResult | None:
     """Medication lookup for single and compound prescriptions.
 
     Splits on " and " and looks up every drug segment independently.
-    Returns an OntologyResult whose top-level fields reflect the first
-    confirmed drug (for Stage 5 type checking), and whose drug_list field
-    holds per-drug DrugResult entries so the display layer can show all hits.
+    Single drug: returns the match, or None if it is not found (unchanged).
+    Compound (two or more segments): drug_list always holds one DrugResult per
+    segment, also when some or all segments are not found. The top-level
+    result is found=True only if EVERY segment was found; its fields then come
+    from the first drug. If any segment is missing, the result is found=False
+    with the full drug_list, so one known drug can never hide an unknown one.
+    Stage 5 checks every drug (found and allowed type).
     """
     segments = re.split(r'\s+and\s+', raw_entity, flags=re.IGNORECASE)
 
@@ -428,10 +433,16 @@ def _lookup_medication(raw_entity: str) -> OntologyResult | None:
             match_method=match.match_method if match else "none",
             score=match.score if match else 0.0,
             found=bool(match),
+            semantic_type=match.semantic_type if match else None,
         ))
 
         if match and first_match is None:
             first_match = match
+
+    if len(drug_results) > 1 and not all(d.found for d in drug_results):
+        # compound with at least one unresolved segment: keep every per-drug result
+        return OntologyResult(False, raw_entity, None, None, None, "none", 0.0, None,
+                              drug_list=drug_results)
 
     if first_match is None:
         return None

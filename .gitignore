@@ -47,3 +47,5 @@ data/audio/
 # Thesis LaTeX template
 latex-template-cgv-2/
 latex-template-cgv-2.zip
+docs/thesis_review/
+docs/comparable_pipeline_review.md

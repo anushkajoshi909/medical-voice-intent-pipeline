@@ -35,8 +35,9 @@ from datetime import date as _date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-RUNS = ROOT / "evaluation" / "runs"
-OUT = ROOT / "evaluation" / "reports" / "final"
+from metric_labels import ACTION_LABEL, ENTITY_LABEL, END_SIGNAL_LABEL, label_counts  # noqa: E402
+from paths import RUNS, REPORTS  # noqa: E402  (evaluation/final_run/ by default)
+OUT = REPORTS / "final"
 STAGES = ["stage1", "stage2", "stage3", "stage4", "stage5", "stage6"]
 
 
@@ -128,14 +129,18 @@ def extraction_metrics(rows):
 
 
 def main():
+    global RUNS
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=_date.today().isoformat())
     ap.add_argument("--tags", nargs="+", default=["final500", "final4000"])
     ap.add_argument("--also-dates", nargs="*", default=[], help="further dates whose run folders belong to the batch (a batch that ran over midnight)")
     ap.add_argument("--baseline", help="name of the B0 run folder to include (default: the B0 run of the batch)")
     ap.add_argument("--e3", help="name of the E3 run folder (default: the E3 run of the batch date)")
-    ap.add_argument("--out", default=str(OUT), help="output folder (default evaluation/reports/final)")
+    ap.add_argument("--out", default=str(OUT), help="output folder (default evaluation/final_run/reports/final)")
+    ap.add_argument("--runs-dir", default=str(RUNS),
+                    help="folder with the run folders (default evaluation/final_run/runs; old runs: evaluation/old_runs/runs)")
     args = ap.parse_args()
+    RUNS = Path(args.runs_dir)
     out_dir = Path(args.out)
     systems = load_batch(args.date, args.tags, args.baseline, args.also_dates)
     gold = load_gold()
@@ -202,21 +207,23 @@ def main():
         result["entity_resolution_E3"] = json.loads((e3[-1] / "summary.json").read_text())
         runs_used.append(e3[-1].name)
     sample = next(iter(systems.values()))[0][1]
+    n = label_counts()
     result = {"_about": {
         "written_by": "evaluation/scripts/build_final_report.py (reads run folders only)",
         "date": args.date, "dataset_tags": args.tags, "run_folders": sorted(runs_used),
         "git_commit": sample.get("git_commit"), "git_dirty": sample.get("git_dirty"),
-        "dataset": "data/annotated_commands.json, 243 commands (130 valid, 113 invalid)",
+        "dataset": f"data/annotated_commands.json, {n['commands']} commands ({n['valid']} valid, {n['invalid']} invalid)",
         "gold_labels": "data/labels/gold_labels.json (entity, end_signal) and entity_resolution_gold.csv (E3)",
         "metrics": {
-            "valid_recall_pct": "valid commands accepted by the pipeline, % of 130",
-            "valid_clarification_rate_pct": "valid commands sent to clarification (entity could not be grounded), % of 130",
-            "false_rejection_rate_pct": "valid commands rejected, % of 130",
-            "false_acceptance_rate_pct": "invalid commands accepted, % of 113",
+            "valid_recall_pct": f"valid commands accepted by the pipeline, % of {n['valid']}",
+            "valid_clarification_rate_pct": f"valid commands sent to clarification (entity could not be grounded), % of {n['valid']}",
+            "false_rejection_rate_pct": f"valid commands rejected, % of {n['valid']}",
+            "false_acceptance_rate_pct": f"invalid commands accepted, % of {n['invalid']}",
             "precision_pct / f1_pct": "of all accepted commands, share that is valid / F1 of that precision with valid_recall",
-            "accuracy_strict_pct": "(valid accepted + invalid rejected or clarified) / 243",
-            "action_accuracy_pct": "valid commands whose extracted action equals expected_action",
-            "entity_accuracy_pct": "valid commands with a gold entity whose extracted entity matches it (case and punctuation ignored)",
+            "accuracy_strict_pct": f"(valid accepted + invalid rejected or clarified) / {n['commands']}",
+            "action_accuracy_pct": f"{ACTION_LABEL}: valid commands whose extracted action equals expected_action, % of {n['action']}",
+            "entity_accuracy_pct": f"{ENTITY_LABEL}: valid commands with a gold entity whose extracted entity text matches it "
+                                   f"(case and punctuation ignored), % of {n['entity']}; not entity-type or ontology-linking accuracy",
             "end_signal_*": "dictation commands (set_note, send_message): did the model detect the finish phrase",
             "llm_alone": "decision from Stage 2 only (valid action = accept), without Stages 3 to 5",
             "latency_s": "seconds per command: end to end, LLM call (stage2), slowest other stage; remote endpoint, depends on load",
@@ -239,12 +246,12 @@ def main():
     f2 = lambda a: "n/a" if a is None else f"{a['mean']:.2f} ± {a['sd']:.2f}"
     S = result["systems"]
     md = [f"# Main results ({args.date} runs)", "",
-          f"Written by evaluation/scripts/build_final_report.py. 243 commands (130 valid, 113 invalid); mean ± SD over 3 repetitions; "
+          f"Written by evaluation/scripts/build_final_report.py. {n['commands']} commands ({n['valid']} valid, {n['invalid']} invalid); mean ± SD over 3 repetitions; "
           "percent unless noted. All other numbers and the definition of each metric are in all_results_%s.json." % args.date, "",
           "## 1. Overall result of the pipeline", "",
-          "- **Overall accuracy:** commands decided correctly, out of 243: valid commands accepted plus invalid commands rejected or sent to clarification.",
-          "- **Valid accepted:** share of the 130 valid commands that the pipeline accepts.",
-          "- **Invalid wrongly accepted:** share of the 113 invalid commands that the pipeline accepts.",
+          f"- **Overall accuracy:** commands decided correctly, out of {n['commands']}: valid commands accepted plus invalid commands rejected or sent to clarification.",
+          f"- **Valid accepted:** share of the {n['valid']} valid commands that the pipeline accepts.",
+          f"- **Invalid wrongly accepted:** share of the {n['invalid']} invalid commands that the pipeline accepts.",
           "- **Latency:** seconds per command from raw text to the structured result (remote model; depends on load).", "",
           "| system | overall accuracy | valid accepted | invalid wrongly accepted | latency median | latency p95 |",
           "|---|---|---|---|---|---|"]
@@ -258,8 +265,9 @@ def main():
         md.append(f"| B0 Ludyga grammar | {a0['accuracy_strict_pct']} | {a0['valid_recall_pct']} | "
                   f"{a0['false_acceptance_rate_pct']} | {bl['median_s']:.4f} | {bl['p95_s']:.4f} |")
     md += ["", "## 2. What the language model extracts (Stage 2)", "",
-           "Measured against the gold labels: the action of the 130 valid commands, the entity of 92 of them, and the end signal of the 20 dictations.", "",
-           "| system | action accuracy | entity accuracy | end-signal F1 |", "|---|---|---|---|"]
+           f"Measured against the gold labels: the action of the {n['action']} valid commands with an action label, the entity text of the "
+           f"{n['entity']} with an entity label, and the end signal of the {n['end_signal']} dictations.", "",
+           f"| system | {ACTION_LABEL} | {ENTITY_LABEL} | {END_SIGNAL_LABEL} |", "|---|---|---|---|"]
     for k, v in S.items():
         e = v["extraction"]
         md.append(f"| {k} | {f1(e['action_accuracy_pct'])} | {f1(e['entity_accuracy_pct'])} | {f1(e['end_signal_f1_pct'])} |")

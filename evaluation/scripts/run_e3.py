@@ -5,7 +5,7 @@ Reads data/labels/entity_resolution_gold.csv, sends every (action, entity) row t
 Stage 4 (ontology lookup) and Stage 5 (type check) of the pipeline and compares the result with the
 expected status / type / concept of the row. Writes an append-only run folder
 
-  evaluation/runs/<date>_E3_entity-resolution/
+  evaluation/runs/<date>_E3_entity-resolution[_<tag>]/
       results.jsonl   one line per row: gold fields + what Stages 4 and 5 returned + verdicts
       summary.json    metrics (overall, per category, per action)
       summary.md      the same as tables, plus the list of failed rows
@@ -23,7 +23,9 @@ Error classes
 Same concept in two ontologies (pneumonia: DOID and HP) counts as correct when the label is the same
 and the action allows both types (diagnosis: disease, symptom).
 
-Usage: python evaluation/scripts/run_e3.py [--runs-dir DIR]
+Usage: python evaluation/scripts/run_e3.py [--runs-dir DIR] [--tag TAG]
+  --tag   added to the folder name, so a batch made with changed code on the same day gets its own E3
+          folder instead of reusing (skipping to) an older one; run_all.py passes its 500-token tag
 """
 import argparse
 import collections
@@ -59,9 +61,16 @@ def pct(a, b):
     return round(100 * a / b, 1) if b else None
 
 
+def e3_folder_name(tag=None, day=None):
+    name = f"{day or date.today().isoformat()}_E3_entity-resolution"
+    return f"{name}_{tag}" if tag else name
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs-dir", default=str(ROOT / "evaluation" / "runs"))
+    from paths import RUNS
+    ap.add_argument("--runs-dir", default=str(RUNS))
+    ap.add_argument("--tag", help="suffix of the run folder (e.g. the batch tag)")
     args = ap.parse_args()
     rows = list(csv.DictReader(open(SET, newline="")))
     out = []
@@ -113,7 +122,7 @@ def main():
     summary = {"overall": block(out),
                "by_category": {c: block([x for x in out if x["category"] == c]) for c in sorted({x["category"] for x in out})},
                "by_action": {a: block([x for x in out if x["action"] == a]) for a in sorted({x["action"] for x in out})}}
-    d = Path(args.runs_dir) / f"{date.today().isoformat()}_E3_entity-resolution"
+    d = Path(args.runs_dir) / e3_folder_name(args.tag)
     if (d / "summary.json").exists():
         print(f"skip {d.name} (already complete; delete the folder to recompute)")
         return

@@ -7,6 +7,8 @@
 
 ## Status (November 2026)
 
+**Report follow-up (8 November 2026):** the highlighted implementation passages have been rewritten to describe the fixes, keeping their Finding 7–12 colours for wording review. Chapters 7–9 contain temporary “Review after rerun” pointers. Numerical results and plots remain historical until the fresh batch is reviewed. The detailed follow-up checklist is [post_fix_report_review.md](thesis_review/post_fix_report_review.md). Original UML sources and bibliography entries were not changed.
+
 | # | Finding | Status now | Relevant for the thesis? | Where in the thesis |
 |---|---|---|---|---|
 | 1 | False accepts via `passthrough_fallback` (`show` accepts any term as an EHR record) and the unused confidence value | **Open.** No fix except the few-shot examples of Finding 6. Out-of-domain commands that look like a data request are accepted if the language model maps them to `show`. | Yes, as a limit | Section 5.8 (only the language model decides whether a command belongs to the domain); Chapter 7 (Llama 3.3 accepts "Look into whatever that is") |
@@ -15,6 +17,12 @@
 | 4 | Manual re-test: the confidence value is not reproducible; `send_message` has the same free-text flaw as `set_note` | **Confirmed again.** A second complete run gave other answers at temperature 0 (accuracy within 1.2 points). The free-text flaw is open. | Yes, for reproducibility | Section 6.1 (three repetitions); Chapter 7: paragraph on the second run |
 | 5 | Fresh full run: the confidence gate has no separation; two kinds of language-model failure; a crash of `--save` | **Crash fixed.** Confidence is shown in the explanation and is not used for any decision. | Yes | Section 5.8; Chapter 9 (use the confidence value) |
 | 6 | Few-shot examples as a fix; 11 of 18 old examples were verbatim commands of the evaluation set | **Done.** Four examples added and eleven reworded. No example is a command of the dataset (substring check). | Yes, for the integrity of the evaluation | Comment in `domain_config.yaml`; Chapter 8 (threats to validity) |
+| 7 | Stage 7 treats clarification requests as confirmable commands | **Fixed on 8 November 2026** (code; report wording updated in colour for review). Only `status=accepted` enters confirmation; `needs_clarification` returns `clarification_requested`, shows the message, asks for a corrected command, and the session goes back to listening. The trigger is removed before a reply is classified. Tests: `tests/test_stage7_clarification.py`. Was: reproduced on 6 November 2026. | Yes, as the corrected interaction | Sections 5.3, 5.7, 5.8, 6.3.5 and 6.3.6 now describe accepted-only confirmation in the Finding 7 colour. |
+| 8 | Missing trigger phrase does not prevent command processing | **Fixed on 8 November 2026** (code; report wording updated in colour for review). A new command without a trigger returns status `inactive` before any processing. The benchmark prepends the trigger to the pipeline input, as it already did for B0. Tests: `tests/test_trigger_gate.py`. Was: confirmed on 7 November 2026. | Yes | Section 6.3.1 and Figure 6.2 now show inactive input; Section 7.1 describes trigger preparation. Fresh results await review. |
+| 9 | Stage 2 lacks explicit extraction-schema validation | **Fixed on 8 November 2026** (code; report wording updated in colour for review). Strict Pydantic schema in Stage 2 (`ExtractionSchema`), `error_kind` api/syntax/schema. All 8,465 stored model answers parse identically. Tests: `tests/test_stage2_schema.py`. Was: confirmed on 7 November 2026. | Yes | Sections 6.3.2 and 5.8; purple Finding 9 review markers. |
+| 10 | Unfinished notes/messages have no completion reminder or persistent continuation state | **Fixed on 8 November 2026** (code; report wording updated in colour for review). Session state in `src/interaction.py`: open dictation across turns, reminder after 5 s of inactivity (configurable), finish/continue/cancel replies, normal confirmation after finishing. Tests: `tests/test_interaction.py`. Was: confirmed on 7 November 2026. | Yes | Sections 5.3, 5.8, and 6.3.5; green Finding 10 review markers. |
+| 11 | Compound medications can be accepted with unresolved drug segments | **Fixed on 8 November 2026** (code; report wording updated in colour for review). A compound medication is accepted only if every segment is found with an allowed type; otherwise clarification naming the failing segments. Tests: `tests/test_compound_medication.py`. Was: reproduced on 7 November 2026. | Yes | Sections 5.3, 5.8, 6.3.4, and 6.3.5; red Finding 11 markers. |
+| 12 | Action and entity metric labels need clearer, distinct terminology | **Done on 8 November 2026 in the reporting code** (report metric wording updated in colour; plots await fresh results). Display names in `evaluation/scripts/metric_labels.py`; JSON keys and scores unchanged; denominators counted from the labels. Tests: `tests/test_metric_labels.py`. Historical reports were not regenerated. | Yes | Sections 7.1 and 7.3 and the extraction figure; grey Finding 12 markers. |
 | – | "Candidate fixes": confidence redefinition, self-consistency vote, ontology grounding of the free-text fallback | **Not pursued.** The thesis makes no dataset-specific fixes. | As future work | Chapter 9 |
 
 ---
@@ -785,15 +793,788 @@ means" candidate fix.
 
 ---
 
+# Finding 7: Clarification requests enter the confirmation path
+
+**Date:** 6 November 2026  
+**Status at the time of the finding:** Open (see Resolution below). Reproduced locally; application code has not been changed.
+
+## Expected behaviour
+
+Only Stage 6 results with `status=accepted` should enter the action's
+confirmation policy. A `needs_clarification` result should display the
+clarification message and request a corrected command. That command must
+pass through the pipeline again before it can be confirmed. Saying “yes”
+does not resolve an unknown entity or correct a semantic type mismatch.
+
+## Reproduced behaviour
+
+An isolated Stage 7 check supplied the following payload, using the current
+explicit-confirmation policy for `diagnosis` and a scripted “yes” response:
+
+```json
+{
+  "status": "needs_clarification",
+  "action": "diagnosis",
+  "clarification_message": "Hemodialysis is a procedure, not a permitted diagnosis type. Please repeat or rephrase."
+}
+```
+
+Observed output:
+
+```text
+Stage 6 status: needs_clarification
+Stage 7 outcome: confirmed
+Stage 7 message: CONFIRMED — command executed.
+```
+
+The original Stage 6 status remains `needs_clarification`; Stage 7 produces
+a contradictory confirmation result. This check did not call a language
+model, rerun Stages 1–6, or execute a clinical application action. The
+execution claim is a returned message, not evidence of application execution.
+
+## Cause
+
+- In `src/stage7_confirmation.py`, `build_prompt()` returns the clarification
+  message for `needs_clarification`, rather than treating it as a separate
+  interaction from confirmation.
+- `run()` treats any non-empty prompt returned by `build_prompt()` as eligible
+  for the action's confirmation policy. It does not first require
+  `status=accepted`.
+- Consequently, a positive reply returns `confirmed`. The same path also
+  contains automatic-confirmation branches for actions with timeout policies.
+  The local reproduction above tested the explicit “yes” branch only.
+- `src/run_pipeline.py::_run_confirmation()` passes the Stage 6 payload to this
+  function without a separate guard for clarification results.
+
+## Proposed correction, not yet implemented
+
+1. Restrict confirmation and automatic confirmation to `status=accepted`.
+2. Display clarification messages without offering yes/no confirmation, and
+   request a corrected command in both interactive and voice modes.
+3. Reprocess the corrected command through the pipeline.
+4. Replace the prototype's “command executed” message with wording that
+   accurately reports confirmation unless application execution is integrated.
+5. Verify that clarification results cannot become `confirmed` or
+   `auto_confirmed`, including positive replies and timeout policies, while
+   accepted commands retain their configured confirmation behaviour.
+
+## Relation to the thesis
+
+Section 5.3 now describes the intended separation between clarification and
+confirmation. This finding records the remaining implementation discrepancy;
+it has not been resolved by changing the thesis text. The reproduction alone
+does not establish an effect on the previously reported evaluation scores.
+
+
+## Resolution (8 November 2026)
+
+**Status:** Fixed in the code. The historical evidence above is unchanged.
+
+Changes:
+- `src/stage7_confirmation.py`: `run()` returns the new outcome
+  `clarification_requested` for `needs_clarification` before any confirmation
+  policy is applied (no yes/no question, no automatic confirmation for timed or
+  zero-timeout actions). `build_prompt()` now builds a prompt only for
+  `accepted`. `rejected`, `accepted_partial`, and `inactive` stay
+  `not_applicable`.
+- Wording: "CONFIRMED — command executed." is replaced by a message that says
+  the user confirmed the interpretation and that no clinical application is
+  connected, so nothing was executed. The Stage 6 clarification messages no
+  longer say "Please repeat or confirm" / "repeat or rephrase"; they ask for
+  the corrected command.
+- Additional defect found while fixing this (not in the original finding):
+  the confirmation vocabulary contains "ok", so a reply "ok glasses" or a new
+  command "ok glasses show X" was classified as a yes. `classify_confirmation()`
+  now removes the trigger phrase first.
+- `src/interaction.py` / `src/run_pipeline.py`: after a clarification the
+  session returns to listening (idle). The corrected command is a new command:
+  it needs the trigger and runs through the whole pipeline again.
+
+Tests (`tests/test_stage7_clarification.py`, `tests/test_interaction.py`):
+clarification with yes / "ok glasses correct" / no / unclear / no reply; under
+explicit, timed (5 s), and immediate (0) policies; accepted commands keep the
+explicit, timed, and immediate behaviour; rejected, partial, and inactive
+results are not confirmable; a corrected command is processed as a new command.
+
+Remaining limitations: no clinical application is integrated, so a confirmed
+command is not executed anywhere. The confirmation keywords are a fixed list.
+
+---
+
+# Finding 8: Missing trigger phrase does not prevent command processing
+
+**Date:** 7 November 2026  
+**Status at the time of the finding:** Open (see Resolution below). Confirmed through a local preprocessing check and inspection
+of the caller; application code has not been changed.
+
+## Intended activation behaviour
+
+The user clarified that the trigger phrase is an activation requirement,
+similar to a wake phrase. A recognised “ok glasses” variant should activate
+command processing. Without a trigger, input should be ignored and the
+system should remain waiting: no intent-extraction call, structural or
+semantic validation, or confirmable command should follow.
+
+Minimal local processing to detect activation is still necessary. In the
+current voice implementation, audio is transcribed before the textual
+trigger is checked. Preventing transcription or remote audio submission
+before activation would require an additional audio wake-phrase detector;
+a text-level trigger guard alone would not provide this behaviour.
+
+## Confirmed current behaviour
+
+The local preprocessing check produced:
+
+```text
+Input:          start HD
+trigger_found:  false
+clean_text:     start hemodialysis
+format_invalid: false
+```
+
+In `src/stage1_preprocess.py`, `preprocess()` records whether the trigger was
+found and removes it when present. An absent trigger does not stop processing.
+
+In `src/run_pipeline.py`, `run_command()` checks `stage1.format_invalid`
+before invoking the model, but does not check `stage1.trigger_found`.
+Consequently, this input reaches the Stage 2 extraction call despite having
+no activation phrase. The subsequent result depends on the extracted action
+and validation results. No remote model call was made for this finding;
+the call path was confirmed by inspecting the code.
+
+## Proposed correction, not yet implemented
+
+1. Enforce activation before intent extraction. Missing-trigger input should
+   produce an inactive/ignored outcome, rather than a command awaiting
+   confirmation or a normal intent-processing result.
+2. Ensure the inactive path makes no model call and does not run command
+   validation, entity resolution, or confirmation. Place the trigger check
+   early enough to avoid unnecessary command preprocessing as well.
+3. Apply the requirement consistently to the relevant runtime entry points.
+   Define how activation interacts with confirmation replies and any ongoing
+   dictation: the current interface accepts replies such as “yes” without a
+   trigger, so this behaviour needs an explicit decision rather than an
+   accidental change.
+4. Verify supported trigger variants, missing and incorrect triggers, and
+   text preceding a recognised trigger. Test that missing-trigger inputs
+   cannot produce an accepted or confirmed command and do not invoke the model.
+5. If activation must precede speech recognition itself, implement and test
+   wake-phrase detection separately from the current Whisper transcription path.
+
+## Evaluation and documentation after the fixes
+
+Many existing evaluation commands omit the trigger because they were used
+to assess command interpretation rather than activation. Enabling a trigger
+guard without accounting for this would change what the evaluation measures.
+
+For the planned rerun after the outstanding issues are fixed:
+
+- Define and record how trigger phrases are supplied for the command-recognition
+  comparison, using a consistent preparation policy for the pipeline and baseline.
+- Add separate activation cases with and without valid triggers, including
+  checks that the model is not called for inactive input.
+- Include checks for the clarification/confirmation issue in Finding 7;
+  the historical Stages 1–6 evaluation does not test Stage 7.
+- Preserve the previous run records and write new results with the updated
+  code version, configuration, dataset preparation, and counting rules.
+- Update Section 6.3.1, Figure 6.2, execution instructions, and the reported
+  evaluation results to reflect the implemented activation policy.
+
+The current thesis description of processing without a trigger records the
+existing implementation; it is not the user's intended activation behaviour.
+No code fix or evaluation rerun has been performed for this finding.
+
+
+## Resolution (8 November 2026)
+
+**Status:** Fixed in the code (text-level activation). The historical evidence
+above is unchanged.
+
+Runtime policy:
+- A NEW command needs a trigger phrase ("ok glasses", "okay glasses",
+  "okie glasses", any case, punctuation ignored, text before the trigger
+  allowed). `stage1_preprocess.detect_trigger()` runs first in
+  `run_pipeline.run_command()`. Without a trigger the result has Stage 6 status
+  `inactive` (reason `trigger_not_found`) and nothing else runs: no
+  preprocessing, no LLM call, no ANTLR check, no lookup, no type check, no
+  confirmation. The result has the same keys as a normal result.
+- Replies inside an active interaction need no trigger: Stage 7 confirmation
+  replies and the replies/content of an open dictation (`src/interaction.py`).
+  A trigger inside such a reply is removed.
+- A corrected command after a clarification is a new command and needs the
+  trigger.
+- Boundary: the check works on the transcript. In `--voice` mode the audio is
+  still recorded and transcribed before activation is known; avoiding that
+  needs an audio wake-word detector, which is not part of this fix.
+
+Evaluation preparation: the 243 dataset commands contain no trigger (they test
+command recognition, not activation). `run_pipeline.with_trigger()` prepends
+the configured trigger ("ok glasses ") to the pipeline input; the dataset files
+are unchanged. B0 already received the same prefix (`get_json(f"ok glasses
+{text}")`) and now uses the same helper. Stage 1 strips the trigger again, so
+the cleaned text is identical. In `run_eval.py` an `inactive` result is counted
+as `IGNORED`, which is never a correct decision for a valid or an invalid
+command.
+
+Offline check: a replay of all 18 first-run folders (4,374 results, stored
+Stage 2 answers, no LLM calls, written to a scratch folder) gave 0 inactive
+results and 0 changed outcomes. B0 run again: 243 commands, 0 changed outcomes.
+
+Tests (`tests/test_trigger_gate.py`, `tests/test_interaction.py`): variants and
+case, missing / wrong trigger, text before the trigger, spies that assert no
+preprocessing, LLM, Stage 3-6 calls for inactive input, new command versus
+follow-up reply.
+
+Remaining limitations: no audio wake-word detection (see boundary). Activation
+is not part of the command-recognition benchmark; it is covered by the tests.
+
+---
+
+# Finding 9: Stage 2 lacks explicit extraction-schema validation
+
+**Date:** 7 November 2026  
+**Status at the time of the finding:** Open (see Resolution below). Strict Pydantic validation is proposed, not implemented.
+
+## Current behaviour and cause
+
+`src/stage2_llm_extract.py` parses JSON and constructs `LLMResult` using
+`dict.get()` defaults and the conversions `str()`, `bool()`, and `float()`.
+An ordinary data class does not enforce its type annotations at runtime.
+The `valid_action` property checks configured action membership, but the
+response is not validated against a complete extraction schema. Additional
+response keys are not checked.
+
+JSON syntax validity therefore does not establish that the required fields,
+types, and value constraints are satisfied.
+
+## Offline reproduction
+
+The existing `extract()` function was called with a fake client returning
+supplied JSON responses. No remote model or application action was invoked.
+Starting from an otherwise valid extraction, each change below was tried
+independently:
+
+| Supplied response change | Current Stage 2 result |
+|---|---|
+| `end_signal` is the string `"false"` | Converted to Boolean `True`, with no error |
+| `entity` is JSON `null` | Converted to the string `"None"`, with no error |
+| `confidence` is `2.0` | Retained without an error or range check |
+| `end_signal` is absent | Defaults to `False`, with no error |
+
+These are constructed test cases confirming parser behaviour, not evidence
+that these malformed responses occurred in the reported evaluation. An
+invalid confidence currently affects reporting rather than acceptance,
+since confidence is not used as a decision threshold. Wrongly converted
+entity or completion fields may affect subsequent processing.
+
+## Proposed correction, not yet implemented
+
+Use an explicit response model, for example Pydantic, between JSON parsing
+and construction of the pipeline result:
+
+1. Require the agreed response fields, and validate their types before
+   converting or defaulting them. Keep empty strings distinct from null or
+   absent values.
+2. Configure strict validation deliberately: Pydantic also performs coercion
+   by default. In particular, require a genuine Boolean for `end_signal` and
+   string values for action, entity, and recipient where applicable.
+3. Constrain confidence to a finite value in the interval [0, 1].
+4. Preserve action membership checks against the configured actions plus
+   UNKNOWN. Define required recipient handling for message extractions and
+   decide whether additional response fields should be rejected.
+5. Record schema-validation failures distinctly, retaining the raw response
+   and validation details for inspection. Do not pass malformed extractions
+   to structural or semantic validation as if they were valid responses.
+6. Test missing fields, nulls, wrong types, invalid actions, out-of-range
+   confidence, extra fields, and valid responses. Rerun evaluation after the
+   validation policy and other pending fixes are implemented.
+
+Schema validation checks the response representation. It does not establish
+that the extracted action or entity matches the user's intent, and it does
+not replace ANTLR structural validation, entity grounding, or type checks.
+
+## Report and sources
+
+Section 6.3.2 describes the current parsing and conversions. Section 5.8
+records the limitation. Purple Finding 9 markers identify the passages to
+revisit after implementation. Pydantic is a proposed improvement, not a
+claimed dependency or implemented validation layer. No bibliography entries
+have been changed.
+
+- [Pydantic strict mode](https://docs.pydantic.dev/latest/concepts/strict_mode/)
+- [Pydantic models and validation](https://docs.pydantic.dev/latest/concepts/models/)
+
+
+## Resolution (8 November 2026)
+
+**Status:** Fixed in the code. The historical evidence above is unchanged.
+
+Changes (`src/stage2_llm_extract.py`):
+- `ExtractionSchema` (Pydantic v2, `strict=True`, `extra="forbid"`): required
+  `action` (str), `entity` (str, may be empty), `end_signal` (real Boolean),
+  `confidence` (finite number in [0, 1]); `recipient` (str) required for
+  `send_message`, optional (becomes "") for other actions. The action must be a
+  configured action or UNKNOWN. Extra fields are rejected.
+- `parse_extraction(raw, model)`: syntax error -> `error_kind="syntax"`; JSON
+  that is not an object or breaks the schema -> `error_kind="schema"`, error
+  text "schema error: <field>: <message>"; call failure or null content
+  (`None`) -> `error_kind="api"`; an empty or whitespace-only string is not
+  JSON -> `error_kind="syntax"`. In every failure case the action is UNKNOWN (Stage 6:
+  rejected) and `raw_response` is kept. `LLMResult` has a new optional field
+  `error_kind`; existing callers are unchanged.
+- Dependency: `pydantic==2.11.7` in the new `requirements.txt`.
+
+Offline check: all 8,465 stored model answers of all run folders were parsed
+with the new code. Every result is identical to the stored Stage 2 result (16
+answers were already JSON syntax errors). The schema therefore changes no
+reported number.
+
+Tests (`tests/test_stage2_schema.py`): missing fields, nulls, wrong scalar and
+container types, `end_signal="false"`, unknown actions versus UNKNOWN,
+negative / >1 / NaN / infinite confidence, extra fields, recipient rules, empty
+entity, ordinary and fenced JSON, the three error kinds.
+
+Remaining limitations: the schema checks the form of the answer, not whether
+the action or entity is what the user meant.
+
+---
+
+# Finding 10: Unfinished dictation has no completion reminder or continuation state
+
+**Date:** 7 November 2026  
+**Status at the time of the finding:** Open (see Resolution below). A completion reminder and pending dictation state are proposed,
+not implemented.
+
+## Current behaviour
+
+For a note or message whose extracted `end_signal` is false, Stage 6 returns
+`accepted_partial` with an open-dictation marker. Stage 7's `build_prompt()`
+returns `None` for this status, and `run()` returns `not_applicable`. There is
+no user-facing completion question or inactivity reminder. Diagnostic terminal
+output can still show the partial result; this is not the same as guiding the
+user to finish the interaction.
+
+The interactive and voice loops process each subsequent input as a new
+command. They do not maintain a pending dictation buffer to which a later
+utterance can be appended. The open status alone therefore does not provide
+a complete multi-turn dictation interaction.
+
+## Offline check and code inspection
+
+A supplied Stage 6 payload with `status=accepted_partial`, `action=set_note`,
+and `end_signal=false` produced:
+
+```text
+Completion/confirmation prompt: None
+Stage 7 outcome: not_applicable
+```
+
+No remote model or application action was invoked. The absence of a pending
+session was established by inspecting `_interactive_loop()` and `_voice_loop()`
+in `src/run_pipeline.py`. Relevant modules are `src/stage6_intent_output.py`
+and `src/stage7_confirmation.py`.
+
+## Proposed interaction, not yet implemented
+
+After a configurable period without further dictation, for example five
+seconds, prompt the user:
+
+> Are you finished with this note, or would you like to continue?
+
+Use equivalent wording for a message. Five seconds is a proposed starting
+value, not an evaluated usability threshold. The prompt must not interrupt
+active recording or treat model/network processing time as user inactivity.
+
+The interaction should distinguish:
+
+- **Finished:** close dictation and run any required checks before applying
+  the normal action-specific confirmation policy. Indicating completion does
+  not itself confirm sending a message or committing the command.
+- **Continue:** preserve the current text, collect further dictation, and append
+  it to the pending content.
+- **Cancel:** discard the pending interaction when cancellation is explicit.
+- **No or unclear response:** keep the interaction pending according to a
+  defined timeout/cancellation policy. Silence must not automatically complete
+  the dictation or send the message.
+
+A completion reminder is separate from both clarification (Finding 7) and
+confirmation of a completed interpretation.
+
+## Implementation considerations
+
+1. Retain a pending session with its action, dictated content, message recipient,
+   original input, and other information needed to resume processing. Preserve
+   the distinction between dictated text and interaction-control replies.
+2. Define inactivity measurement for text and push-to-talk voice modes. The
+   current push-to-talk implementation has no continuous listening timer.
+3. Interpret replies in the pending interaction's context. A reply such as
+   “continue” must not accidentally become a new independent command.
+4. Define how continuation and completion replies interact with trigger gating
+   (Finding 8), rather than rejecting a legitimate follow-up by accident.
+5. Validate extraction fields using the agreed schema policy (Finding 9).
+   Missing `end_signal` must remain distinguishable from a valid Boolean false
+   under that policy.
+6. Verify notes and messages with and without explicit completion signals,
+   continuation over multiple turns, recipient retention, cancellation,
+   inactivity prompts, unclear responses, and the normal confirmation policy.
+
+## Report and evaluation
+
+The report describes the current behaviour and labels this as a proposed
+interaction improvement. Green Finding 10 markers identify the relevant
+passages to revise after implementation. The existing single-command
+Stages 1–6 evaluation does not establish the usability or correctness of a
+multi-turn completion interaction. Add separate interaction tests after the
+fix and assess the reminder interval with users if a usability study is run.
+
+No code fix or evaluation rerun has been performed for this finding.
+
+
+## Resolution (8 November 2026)
+
+**Status:** Fixed in the code for `--interactive` and `--voice`. The historical
+evidence above is unchanged.
+
+Changes:
+- New module `src/interaction.py` (`InteractionSession`, `PendingDictation`):
+  keeps an open note/message (action, content, recipient, original input,
+  confidence, model, all utterances). Clock, pipeline, and confirmation are
+  injected, so the tests need no model, microphone, or real waiting.
+- Replies in an open dictation need no trigger and make no LLM call. Whole
+  utterances "finish" / "continue" / "cancel" (and variants, configured in
+  `domain_config.yaml` under `interaction.dictation_replies`) control the
+  dictation. Anything else is dictated content and is appended. Content that
+  ends with a multi-word finish phrase ("... finish note") is appended without
+  the phrase and finishes the dictation.
+- Reminder: after `interaction.dictation_reminder_sec` (5 s, an initial value,
+  not evaluated with users) of inactivity the question "I did not hear an end
+  phrase for this note. Is the note finished, or would you like to continue?"
+  (message: "... this message ...") is shown once per waiting period.
+  Inactivity is measured from the end of the last turn's processing. Time
+  between `begin_input()` and `end_input()` (recording and transcription) is
+  excluded: `end_input()` moves the reminder and discard deadlines on by that
+  time, also when the transcript is empty and `handle()` is not called. After
+  the reminder, finish / continue / cancel control the dictation, and any other
+  utterance is kept as dictated content (an implicit "continue"), so text that
+  was started before the question appeared is never lost. Only an empty
+  utterance is "unclear".
+- Finish: `run_pipeline.complete_dictation()` runs Stages 3-6 on the full
+  content with `end_signal=True` (no LLM call), then the action's normal Stage 7
+  policy applies. Finishing is not a confirmation; a message still needs the
+  explicit confirmation of `send_message`.
+- Silence never finishes or sends a dictation. If the question gets no answer
+  for `interaction.dictation_discard_sec` (60 s, added on 8 November 2026 at
+  the user's request), the open dictation is discarded and the user is told
+  "No answer: the open note was discarded. Nothing was saved or sent." Cancel
+  clears it at once.
+- `--text` (one command, no session): an open dictation is reported as still
+  open, with the hint to use `--interactive` / `--voice` or an end phrase.
+- `domain_loader.load()` returns the new `interaction` block. The block is not
+  used in the LLM prompt.
+
+Tests (`tests/test_interaction.py`, fake clock and scripted replies): notes and
+messages with and without end signal, several continuation turns, recipient and
+content kept, finish / continue / cancel / unclear / silence, reminder timing
+(4.9 s none, 5 s once), discard 60 s after an unanswered question (59.9 s not
+yet; no discard while recording; an answer stops the discard), recording time
+excluded after the recording ends (also with an empty transcript), a
+continuation sent after the reminder is kept, punctuated and hyphenated finish
+phrases remove only their own span, no reminder while recording or during processing,
+trigger-free follow-ups, normal confirmation after finishing, state cleared and
+isolated between sessions.
+
+Remaining limitations: in push-to-talk voice mode there is no ambient
+listening, so the reminder can only appear while the system waits for the next
+recording. While a dictation is open, a new command (even with the trigger) is
+treated as dictated content; the user has to finish or cancel first. The
+control phrases are a fixed English list. The 5 s and 60 s intervals are not
+validated with users. A discarded dictation is lost; it is not kept as a draft.
+
+### Review of the fixes (8 November 2026)
+
+An independent review of the code changes confirmed the clarification guard
+and the per-drug validation, and found five bugs. All five are fixed, each with
+a test that fails on the earlier code:
+
+1. Interaction: text started before the reminder and sent after it was taken
+   as an unclear answer and not appended. Now any non-control utterance after
+   the reminder is dictated content (`tests/test_interaction.py`).
+2. `strip_trigger()` did not remove a punctuated trigger ("ok, glasses"), so its
+   "ok" still counted as a confirmation. It now accepts the same variants as
+   `detect_trigger()` (`tests/test_stage7_clarification.py`).
+3. A punctuated finish phrase ("98%. Finish-the-note.") was removed by
+   counting words, which cut dictated text ("oxygen saturation"). Now only the
+   character span of the phrase is removed (`tests/test_interaction.py`).
+4. Recording time still counted towards the discard deadline after the
+   recording ended (empty transcript path). `end_input()` now moves the
+   deadlines on (`tests/test_interaction.py`).
+5. `run_eval.score_pipeline()` raised `KeyError: 'IGNORED'` in the per-category
+   counts for inactive input (`tests/test_run_eval_scoring.py`).
+
+Also from the review: E3 runs now get the batch tag in their folder name
+(`run_e3.py --tag`), and `run_all.py` names the E3 folder explicitly in the
+report, so a second batch on the same day cannot reuse an older E3 result.
+
+A second review confirmed these fixes and found one more input-loss case: in
+the terminal a typed line only arrives on Enter, so the 60 s discard could
+delete an open note while the user was still typing a continuation. Fix:
+`run_pipeline.TerminalLineReader` reads the terminal key by key (cbreak mode,
+own echo, backspace), calls `InteractionSession.note_activity()` for every
+keystroke, which restarts the reminder and discard deadlines, and keeps the
+typed text across a reminder or discard message. Real silence still discards.
+`tests/test_terminal_typing.py` types continuously across both deadlines
+(the note and the full continuation are kept) and checks real silence; the two
+typing tests fail if keystrokes are not counted. Piped (non-terminal) input
+falls back to `input()` without timers. In `--voice` mode a recording counts as
+activity through `begin_input`/`end_input`. Note on the "hmm becomes content"
+policy: the confirmation question shows free text shortened to 60 characters,
+so a short addition at the end of a long note is not necessarily visible
+there.
+
+A third review found two input-preservation bugs in the terminal reader, and
+checking them in a pseudo-terminal showed a third one. All are fixed in
+`run_pipeline.TerminalLineReader` with tests in `tests/test_terminal_typing.py`:
+
+1. Several lines in one input (a pasted block) lost everything after the first
+   newline. Unread characters now stay in a queue and become the next lines.
+   A confirmation question is answered by `read_answer()` (passed to Stage 7 as
+   the new optional `read_response`): it first moves input that is already
+   waiting into the queue and then takes only keys typed after the question, so
+   a pasted "yes" can never confirm a command. The pasted lines are kept and
+   handled afterwards as normal inputs.
+2. A UTF-8 character split between two reads ("ü" in "Müller") was deleted,
+   because each chunk was decoded on its own with errors ignored. The reader now
+   keeps an incremental UTF-8 decoder.
+3. `tty.setcbreak()` was called with its default `TCSAFLUSH`, which discards input
+   that is already waiting (type-ahead, the rest of a paste) every time a read
+   starts. It is now called with `TCSANOW`. Checked in a pseudo-terminal: a
+   two-line paste and a split "ü" give "first line", "second line", "Müller".
+
+A fourth review found two problems in the confirmation reader, both fixed:
+
+1. Pasted text was told apart from typing by a 50 ms quiet period, a timing
+   guess: a paste arriving 100 ms after the question could still confirm a
+   command. The guess is removed. The interactive session now switches the
+   terminal to bracketed paste mode, which marks every paste (ESC[200~ ...
+   ESC[201~). Pasted characters are kept and handled later as normal input,
+   but never used as the answer to a confirmation question, whatever the
+   timing. Input that is already waiting when the question is shown is not an
+   answer either. Policy for unmarked input: a terminal without bracketed paste
+   sends a paste like typing; such text that arrives after the question counts
+   as typed (a documented limitation; macOS Terminal, iTerm2 and xterm support
+   the mode).
+2. The confirmation timeout restarted with every input chunk (a 5 s question
+   accepted "yes" after 16 s). `read_answer()` now uses one deadline for the
+   whole question, including the time to collect waiting input; keys do not
+   extend it. No timeout (`null` policy) still waits without limit. A partly
+   typed answer at the deadline is dropped and the action's policy applies.
+
+Other escape sequences (arrow keys) are no longer inserted as text. Tests in
+`tests/test_terminal_typing.py` (marked paste after 0.1 s and 3 s gaps, paste
+markers split between reads, pasted text as normal input, deadline with keys
+every 4 s, waiting input counting towards the deadline, no limit for `null`,
+the 5 s `show` policy through Stage 7). 99 tests pass.
+
+---
+
+# Finding 11: Compound medications can be accepted with unresolved drug segments
+
+**Date:** 7 November 2026  
+**Status at the time of the finding:** Open (see Resolution below). Correction required; not implemented.
+
+## Reproduction
+
+The supplied extraction was for:
+
+```text
+ok glasses set medication aspirin 100 milligrams and zqxvnonexistent 50 milligrams
+```
+
+`zqxvnonexistent` is an invented test name. Local preprocessing, structural
+validation, lookup, type validation, and output assembly produced:
+
+```text
+trigger_found: true
+structural validation: valid
+aspirin: found
+zqxvnonexistent: not found
+Stage 5 status: accepted
+Stage 6 status: accepted
+```
+
+Stage 2 was supplied with a controlled extraction; no model was called and
+no application action was executed. This confirms an implementation failure
+on a constructed test case, not its frequency in the recorded evaluation.
+
+## Cause
+
+`src/stage4_ontology_lookup.py::_lookup_medication()` records each segment
+in `drug_list`, but returns a successful top-level result if any segment
+matches. Its top-level type comes from the first successfully resolved drug.
+`src/stage5_type_validate.py::validate()` checks that top-level result without
+requiring every `DrugResult` to be found. Stage 6 can therefore assemble an
+accepted intent while an individual drug is unresolved.
+
+## Required correction, not yet implemented
+
+- Require successful resolution and permitted type for every medication
+  segment before producing an accepted compound-medication intent.
+- Preserve the successful results and identify the unresolved or incompatible
+  segment in a clarification request. Do not discard the original content
+  or automatically replace an unresolved drug with a guessed concept.
+- Carry per-drug validation information into output assembly and the displayed
+  summary. Coordinate clarification routing with Finding 7 so that unresolved
+  segments cannot be confirmed or automatically confirmed.
+- Test all-known drugs, one unknown drug, all unknown drugs, reversed ordering,
+  more than two segments, and unsupported types where applicable. Ensure one
+  successful segment never hides another segment's failure.
+- Rerun the relevant evaluation after implementation and preserve the previous
+  results. Avoid a dataset-specific exception for this invented test name.
+
+Red Finding 11 markers identify the affected report passages in Sections
+5.3, 5.8, 6.3.4, and 6.3.5. The source code is unchanged.
+
+
+## Resolution (8 November 2026)
+
+**Status:** Fixed in the code. The historical evidence above is unchanged.
+
+Changes:
+- `src/stage4_ontology_lookup.py`: `DrugResult` has a new field
+  `semantic_type`. For a compound (two or more segments), `drug_list` always
+  holds one result per segment. The top-level result is found only if every
+  segment is found; otherwise `found=False` with the full `drug_list` (also when
+  all segments fail). A single drug behaves as before.
+- `src/stage5_type_validate.py`: for a `drug_list`, every drug must be found
+  (else `entity_not_found`) and have an allowed type (else `type_mismatch`).
+- `src/stage6_intent_output.py`: `_compound_clarification()` builds a
+  `needs_clarification` payload that names the unresolved or incompatible
+  segments (`unresolved_segments`), keeps all per-drug results (`drugs`) and
+  the original command, lists the recognised drugs, and guesses nothing.
+  Through Finding 7 such a result cannot be confirmed.
+- Behaviour change for start/stop (fallback to the medication index) and
+  set_medication: a compound with a failed segment now stops at the medication
+  index, so the global clarification search is not run for the whole compound
+  string.
+
+Reproduction now: "aspirin 100 milligrams and zqxvnonexistent 50 milligrams" ->
+Stage 5 `entity_not_found`, Stage 6 `needs_clarification` ("I couldn't find
+'zqxvnonexistent 50 milligrams' ... Recognised: aspirin."), Stage 7
+`clarification_requested`.
+
+Offline check: the replay of the first run changed no outcome (the three
+compound medication commands of the dataset resolve all their drugs).
+
+Tests (`tests/test_compound_medication.py`, local ontology index, controlled
+Stage 2): all known, one unknown in either position, all unknown, three
+segments, an incompatible type (patched lookup), single-drug regression,
+Stage 4-7 path with replies "yes" / "ok glasses correct" / none.
+
+---
+
+# Finding 12: Clarify action and entity extraction metric names
+
+**Date:** 7 November 2026  
+**Status at the time of the finding:** Open documentation and reporting task (see Resolution below). No calculation error is
+established by this finding; no scoring code or existing results were changed.
+
+## Current definitions and proposed labels
+
+| Current label/key | What is measured | Proposed display label |
+|---|---|---|
+| Action accuracy / `action_accuracy_pct` | Correct expected action on valid commands with an action label (130 commands in the reported evaluation). | Action classification accuracy |
+| Entity accuracy / `entity_accuracy_pct` | Extracted text equals the reference text after normalisation, on the 92 valid commands with entity labels. | Entity extraction accuracy (normalised exact match) |
+
+The entity score is not entity-type classification accuracy, token-level NER
+F1, or ontology-linking accuracy. It compares the extracted text, which can
+include medication instructions or dictated message content. These two
+metrics use different denominators and should not be merged under one
+unqualified “classification accuracy” label.
+
+## Verified scoring behaviour
+
+`evaluation/scripts/run_eval.py::score_pipeline()` compares action names and
+normalised extracted entity text with the gold labels. The report builder
+uses the same entity normalisation: lowercase, replacement of punctuation
+other than forward slash, and whitespace normalisation. The report-level
+metric definitions already describe these comparisons; the requested change
+is primarily the clarity and consistency of their names.
+
+## Proposed reporting update, not yet implemented
+
+- Apply the distinct display labels in metric definitions, narrative text,
+  generated tables, figure legends, and report-generation scripts.
+- Keep the underlying definitions, denominators, and values unchanged unless
+  a separate scoring change is explicitly justified.
+- Internal JSON keys need not change merely to improve display names. If
+  renamed, maintain compatibility with historical run records and consumers.
+- Review `evaluation/scripts/run_eval.py`, `build_final_report.py`,
+  `make_extraction_figure.py`, `make_figures.py`, and `make_report_tables.py`.
+- Regenerate reporting artifacts and check their names consistently after the
+  implementation fixes and planned rerun. Regeneration of labels alone does
+  not require new remote model calls.
+
+Grey Finding 12 markers are placed in the metric definitions and extraction
+results/figure in Chapter 7. Existing plotted labels remain unchanged until
+this coordinated update.
+
+
+## Resolution (8 November 2026)
+
+**Status:** Done in the reporting code. The thesis and the generated reports of
+the historical runs were not changed.
+
+Changes:
+- `evaluation/scripts/metric_labels.py`: `ACTION_LABEL = "Action
+  classification accuracy"`, `ENTITY_LABEL = "Entity extraction accuracy
+  (normalised exact match)"`, `END_SIGNAL_LABEL = "End-signal F1"`, and
+  `label_counts()`, which counts commands, valid / invalid commands, action
+  labels (130), entity labels (92), and end-signal labels (20) from the dataset
+  and `data/labels/gold_labels.json`.
+- `build_final_report.py`, `make_report_tables.py`, `make_figures.py`, and
+  `make_extraction_figure.py` use these names, and the report texts take their
+  denominators from `label_counts()` instead of fixed numbers. JSON keys
+  (`action_accuracy_pct`, `entity_accuracy_pct`, ...) and the scoring are
+  unchanged. `make_figures.py` has new options `--out` and `--no-copy` so that
+  figures can be made without overwriting the thesis figures.
+
+Tests (`tests/test_metric_labels.py`): rebuilding the first-run report from the
+stored run folders into a temporary folder gives exactly the same numbers as
+`all_results_2026-11-03.json`; the definitions and the Markdown report use the
+new names; the denominators are 130 and 92.
+
+Note: `make_extraction_figure.py` writes directly into the thesis folder and
+`make_figures.py` copies there unless `--no-copy` is given. They were not run.
+
+---
+
 # Status / next steps (updated November 2026)
 
+- **Fixes (8 November 2026):** Findings 7 to 12 are fixed in the code, with
+  99 offline tests (`python3 -m unittest discover -s tests`), after four
+  independent reviews found more bugs, which are fixed (Finding 10, "Review of
+  the fixes"). An offline replay
+  of the first run and a new B0 run changed no outcome. Report descriptions
+  in Chapters 5 and 6 have now been updated in colour for review. Chapters 7–9
+  retain historical numbers and contain temporary pointers for review after
+  the fresh evaluation; its results have not been incorporated. The user is
+  managing that rerun using the commands in `evaluation/evaluation.md`
+  (section "Rerun after the fixes of November 2026").
+- **Planned follow-up (7 November 2026):** fix the outstanding implementation
+  issues, including clarification/confirmation routing (Finding 7) and missing
+  trigger gating (Finding 8), extraction-schema validation (Finding 9), and
+  unfinished-dictation interaction (Finding 10), and compound medication
+  validation (Finding 11). Coordinate metric terminology (Finding 12), then
+  rerun the evaluation with the activation
+  policy and test coverage documented. *(Superseded by the entry above.)*
 - **Pipeline:** all seven stages are implemented. Stage 7 was implemented and
   tried, but it is not part of the evaluation.
 - **Evaluation:** done. Two complete runs on the 243 commands with six systems
   (four models, two token budgets for DeepSeek and gpt-oss), the baseline B0,
   and the entity-resolution set E3. The reports are in
-  `evaluation/reports/final/` (first run: `*_2026-11-03.*`, second run:
-  `*_2026-11-05.*`). The decisions are the same in both runs, and the response
+  `evaluation/old_runs/reports/final/` (first run: `*_2026-11-03.*`, second run:
+  `*_2026-11-05.*`). The final run with the fixed code (8 November 2026) is in
+  `evaluation/final_run/`. The decisions are the same in both runs, and the response
   times differ with the load of the model service.
 - **Grammar:** the keyword workaround of Stage 3 is gone. The rule for a
   treatment has a fixed keyword (`START TREATMENT any_text`), and diagnosis and

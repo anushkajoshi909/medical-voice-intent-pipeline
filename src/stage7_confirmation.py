@@ -5,6 +5,17 @@ Takes the Stage 6 intent payload and presents a human-readable summary to
 the user, requiring an explicit "correct"/"wrong" response before the
 command is considered ready for execution.
 
+Only a Stage 6 result with status "accepted" can be confirmed. A
+"needs_clarification" result is shown with its clarification message and
+returns outcome "clarification_requested": a yes/no reply cannot resolve an
+unknown or incompatible entity, so the user has to say a corrected command,
+which runs through the whole pipeline again (and needs the trigger phrase).
+"rejected", "accepted_partial" (open dictation, handled by interaction.py)
+and "inactive" return "not_applicable".
+
+No clinical application is connected: "confirmed" means the user confirmed
+the interpretation, not that anything was executed.
+
 Policy comes from each action's `confirmation_timeout_sec` in
 domain_config.yaml:
   null  -> always block for an explicit response (high-risk actions:
@@ -31,17 +42,23 @@ from typing import Callable, Optional
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from stage1_preprocess import strip_trigger
+
 _CONFIRM_WORDS = {"correct", "yes", "yeah", "yep", "confirm", "confirmed",
                    "right", "affirmative", "ok", "okay", "good"}
 _REJECT_WORDS = {"wrong", "no", "nope", "incorrect", "negative", "cancel",
                   "repeat", "undo"}
 
 
+_NOT_EXECUTED = "no clinical application is connected, so nothing was executed"
+
+
 @dataclass
 class Stage7Result:
     needs_confirmation: bool
     prompt: str | None
-    outcome: str            # "confirmed" | "rejected" | "auto_confirmed" | "unclear" | "not_applicable"
+    outcome: str            # "confirmed" | "rejected" | "auto_confirmed" | "unclear"
+                            # | "clarification_requested" | "not_applicable"
     final_message: str
 
 
@@ -87,16 +104,12 @@ def _summarize_slot(name: str, slot) -> str:
 
 
 def build_prompt(stage6_payload: dict) -> str | None:
-    """Build the human-readable glasses display text. Returns None when
-    there's nothing to confirm yet (already rejected, or a note/message
-    still open awaiting end-of-dictation)."""
-    status = stage6_payload.get("status")
-
-    if status in ("rejected", "accepted_partial"):
+    """Build the confirmation question shown on the glasses. Returns None for
+    every status except "accepted": there is nothing to confirm (rejected,
+    inactive, still-open dictation) or the command needs clarification, which
+    is a different interaction (see run())."""
+    if stage6_payload.get("status") != "accepted":
         return None
-
-    if status == "needs_clarification":
-        return stage6_payload.get("clarification_message")
 
     # accepted
     action = stage6_payload.get("action", "")
@@ -112,8 +125,10 @@ def build_prompt(stage6_payload: dict) -> str | None:
 # ── response classification ──────────────────────────────────────────────────
 
 def classify_confirmation(text: str) -> str:
-    """Deterministic keyword match — "confirmed" | "rejected" | "unclear"."""
-    cleaned = re.sub(r"[^a-z ]", " ", text.lower())
+    """Deterministic keyword match — "confirmed" | "rejected" | "unclear".
+    The trigger phrase is removed first: its "ok" must not count as a yes, so
+    "ok glasses" alone, or a new command such as "ok glasses show X", is unclear."""
+    cleaned = re.sub(r"[^a-z ]", " ", strip_trigger(text).lower())
     words = set(cleaned.split())
     if words & _REJECT_WORDS:
         return "rejected"
@@ -140,25 +155,36 @@ def _wait_for_response(timeout_sec: Optional[float]) -> Optional[str]:
 # ── main entry point ─────────────────────────────────────────────────────────
 
 def run(stage6_payload: dict, action: str,
-        respond: Optional[Callable[[str], str]] = None) -> Stage7Result:
+        respond: Optional[Callable[[str], str]] = None,
+        read_response: Optional[Callable[[Optional[float]], Optional[str]]] = None) -> Stage7Result:
     """Run Stage 7 confirmation for a Stage 6 payload.
 
     respond — optional callable(prompt) -> str used to supply a scripted
               answer instead of real terminal input (for testing). If not
               given, uses real terminal input, bounded by the action's
               confirmation_timeout_sec.
+    read_response — optional callable(timeout) -> str | None that reads the
+              terminal answer instead of input() (the --interactive session
+              passes TerminalLineReader.read_answer, which only takes keys typed
+              after the question, so pasted text cannot answer it).
     """
+    status = stage6_payload.get("status", "")
+    if status == "needs_clarification":
+        # never enters the confirmation policy: no yes/no, no auto-confirmation
+        message = (stage6_payload.get("clarification_message")
+                   or "The command could not be resolved. Please say the corrected command.")
+        return Stage7Result(False, message, "clarification_requested", message)
+
     prompt = build_prompt(stage6_payload)
     if prompt is None:
-        return Stage7Result(False, None, "not_applicable",
-                             stage6_payload.get("status", ""))
+        return Stage7Result(False, None, "not_applicable", status)
 
     timeout = _action_cfg().get(action, {}).get("confirmation_timeout_sec")
 
     if timeout == 0:
         return Stage7Result(True, prompt, "auto_confirmed",
                              f"{prompt} -> AUTO-CONFIRMED "
-                             f"(no delay policy for {action!r})")
+                             f"(no delay policy for {action!r}; {_NOT_EXECUTED})")
 
     print(f"\n  [Glasses display] {prompt}")
 
@@ -170,16 +196,16 @@ def run(stage6_payload: dict, action: str,
                   f"say 'ok glasses, correct' or 'ok glasses, wrong')")
         else:
             print("  (say 'ok glasses, correct' or 'ok glasses, wrong')")
-        raw = _wait_for_response(timeout)
+        raw = (read_response or _wait_for_response)(timeout)
 
     if raw is None:
         return Stage7Result(True, prompt, "auto_confirmed",
-                             f"No response within {timeout}s — auto-confirmed.")
+                             f"No response within {timeout}s — auto-confirmed ({_NOT_EXECUTED}).")
 
     verdict = classify_confirmation(raw)
     if verdict == "confirmed":
         return Stage7Result(True, prompt, "confirmed",
-                             "CONFIRMED — command executed.")
+                             f"CONFIRMED — interpretation confirmed by the user ({_NOT_EXECUTED}).")
     if verdict == "rejected":
         return Stage7Result(True, prompt, "rejected",
                              "REJECTED — please repeat the command.")

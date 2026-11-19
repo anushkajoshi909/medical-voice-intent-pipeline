@@ -3,7 +3,7 @@
 
 For every system it writes one run folder:
 
-  evaluation/runs/<date>_<system>_<dataset>_r<k>/
+  evaluation/final_run/runs/<date>_<system>_<dataset>_r<k>/
       results.jsonl   one line per command: gold fields, system outcome, all stage
                       outputs, raw LLM response, per-stage timings
       meta.json       everything needed to reproduce / audit the run
@@ -11,7 +11,9 @@ For every system it writes one run folder:
 
 and one overview table over all runs:
 
-  evaluation/reports/tables/overview.csv
+  evaluation/final_run/reports/tables/overview_<date>_<tag>.csv
+
+(--runs-dir / --reports-dir choose other folders; see paths.py)
 
 Systems
   B0-ludyga        Ludyga's original grammar (baseline_ludyga/commandToJson.py)
@@ -69,6 +71,10 @@ STAGES = ["stage1", "stage2", "stage3", "stage4", "stage5", "stage6"]
 OUTCOME_OF_STATUS = {
     "accepted": "ACCEPT", "accepted_partial": "ACCEPT",
     "needs_clarification": "CLARIFY", "rejected": "REJECT",
+    # no trigger phrase: the input was ignored. Never counted as a correct decision
+    # (neither a valid acceptance nor a correct rejection). The benchmark prepends
+    # the trigger to every command (rp.with_trigger), so this should stay at 0.
+    "inactive": "IGNORED",
 }
 
 
@@ -162,6 +168,8 @@ def load_dataset(paths, limit, sample=None):
 
 def first_rejecting_stage(r):
     """First stage that did not let the command through ('none' if accepted)."""
+    if r["s6_status"] == "inactive":
+        return "stage1_no_trigger"
     if r["format_invalid"]:
         return "stage1_format"
     if r["action"] in ("UNKNOWN", "") or r.get("llm_error"):
@@ -175,8 +183,8 @@ def first_rejecting_stage(r):
 
 def confusion(rows, outcome_key):
     """Counts for gold-valid / gold-invalid items by system outcome."""
-    c = {"valid": {"ACCEPT": 0, "CLARIFY": 0, "REJECT": 0},
-         "invalid": {"ACCEPT": 0, "CLARIFY": 0, "REJECT": 0}}
+    c = {"valid": {"ACCEPT": 0, "CLARIFY": 0, "REJECT": 0, "IGNORED": 0},
+         "invalid": {"ACCEPT": 0, "CLARIFY": 0, "REJECT": 0, "IGNORED": 0}}
     for x in rows:
         c["valid" if x["gold_valid"] else "invalid"][x[outcome_key]] += 1
     return c
@@ -197,6 +205,7 @@ def metrics_from(c):
         "valid_rejected": v["REJECT"],
         "invalid_accepted": i["ACCEPT"], "invalid_clarified": i["CLARIFY"],
         "invalid_rejected": i["REJECT"],
+        "valid_ignored": v["IGNORED"], "invalid_ignored": i["IGNORED"],
         "valid_recall_pct": pct(v["ACCEPT"], nv),
         "valid_clarification_rate_pct": pct(v["CLARIFY"], nv),
         "false_rejection_rate_pct": pct(v["REJECT"], nv),
@@ -250,8 +259,11 @@ def explanation_metrics(rows, action_cfg):
 def score_pipeline(rows, action_cfg):
     for x in rows:
         x["gold_valid"] = x["valid"]
-        x["outcome_llm_only"] = ("ACCEPT" if x["result"]["action"] in action_cfg
-                                 and not x["result"]["format_invalid"] else "REJECT")
+        if x["result"]["s6_status"] == "inactive":
+            x["outcome_llm_only"] = "IGNORED"
+        else:
+            x["outcome_llm_only"] = ("ACCEPT" if x["result"]["action"] in action_cfg
+                                     and not x["result"]["format_invalid"] else "REJECT")
     hybrid = metrics_from(confusion(rows, "outcome"))
     llm_only = metrics_from(confusion(rows, "outcome_llm_only"))
 
@@ -276,7 +288,7 @@ def score_pipeline(rows, action_cfg):
     per_cat = {}
     for x in rows:
         d = per_cat.setdefault(x["category"], {"n": 0, "ACCEPT": 0, "CLARIFY": 0, "REJECT": 0,
-                                               "gold_valid": x["valid"]})
+                                               "IGNORED": 0, "gold_valid": x["valid"]})
         d["n"] += 1
         d[x["outcome"]] += 1
 
@@ -358,7 +370,7 @@ def run_hybrid(client, model, items, rep, run_dir, meta, replay=False):
             CUR.clear()
             CUR["current_id"] = it["id"]              # used by the replay stand-in for Stage 2
             t0 = time.perf_counter()
-            r = rp.run_command(client, it, model)
+            r = rp.run_command(client, rp.with_trigger(it), model)   # same trigger prefix as B0
             # replay: Stage 2 was not executed now, add the time it took in the original run
             CUR["end_to_end"] = time.perf_counter() - t0 + (CUR.get("stage2", 0.0) if replay else 0.0)
             row = {
@@ -386,7 +398,7 @@ def run_baseline(items, run_dir):
         for pos, it in enumerate(items, 1):
             t0 = time.perf_counter()
             try:
-                output, err = get_json(f"ok glasses {it['text']}"), None
+                output, err = get_json(rp.with_trigger(it)["text"]), None   # same prefix as the pipeline
             except Exception as e:                  # grammar/visitor crash = reject
                 output, err = {}, f"{type(e).__name__}: {e}"
             dt = time.perf_counter() - t0
@@ -447,8 +459,9 @@ def main():
     ap.add_argument("--replay", nargs="+", metavar="RUN_DIR",
                     help="re-run Stages 1,3-6 on the stored Stage 2 outputs of these run folders (no LLM calls)")
     ap.add_argument("--no-baseline", action="store_true")
-    ap.add_argument("--runs-dir", default=str(ROOT / "evaluation" / "runs"))
-    ap.add_argument("--reports-dir", default=str(ROOT / "evaluation" / "reports"))
+    from paths import RUNS, REPORTS
+    ap.add_argument("--runs-dir", default=str(RUNS))
+    ap.add_argument("--reports-dir", default=str(REPORTS))
     ap.add_argument("--hash-ontologies", action="store_true", help="sha256 of the big ontology files (slow)")
     args = ap.parse_args()
 

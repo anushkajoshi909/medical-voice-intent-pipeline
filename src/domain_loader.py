@@ -80,7 +80,7 @@ def load() -> dict:
 
     Returns a dict with keys:
       system_prompt, action_config, trigger_phrase, valid_actions,
-      grammar_command_types
+      grammar_command_types, interaction
     """
     parser_path = ROOT / "MedicalSmartGlassesParser.g4"
     config_path = ROOT / "domain_config.yaml"
@@ -127,6 +127,7 @@ def load() -> dict:
         "trigger_phrase":      cfg["trigger_phrase"],
         "valid_actions":       set(cfg["actions"].keys()),
         "grammar_command_types": grammar_types,
+        "interaction":         cfg.get("interaction") or {},
     }
 
 

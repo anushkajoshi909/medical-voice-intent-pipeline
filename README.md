@@ -78,7 +78,13 @@ Evaluated on 243 annotated commands (130 valid, 113 invalid).
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install openai pyyaml
+pip install -r requirements.txt
+```
+
+Offline tests (no model calls, no microphone, no real waiting):
+
+```bash
+python3 -m unittest discover -s tests -v
 ```
 
 ### 2. Set API key
@@ -148,7 +154,7 @@ Prints step-by-step output for every stage without running the full evaluation s
 ```bash
 python src/run_pipeline.py --interactive
 ```
-Type a command, see it run through all 7 stages. On `REJECTED` you're asked to repeat the command — the same confirm/reject/repeat loop described in `Final_Pipeline_Complete.md`'s Stage 7 worked examples. Type `exit` to quit.
+Type a command starting with "ok glasses" and see it run through all 7 stages. A command without the trigger phrase is ignored (status `inactive`) and the session keeps listening. Only an accepted command is confirmed; a command that needs clarification shows its message and the session waits for the corrected command (again with "ok glasses"). A note or message without an end phrase stays open: further lines are added to it without a trigger, "finish", "continue", and "cancel" control it, after 5 s without input the glasses say that no end phrase was heard and ask whether the note is finished, and if that question gets no answer for 60 s the open note is discarded (`src/interaction.py`, settings under `interaction` in `domain_config.yaml`). Type `exit` to quit.
 
 ### Save results to `results/`
 ```bash
@@ -169,6 +175,7 @@ python src/run_pipeline.py --save
 │   ├── stage5_type_validate.py     # Semantic type validation against domain_config rules
 │   ├── stage6_intent_output.py     # Assembles final intent JSON from Stages 1-5 results
 │   ├── stage7_confirmation.py      # User confirmation dialogue (--text/--interactive)
+│   ├── interaction.py              # Session state across turns: open dictation, reminder, finish/continue/cancel
 │   ├── domain_loader.py            # Wires grammar + config + prompt at startup
 │   ├── grammar/                    # Generated Python parser (from .g4 files, committed)
 │   │   ├── MedicalSmartGlassesLexer.py
@@ -200,8 +207,8 @@ python src/run_pipeline.py --save
 ├── evaluation/                     # The evaluation (see evaluation/evaluation.md)
 │   ├── evaluation.md               # Dataset, metrics, folders, how to run
 │   ├── scripts/                    # run_all.py, run_eval.py, run_e3.py, build_final_report.py, ...
-│   ├── runs/                       # One folder for each run (results.jsonl, meta.json, summary.json)
-│   └── reports/                    # final/ (reports of each run), tables/ (overview and summary)
+│   ├── final_run/                  # The reported evaluation (8 Nov 2026): runs/, reports/final/, reports/tables/
+│   └── old_runs/                   # Earlier runs (3-5 Nov 2026, before the fixes), kept unchanged
 │
 ├── MedicalSmartGlassesLexer.g4    # ANTLR lexer — grammar authority for structure
 ├── MedicalSmartGlassesParser.g4   # ANTLR parser — command type hierarchy (u21 diagnosis,

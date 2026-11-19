@@ -50,6 +50,23 @@ domain: healthcare
 domain_description: "medical voice interface running on smart glasses worn by clinicians"
 trigger_phrase: "ok glasses"
 
+# ── Interaction (src/interaction.py; not used by the LLM prompt) ──────────────
+# Replies inside an active interaction (open dictation) need no trigger phrase.
+# They are matched as whole utterances (case and punctuation ignored), so the
+# same words inside dictated text stay content. No LLM call is made for them.
+interaction:
+  dictation_reminder_sec: 5          # user inactivity before the completion question (initial value, not evaluated with users)
+  dictation_discard_sec: 60          # no answer this long after the question: the open dictation is discarded (never saved or sent)
+  dictation_reminder:
+    set_note: "I did not hear an end phrase for this note. Is the note finished, or would you like to continue?"
+    send_message: "I did not hear an end phrase for this message. Is the message finished, or would you like to continue?"
+  dictation_replies:
+    finish: ["finish", "finished", "done", "i am done", "i am finished", "im done", "im finished", "yes finished",
+             "that is all", "thats all", "finish note", "finish the note", "finish message", "finish the message",
+             "end of note", "end of message", "send it"]
+    continue: ["continue", "keep going", "not finished", "not yet", "i want to continue", "continue dictation"]
+    cancel: ["cancel", "discard", "cancel note", "cancel message", "discard note", "discard message", "delete it"]
+
 # ── Actions ────────────────────────────────────────────────────────────────────
 # grammar_command_type : must match a rule name in MedicalSmartGlassesParser.g4
 #                        (validated at startup — mismatch raises ValueError)

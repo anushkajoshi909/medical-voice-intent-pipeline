@@ -70,6 +70,25 @@ def validate(action: str, stage4) -> Stage5Result:
         return Stage5Result("accepted", pass_type, allowed,
                             f"passthrough — semantic_type={pass_type!r} assigned without lookup")
 
+    # Compound medication: every drug must be found and have an allowed type
+    drugs = getattr(stage4, "drug_list", None)
+    if drugs:
+        missing = [d.raw_segment for d in drugs if not d.found]
+        if missing:
+            return Stage5Result(
+                "entity_not_found", None, allowed,
+                f"{len(missing)} of {len(drugs)} drug(s) not found: {missing}",
+            )
+        wrong = [d for d in drugs if d.semantic_type not in allowed]
+        if wrong:
+            return Stage5Result(
+                "type_mismatch", wrong[0].semantic_type, allowed,
+                f"{[d.raw_segment for d in wrong]} resolved as "
+                f"{sorted({str(d.semantic_type) for d in wrong})} but {action!r} expects one of {allowed}",
+            )
+        return Stage5Result("accepted", drugs[0].semantic_type, allowed,
+                            f"all {len(drugs)} drugs found; types ∈ allowed_slot_types for {action!r}")
+
     # Ontology lookup: entity not found in action's index
     if not stage4.found or stage4.match_method == "none":
         # Global clarification search found it in a different index → type mismatch

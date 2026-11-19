@@ -13,6 +13,9 @@ Pipeline spec (Final_Pipeline_Complete.md):
   • Strip punctuation including hyphens (, . : ! ? - → space)
   • Normalise trigger variants: "ok" / "okie" / "okay" → canonical "ok glasses"
   • Remove trigger from string, keep remainder
+  • detect_trigger() is the activation check: run_pipeline.run_command() ignores
+    a new command without a trigger before any further processing (Stage 6
+    status "inactive", no LLM call)
   • Expand medical abbreviations (abbreviations.json) BEFORE passing to LLM
   • Scan for urgency flags → store separately, remove from text
 """
@@ -84,6 +87,28 @@ def _extract_urgency(text: str) -> tuple[str, list[str]]:
     return MULTI_SPACE.sub(" ", text).strip(), found
 
 
+def detect_trigger(raw: str) -> bool:
+    """Activation check: True if the input contains a trigger phrase ("ok glasses",
+    "okay glasses", "okie glasses", any case, punctuation ignored). Text before the
+    trigger is allowed. This is a text check on the transcript: it does not stop
+    the audio from being recorded or transcribed (that needs an audio wake-word
+    detector)."""
+    return TRIGGER_PATTERN.search(_strip_punctuation(raw).lower()) is not None
+
+
+# The same trigger variants as detect_trigger() accepts, on the raw text: any
+# punctuation or spaces between "ok" and "glasses" ("ok, glasses", "ok-glasses"),
+# and punctuation directly after the trigger is removed with it.
+_TRIGGER_IN_REPLY = re.compile(r"\b(ok(?:ay|ie)?)[^\w]+glasses\b[^\w\s]*", re.IGNORECASE)
+
+
+def strip_trigger(text: str) -> str:
+    """Remove trigger phrases from a reply (used for replies inside an active
+    interaction, which need no trigger but may contain one). The rest of the
+    reply is kept as it is."""
+    return MULTI_SPACE.sub(" ", _TRIGGER_IN_REPLY.sub(" ", text)).strip()
+
+
 def preprocess(raw: str) -> PreprocessResult:
     text = raw
 
@@ -138,7 +163,7 @@ if __name__ == "__main__":
         "ok glasses set note upon examination there was tenderness finish note",
         "ok glasses illustrate the patient's medical history",
         "ok glasses diagnosis hemodialysis",
-        "show SpO2",  # no trigger
+        "show SpO2",  # no trigger -> run_command() ignores it (status "inactive")
     ]
     for raw in test_cases:
         r = preprocess(raw)

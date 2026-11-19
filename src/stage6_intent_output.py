@@ -19,7 +19,11 @@ Statuses produced:
                            true (or action has no end-of-dictation concept)
   accepted_partial      — free-text action (set_note, send_message) still
                            open (end_signal=false); nothing to confirm yet
-  needs_clarification   — Stage 5 status "type_mismatch" or "entity_not_found"
+  needs_clarification   — Stage 5 status "type_mismatch" or "entity_not_found";
+                           shown to the user with a request for a corrected
+                           command, never confirmed (Stage 7)
+  inactive              — not produced here: run_pipeline.run_command() returns
+                           it when a new command has no trigger phrase
 
 No domain knowledge is hardcoded here: allowed_slot_types, semantic types,
 and action names all come from the Stage 2-5 results, which are themselves
@@ -39,7 +43,7 @@ _FREE_TEXT_TYPES = {"free_text"}
 
 @dataclass
 class IntentResult:
-    status: str                    # rejected | accepted | accepted_partial | needs_clarification
+    status: str                    # rejected | accepted | accepted_partial | needs_clarification (| inactive, see run_pipeline)
     payload: dict = field(default_factory=dict)
 
 
@@ -53,7 +57,8 @@ def _drug_slot_list(drug_list) -> list[dict]:
             "rxcui":         d.ontology_id,
             "dose":          dose_value or None,
             "dose_unit":     dose_unit or None,
-            "semantic_type": "medication" if d.found else None,
+            "semantic_type": (d.semantic_type or "medication") if d.found else None,
+            "found":         d.found,
             "match_type":    d.match_method,
         })
     return slots
@@ -146,6 +151,47 @@ def _structure_clarification(stage2, stage3, action_info: dict) -> str | None:
     return None
 
 
+def _compound_clarification(original_text, stage1, stage2, stage3, stage4, stage5,
+                            action, action_info, urgency) -> IntentResult:
+    """Clarification for a compound medication: names the segments that are not
+    found or have a type that is not allowed, and keeps the per-drug results
+    (resolved drugs included) without guessing a replacement."""
+    allowed = stage5.allowed_types
+    label = action.replace("_", " ")
+    missing = [d.raw_segment for d in stage4.drug_list if not d.found]
+    wrong = [d.raw_segment for d in stage4.drug_list
+             if d.found and d.semantic_type not in allowed]
+    resolved = [d.canonical for d in stage4.drug_list
+                if d.found and d.semantic_type in allowed]
+    if missing:
+        problem = (f"I couldn't find {', '.join(repr(m) for m in missing)} "
+                   f"in the reference data for '{label}'.")
+    else:
+        problem = (f"{', '.join(repr(w) for w in wrong)} is not a "
+                   f"{'/'.join(allowed) or 'compatible type'}.")
+    known = f" Recognised: {', '.join(resolved)}." if resolved else ""
+    payload = {
+        "status": "needs_clarification",
+        "reason": stage5.status,
+        "intent_attempted": _intent_name(action, allowed[0] if allowed else None),
+        "action": action,
+        "original_command": original_text,
+        "raw_entity": stage4.raw_entity,
+        "expected_semantic_types": allowed,
+        "urgency": urgency,
+        "drugs": _drug_slot_list(stage4.drug_list),
+        "unresolved_segments": missing + wrong,
+        "explanation": {
+            "llm_extraction":      _llm_explanation(stage1, stage2),
+            "grammar_validation":  _grammar_explanation(stage3),
+            "ontology_evidence":   _ontology_explanation(stage4, action_info),
+            "semantic_validation": stage5.reason,
+        },
+        "clarification_message": f"{problem}{known} Please say the corrected command.",
+    }
+    return IntentResult("needs_clarification", payload)
+
+
 def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_config: dict) -> IntentResult:
     """Assemble the Stage 6 intent payload.
 
@@ -192,13 +238,16 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
 
     # ── Needs clarification (Stage 5 type_mismatch / entity_not_found) ─────
     if stage5.status in ("type_mismatch", "entity_not_found"):
+        if stage4.drug_list:
+            return _compound_clarification(original_text, stage1, stage2, stage3, stage4,
+                                           stage5, action, action_info, urgency)
         if stage5.status == "type_mismatch":
             found_type  = stage4.clarification_type or stage5.semantic_type
             found_label = stage4.clarification_canonical or stage4.canonical or stage4.raw_entity
             clarification_message = (
                 f"I heard '{stage4.raw_entity}' and recognised it as a {found_type}, "
                 f"not a {'/'.join(stage5.allowed_types) or 'compatible type'}. "
-                f"Did you mean something else? Please repeat or confirm."
+                f"Please say the corrected command."
             )
             resolved_entity = {
                 "matched_label":  found_label,
@@ -210,7 +259,7 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
             clarification_message = (
                 f"I couldn't find '{stage4.raw_entity}' in the reference data for '{action}'. "
                 f"The command was understood, but the entity could not be grounded. "
-                f"Please repeat or rephrase."
+                f"Please say the corrected command."
             )
             resolved_entity = None
 

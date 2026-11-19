@@ -21,24 +21,34 @@ Usage:
   python src/run_pipeline.py --save       # save results JSON to results/
   python src/run_pipeline.py --interactive  # type commands, full pipeline + Stage 7
   python src/run_pipeline.py --voice        # speak commands (Whisper ASR), full pipeline + Stage 7
+
+Activation: a new command must contain the trigger phrase ("ok glasses");
+without it the result has status "inactive" and nothing after the trigger
+check runs. Replies inside an open interaction (confirmation, open dictation,
+see interaction.py) need no trigger. The dataset commands have no trigger, so
+batch runs and run_eval.py prepend it (with_trigger), as for the baseline B0.
 """
 import argparse
+import re
+import codecs
 import dataclasses
 import json
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from stage1_preprocess import preprocess
+from stage1_preprocess import preprocess, detect_trigger
 from stage2_llm_extract import extract, get_client, _select_model_interactive, DEFAULT_MODEL
 from stage3_antlr_validate import validate as frame_validate
 from stage4_ontology_lookup import lookup as ontology_lookup
 from stage5_type_validate import validate as type_validate
 from stage6_intent_output import assemble as assemble_intent
 from stage7_confirmation import run as confirm_intent
+from interaction import InteractionSession, PendingDictation
 from domain_loader import load as _load_domain
 
 _ACTION_CONFIG: dict = {}
@@ -69,7 +79,55 @@ def load_commands(extended: bool = False, failures_only: bool = False) -> list[d
     return all_cmds  # full set: 198 base + 18 extended
 
 
+def with_trigger(cmd: dict) -> dict:
+    """Benchmark input preparation: the dataset commands have no trigger phrase,
+    because they test command recognition, not activation. Prepend the configured
+    trigger ("ok glasses ") unless one is already present. The original command
+    dict is not changed. The baseline B0 gets the same prefix in run_eval.py."""
+    if detect_trigger(cmd["text"]):
+        return cmd
+    return dict(cmd, text=f"{_load_domain()['trigger_phrase']} {cmd['text']}")
+
+
+def _inactive_result(cmd: dict) -> dict:
+    """Result for a new command without a trigger phrase: the input is ignored.
+    Nothing after the activation check runs (no preprocessing, no LLM call, no
+    validation, no lookup, no confirmation). Same keys as a normal result."""
+    payload = {
+        "status": "inactive",
+        "reason": "trigger_not_found",
+        "original_command": cmd["text"],
+        "explanation": {"stage1": "No activation phrase ('ok glasses') found; "
+                                  "the input is ignored and the system keeps listening."},
+    }
+    return {
+        "id": cmd.get("id", "?"), "category": cmd.get("category", "?"),
+        "valid": cmd.get("valid"), "expected_action": cmd.get("expected_action"),
+        "action_source": cmd.get("action_source", ""), "text": cmd["text"],
+        "trigger_found": False, "format_invalid": False, "clean_text": "",
+        "abbrevs_expanded": {}, "urgency": [],
+        "action": "", "entity": "", "recipient": "", "end_signal": False, "confidence": 0.0,
+        "frame_valid": False, "frame_reason": "not run (inactive)", "canonical_form": None,
+        "command_type": None,
+        "ont_found": False, "ont_canonical": None, "ont_semantic_type": None,
+        "ont_ontology_id": None, "ont_match_method": "none", "ont_score": 0.0,
+        "ont_source": None, "ont_clarification_type": None,
+        "ont_clarification_canonical": None, "ont_drug_list": None,
+        "s5_status": "skipped", "s5_reason": "not run (inactive)", "s5_allowed_types": [],
+        "s6_status": "inactive", "s6_payload": payload,
+        "binary_correct": False,   # ignored input is never a correct recognition
+        "action_correct": False,
+        "llm_error": None, "model": None,
+    }
+
+
 def run_command(client, cmd: dict, model: str) -> dict:
+    """Run one NEW command through Stages 1-6. A command without a trigger phrase
+    is ignored (status "inactive") before any other processing. Replies inside an
+    active interaction (confirmation, open dictation) do not come through here."""
+    if not detect_trigger(cmd["text"]):
+        return _inactive_result(cmd)
+
     stage1 = preprocess(cmd["text"])
     clean  = stage1.clean_text
 
@@ -81,6 +139,27 @@ def run_command(client, cmd: dict, model: str) -> dict:
                            error="format_invalid: non-speech input detected by Stage 1")
     else:
         stage2 = extract(client, clean, model=model)
+
+    return validate_extraction(cmd, stage1, stage2)
+
+
+def complete_dictation(pending: PendingDictation) -> dict:
+    """Finish an open note/message (interaction.py): Stages 3-6 on the complete
+    dictated content with end_signal=True. No LLM call: the action and recipient
+    come from the extraction that opened the dictation."""
+    from stage2_llm_extract import LLMResult
+    stage1 = preprocess(pending.original_input)
+    stage2 = LLMResult(action=pending.action, entity=pending.content, end_signal=True,
+                       confidence=pending.confidence, raw_response="",
+                       model=pending.model or "", recipient=pending.recipient)
+    cmd = {"id": "session", "text": " ".join(pending.utterances), "valid": None,
+           "expected_action": None, "category": "session", "action_source": "session"}
+    return validate_extraction(cmd, stage1, stage2)
+
+
+def validate_extraction(cmd: dict, stage1, stage2) -> dict:
+    """Stages 3-6 for a given Stage 1 and Stage 2 result (no LLM call)."""
+    clean = stage1.clean_text
 
     # Structural entity enforcement: if action config declares entity_slot=false,
     # strip any entity the LLM extracted before passing to Stage 3.
@@ -297,6 +376,9 @@ def _print_stages(r: dict):
     print(f"\n  {'─'*W}")
     print(f"  ID     : {r['id']}")
     print(f"  Input  : {r['text']!r}")
+    if r['s6_status'] == "inactive":
+        print(f"  ── Stage 1: no trigger phrase -> input ignored (inactive), nothing else runs")
+        return
     print(f"  ── Stage 1: Preprocessing")
     print(f"     clean_text : {r['clean_text']!r}")
     print(f"     trigger    : {'found' if r['trigger_found'] else 'not found'}")
@@ -362,14 +444,21 @@ def _print_stages(r: dict):
 
 
 def _run_confirmation(r: dict, respond=None):
-    """Run Stage 7 for a single pipeline result and print its outcome.
+    """Run Stage 7 for a single pipeline result and print its outcome (--text mode).
 
-    respond — optional callable(prompt) -> str. Pass this to gather the
-    confirmation response the same way the rest of that mode works (e.g.
-    via the mic in --voice mode) instead of the default keyboard input()."""
+    respond — optional callable(prompt) -> str (e.g. the mic in --voice mode)."""
     result = confirm_intent(r['s6_payload'], r['action'], respond=respond)
+    _print_stage7(r, result)
+    return result
+
+
+def _print_stage7(r: dict, result):
     print(f"  ── Stage 7: User Confirmation")
-    if not result.needs_confirmation:
+    if result.outcome == "clarification_requested":
+        print(f"     [Glasses display] {result.final_message}")
+        print(f"     clarification requested: nothing to confirm; the corrected command is a new "
+              f"command (start it with 'ok glasses')")
+    elif not result.needs_confirmation:
         # Stage 3 structural failures (invalid_structure) carry an actionable
         # clarification_message even though there's nothing for Stage 7 to
         # confirm/reject — surface it here rather than leaving it buried in
@@ -381,41 +470,289 @@ def _run_confirmation(r: dict, respond=None):
     else:
         print(f"     outcome    : {result.outcome}")
         print(f"     {result.final_message}")
-    return result
+
+
+def _print_turn(turn):
+    """Print one session turn: the stage output (if a pipeline result exists) and
+    what the session does next."""
+    if turn.result is not None:
+        _print_stages(turn.result)
+    if turn.stage7 is not None:
+        _print_stage7(turn.result, turn.stage7)
+    if turn.kind == "dictation_open":
+        print(f"\n  [Glasses display] {turn.message}")
+    elif turn.kind in ("dictation_continued", "dictation_resumed", "dictation_cancelled", "unclear_reply"):
+        print(f"  [Glasses display] {turn.message}")
+        if turn.pending is not None and turn.kind != "dictation_cancelled":
+            print(f"     dictation so far: {turn.pending.content!r}")
+    elif turn.kind == "inactive":
+        print(f"  [{turn.message}]")
+    elif turn.kind == "rejected":
+        print(f"\n  [Glasses display] {turn.message}")
+    if turn.stage7 is not None and turn.stage7.outcome in ("rejected", "unclear"):
+        print("\n  Please repeat the command.")
+
+
+def _wait_with_reminder(session: InteractionSession, reader):
+    """Wait for the next line. While a dictation is open and the user is inactive,
+    show the completion question once; if it gets no answer, discard the open
+    dictation (never complete or send it). Keystrokes count as activity, so typing
+    a long continuation never triggers the reminder or the discard. reader is a
+    TerminalLineReader: read(timeout_fn) returns a line, or None if the deadline
+    passed without a keystroke (the text typed so far is kept)."""
+    while True:
+        line = reader.read(session.seconds_until_next_event)
+        if line is not None:
+            return line
+        msg = session.reminder()
+        if msg:
+            print(f"\n  [Glasses display] {msg}  (say 'finish' or 'cancel', or keep dictating)")
+            reader.redraw()
+            continue
+        msg = session.expire()
+        if msg:
+            print(f"\n  [Glasses display] {msg}")
+            reader.redraw()
+
+
+_PASTE_START, _PASTE_END = "\x1b[200~", "\x1b[201~"
+_CSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")          # other escape sequences (arrow keys, ...)
+
+
+class TerminalLineReader:
+    """Reads a line key by key, so that typing is visible before Enter.
+
+    read_char(timeout) returns what was typed (bytes from the terminal, or str in
+    tests), or None if nothing was typed before the timeout; on_activity() is
+    called for every input. Bytes are decoded with an incremental UTF-8 decoder
+    kept on the reader, so a character split between two reads ("ü" in
+    "Müller") is not lost. Characters after a newline in the same input (a pasted
+    block of several lines) stay in the queue and become the next lines; nothing
+    is dropped. The text typed so far is kept across read() calls, so a reminder
+    or a discard message never loses it. Without a terminal (piped input) it falls
+    back to input(), without timers.
+
+    Pasted text: bracketed_paste() switches the terminal to bracketed paste mode
+    (xterm, macOS Terminal, iTerm2, ...), which marks every paste with
+    ESC[200~ ... ESC[201~. Pasted characters are kept and used as normal input,
+    but never as the answer to a confirmation question (read_answer). A terminal
+    without this mode sends a paste unmarked; it then cannot be told apart from
+    typing, and a pasted line that arrives after the question counts as typed."""
+
+    def __init__(self, prompt: str, on_activity=lambda: None, read_char=None, write=None,
+                 clock=time.monotonic):
+        self.prompt = prompt
+        self.on_activity = on_activity
+        self._read_char = read_char
+        self._write = write or (lambda t: (sys.stdout.write(t), sys.stdout.flush()))
+        self._clock = clock
+        self.buffer: list[str] = []
+        self.queue: list[tuple[str, bool]] = []   # (character, pasted) not consumed yet
+        self._decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self._esc = ""                            # an escape sequence split between reads
+        self._in_paste = False
+        self._answering = False
+        self._shown = False
+
+    @property
+    def pending_text(self) -> str:
+        return "".join(ch for ch, _ in self.queue)
+
+    def bracketed_paste(self, on: bool):
+        """Switch bracketed paste mode of the terminal on or off (no effect without a terminal)."""
+        if self._read_char is None and sys.stdin.isatty():
+            self._write("\x1b[?2004h" if on else "\x1b[?2004l")
+
+    def redraw(self):
+        self._write(self.prompt + "".join(self.buffer))
+        self._shown = True
+
+    def _with_terminal(self, fn):
+        if self._read_char is not None:
+            return fn(self._read_char)
+        with _cbreak_terminal() as read_char:
+            return fn(read_char)
+
+    def read(self, timeout_fn):
+        if self._read_char is None and not sys.stdin.isatty():
+            return input(self.prompt)
+        return self._with_terminal(lambda rc: self._read(timeout_fn, rc))
+
+    def read_answer(self, timeout: Optional[float], prompt: str = "  answer> ") -> Optional[str]:
+        """Answer to a confirmation question (Stage 7 read_response). Only keys typed
+        after the question count: input that is already waiting when the question is
+        shown, and pasted text (bracketed paste), goes to the queue and is handled
+        later as normal input, so it can never answer the question. One deadline for
+        the whole question (timeout None: wait without limit); keys do not extend it.
+        None if the deadline passes (a partly typed answer is then dropped)."""
+        if self._read_char is None and not sys.stdin.isatty():
+            return _stdin_answer(timeout)
+        deadline = None if timeout is None else self._clock() + timeout
+
+        def remaining():
+            return None if deadline is None else max(0.0, deadline - self._clock())
+
+        def answer(rc):
+            while True:                                  # input already waiting: not an answer
+                chunk = rc(0)
+                if chunk is None:
+                    break
+                self._ingest(chunk)
+            saved = (self.queue, self.buffer, self._shown, self.prompt)
+            self.queue, self.buffer, self._shown, self.prompt = [], [], False, prompt
+            self._answering, self._held = True, []
+            try:
+                return self._read(remaining, rc)
+            finally:
+                rest, held = self.queue, self._held      # held: pasted while answering
+                self.queue, self.buffer, self._shown, self.prompt = saved
+                self.queue = self.queue + held + rest
+                self._answering, self._shown = False, False
+        return self._with_terminal(answer)
+
+    def _ingest(self, chunk):
+        """Decode a chunk and add it to the queue, marking pasted characters."""
+        text = self._esc + (self._decoder.decode(bytes(chunk))
+                            if isinstance(chunk, (bytes, bytearray)) else chunk)
+        self._esc = ""
+        i = 0
+        while i < len(text):
+            if text[i] == "\x1b":
+                rest = text[i:]
+                if rest.startswith(_PASTE_START):
+                    self._in_paste, i = True, i + len(_PASTE_START)
+                    continue
+                if rest.startswith(_PASTE_END):
+                    self._in_paste, i = False, i + len(_PASTE_END)
+                    continue
+                m = _CSI.match(rest)
+                if m:
+                    i += m.end()                         # ignore other escape sequences
+                    continue
+                if len(rest) < 8 and not re.search(r"[@-~]", rest[2:]):
+                    self._esc = rest                     # incomplete: wait for the rest
+                    break
+                i += 1                                   # a lone ESC
+                continue
+            self.queue.append((text[i], self._in_paste))
+            i += 1
+
+    def _read(self, timeout_fn, read_char):
+        if not self._shown:
+            self.redraw()
+        while True:
+            if not self.queue:
+                chunk = read_char(timeout_fn())
+                if chunk is None:
+                    return None                        # deadline passed without input
+                self._ingest(chunk)
+                self.on_activity()
+            line = self._consume()
+            if line is not None:
+                return line
+
+    def _consume(self) -> Optional[str]:
+        """Apply queued characters to the line; return the line at a newline (the rest
+        stays queued), else None. While answering a question, pasted characters are
+        held back for later instead."""
+        while self.queue:
+            (ch, pasted), self.queue = self.queue[0], self.queue[1:]
+            if self._answering and pasted:
+                self._held.append((ch, pasted))
+                continue
+            if ch in ("\r", "\n"):
+                if ch == "\r" and self.queue and self.queue[0][0] == "\n":
+                    self.queue = self.queue[1:]          # \r\n is one line end
+                line, self.buffer, self._shown = "".join(self.buffer), [], False
+                self._write("\n")
+                return line
+            if ch == "\x03":
+                raise KeyboardInterrupt
+            if ch == "\x04" and not self.buffer:
+                raise EOFError
+            if ch in ("\x7f", "\b"):
+                if self.buffer:
+                    self.buffer.pop()
+                    self._write("\b \b")
+            elif ch.isprintable():
+                self.buffer.append(ch)
+                self._write(ch)
+        return None
+
+
+def _stdin_answer(timeout):
+    """Piped input: one line, as stage7_confirmation._wait_for_response does."""
+    from stage7_confirmation import _wait_for_response
+    return _wait_for_response(timeout)
+
+
+class _cbreak_terminal:
+    """Context manager: terminal in cbreak mode (keys arrive one by one, no echo),
+    restored afterwards. Yields read_char(timeout)."""
+
+    def __enter__(self):
+        import termios
+        import tty
+        self._fd = sys.stdin.fileno()
+        self._old = termios.tcgetattr(self._fd)
+        # TCSANOW: the default (TCSAFLUSH) would throw away input that is already
+        # waiting (type-ahead, the rest of a paste) every time a read starts
+        tty.setcbreak(self._fd, termios.TCSANOW)
+        return self._read_char
+
+    def _read_char(self, timeout):
+        import os
+        import select as _select
+        ready, _, _ = _select.select([self._fd], [], [], timeout)
+        if not ready:
+            return None
+        return os.read(self._fd, 1024)          # bytes: decoded incrementally by the reader
+
+    def __exit__(self, *exc):
+        import termios
+        termios.tcsetattr(self._fd, termios.TCSADRAIN, self._old)
+        return False
+
+
+def _make_session(client, model: str, respond=None, read_response=None) -> InteractionSession:
+    return InteractionSession(
+        process=lambda text: run_command(client, {"id": "adhoc", "text": text, "valid": None,
+                                                  "expected_action": None, "category": "adhoc",
+                                                  "action_source": "adhoc"}, model),
+        complete=complete_dictation,
+        confirm=lambda payload, action: confirm_intent(payload, action, respond=respond,
+                                                       read_response=read_response),
+        settings=_load_domain()["interaction"],
+    )
 
 
 def _interactive_loop(client, model: str):
-    """REPL: type a command, see it run through the full pipeline including
-    Stage 7 confirmation. On REJECTED, you're asked to repeat the command,
-    same as the real device flow (Final_Pipeline_Complete.md Stage 7)."""
-    print("Interactive mode — type a command (or 'exit' to quit).\n")
-    while True:
-        try:
-            text = input("> ").strip()
-        except (EOFError, KeyboardInterrupt):
+    """REPL: type commands; the session keeps an open dictation across turns and
+    applies Stage 7. A new command needs 'ok glasses'; replies inside an open
+    dictation or a confirmation do not."""
+    print("Interactive mode — type a command starting with 'ok glasses' (or 'exit' to quit).\n")
+    read = TerminalLineReader("> ")
+    session = _make_session(client, model, read_response=read.read_answer)
+    read.on_activity = session.note_activity
+    read.bracketed_paste(True)                     # pastes are marked, never a confirmation answer
+    try:
+        while True:
+            try:
+                text = _wait_with_reminder(session, read).strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+            if text.lower() in ("exit", "quit"):
+                break
+            if not text:
+                continue
+            _print_turn(session.handle(text))
             print()
-            break
-        if not text or text.lower() in ("exit", "quit"):
-            break
-
-        cmd = {"id": "adhoc", "text": text, "valid": None, "expected_action": None,
-               "category": "adhoc", "action_source": "adhoc"}
-        r = run_command(client, cmd, model)
-        _print_stages(r)
-        result = _run_confirmation(r)
-
-        # Stage 7 reject/unclear needs a repeat; so does a Stage 6-level
-        # structural rejection with an actionable clarification_message,
-        # even though Stage 7 itself reports "not_applicable" for it.
-        needs_repeat = (result.outcome in ("rejected", "unclear")
-                        or (r['s6_payload'].get('status') == 'rejected'
-                            and r['s6_payload'].get('clarification_message')))
-        if needs_repeat:
-            print("\n  Please repeat the command.\n")
-        print()
+    finally:
+        read.bracketed_paste(False)
 
 
-def _record_and_transcribe(asr_client) -> str:
+def _record_and_transcribe(asr_client, ask_enter: bool = True) -> str:
     """Push-to-talk mic capture (reuses listen.py's recording approach),
     then transcribes with the same Whisper endpoint used in whisper_asr.py."""
     import numpy as np
@@ -426,7 +763,8 @@ def _record_and_transcribe(asr_client) -> str:
     SAMPLE_RATE = 16000
     out_path = ROOT / "data" / "audio" / "mic_capture.wav"
 
-    input("Press Enter to start recording...")
+    if ask_enter:
+        input("Press Enter to start recording...")
     print("Recording... press Enter to stop.")
     frames = []
 
@@ -448,51 +786,64 @@ def _record_and_transcribe(asr_client) -> str:
     return text
 
 
+def voice_answer(read_answer, record):
+    """Stage 7 read_response for push-to-talk voice mode.
+
+    The confirmation deadline applies to pressing Enter (starting the recording):
+    push-to-talk cannot hear silence, so not pressing Enter is the silence of
+    voice mode. No Enter before the action's confirmation_timeout_sec -> None,
+    and Stage 7 confirms automatically, as in text mode. Enter in time -> the
+    reply is recorded and transcribed (the recording itself has no deadline).
+    An explicit-reply action (timeout None) waits for Enter without limit.
+    read_answer(timeout, prompt) is TerminalLineReader.read_answer; record() records
+    and transcribes one reply."""
+    def read_response(timeout):
+        prompt = ("  Press Enter to answer by voice"
+                  + (f" (no answer within {timeout:g}s: confirmed automatically)" if timeout else "")
+                  + "... ")
+        if read_answer(timeout, prompt) is None:
+            print()
+            return None
+        return record()
+    return read_response
+
+
 def _voice_loop(client, model: str):
     """Push-to-talk voice mode: record from the mic, transcribe with Whisper
-    (src/whisper_asr.py), then run the transcript through the same 7-stage
-    pipeline as --interactive, including Stage 7 confirmation. One command
-    end-to-end: say it, the pipeline triggers on the transcript.
+    (src/whisper_asr.py), then hand the transcript to the same session as
+    --interactive (trigger check, open dictation, Stage 7 confirmation).
+
+    The trigger is checked on the transcript: audio is recorded and transcribed
+    before activation is known (an audio wake-word detector would be needed to
+    avoid that). Push-to-talk has no ambient listening, so the dictation reminder
+    can only appear while the system waits for the next recording. A timed
+    confirmation (confirmation_timeout_sec > 0) uses the same deadline as text
+    mode, applied to pressing Enter (voice_answer).
 
     Uses the same OpenAI-compatible client for both Whisper and the LLM —
     both are SCADS.AI endpoints under one API key."""
     print("Voice mode — press Enter to record a command (Ctrl+C to quit).\n")
+
+    wait_for_enter = TerminalLineReader("Press Enter to start recording... ")
+    answer = voice_answer(wait_for_enter.read_answer,
+                          lambda: _record_and_transcribe(client, ask_enter=False))
+    session = _make_session(client, model, read_response=answer)
+    wait_for_enter.on_activity = session.note_activity
     while True:
         try:
-            text = _record_and_transcribe(client)
+            _wait_with_reminder(session, wait_for_enter)
+            session.begin_input()                  # recording + transcription: not inactivity
+            try:
+                text = _record_and_transcribe(client, ask_enter=False)
+            finally:
+                session.end_input()                # also for an empty transcript (handle() not called)
         except (EOFError, KeyboardInterrupt):
             print()
             break
         if not text:
             print("  (empty transcript — try again)\n")
             continue
-
-        cmd = {"id": "voice", "text": text, "valid": None, "expected_action": None,
-               "category": "voice", "action_source": "voice"}
-        r = run_command(client, cmd, model)
-        _print_stages(r)
-
-        # Gather the confirmation response via the mic too — same modality as
-        # the rest of this mode, instead of falling back to keyboard input().
-        # Note: push-to-talk has no ambient listening, so a confirmation_timeout_sec
-        # "auto-confirm after N idle seconds" has no voice equivalent here — every
-        # confirmable action explicitly asks via mic in --voice mode, except
-        # confirmation_timeout_sec=0 actions (e.g. emergency), which still skip
-        # the prompt and auto-confirm instantly, same as in --text/--interactive.
-        def _voice_respond(prompt: str, _client=client) -> str:
-            print("  Speak your response now.")
-            return _record_and_transcribe(_client)
-
-        result = _run_confirmation(r, respond=_voice_respond)
-
-        # Stage 7 reject/unclear needs a repeat; so does a Stage 6-level
-        # structural rejection with an actionable clarification_message,
-        # even though Stage 7 itself reports "not_applicable" for it.
-        needs_repeat = (result.outcome in ("rejected", "unclear")
-                        or (r['s6_payload'].get('status') == 'rejected'
-                            and r['s6_payload'].get('clarification_message')))
-        if needs_repeat:
-            print("\n  Please repeat the command.\n")
+        _print_turn(session.handle(text))
         print()
 
 
@@ -531,6 +882,11 @@ def main():
                "category": "adhoc", "action_source": "adhoc"}
         r = run_command(client, cmd, model)
         _print_stages(r)
+        if r["s6_status"] == "accepted_partial":
+            print("  ── Stage 7: n/a — the dictation is still open (no end signal). One-shot --text "
+                  "keeps no session, so it cannot be continued: use --interactive or --voice, "
+                  "or end the command with an end phrase such as 'finish note'.")
+            return
         _run_confirmation(r)
         return
 
@@ -552,7 +908,8 @@ def main():
     results = []
     t0 = time.time()
     for i, cmd in enumerate(commands, 1):
-        r = run_command(client, cmd, model)
+        r = run_command(client, with_trigger(cmd), model)
+        r["text"] = cmd["text"]            # report the dataset text, not the prepared input
         results.append(r)
 
         if r["valid"] is False:
