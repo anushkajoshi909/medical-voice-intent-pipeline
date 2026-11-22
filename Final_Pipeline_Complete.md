@@ -67,6 +67,8 @@ Together, these two patterns mean that **adding a new action or a new ontology s
 ```
 Speech text (from ASR, e.g. Whisper / VOSK)
     │
+    │ no trigger phrase ("ok glasses") ──────→ INACTIVE (input ignored,
+    │                                           nothing else runs)
     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  STAGE 1: Preprocessing                    [implemented]    │
@@ -74,8 +76,11 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  • Strip punctuation; hyphens become spaces                 │
 │  • Expand abbreviations (abbreviations.json, 183 entries)   │
 │  • Lowercase everything                                     │
-│  • Find the trigger (ok / okay / okie + glasses); remove it │
-│    and all text before it                                   │
+│  • A new command must contain the trigger (ok / okay / okie │
+│    + glasses); without it the command is ignored before     │
+│    Stage 1 runs. Replies inside an open confirmation or     │
+│    dictation need no trigger.                               │
+│  • Remove the trigger and all text before it                │
 │  • Scan for urgency words (stat, urgent, urgently,          │
 │    immediately) → store separately, remove from the text    │
 │  Result: clean command text, urgency flags, expanded        │
@@ -109,7 +114,9 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │                                                             │
 │  Constraint: action MUST be from domain_config list         │
 │  If cannot map, or the call fails, or the answer is not    │
-│  valid JSON → action = "UNKNOWN" → reject immediately       │
+│  valid JSON, or it breaks the strict schema (Pydantic:      │
+│  required fields, no type coercion, confidence in [0, 1],   │
+│  no extra fields) → action = "UNKNOWN" → reject immediately │
 └─────────────────────────────────────────────────────────────┘
     │
     │ action = "UNKNOWN" ──────────────────────→ UNRECOGNIZED_COMMAND
@@ -160,7 +167,9 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  set_medication, stop):                                     │
 │    Strategy (entity_extractor field) prepares query:        │
 │      "default"    → normalise + look up entity as-is        │
-│      "medication" → strip dose/unit, look up drug name only  │
+│      "medication" → strip dose/unit, look up drug name only; │
+│                     several drugs ("A and B") are looked up  │
+│                     one by one                               │
 │    Resolution order per index:                              │
 │      1. Exact normalised label match                        │
 │      2. Synonym match (OBO synonym entries; RxNorm aliases) │
@@ -187,6 +196,9 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  Match  → ACCEPTED                                          │
 │  No match → NEEDS_CLARIFICATION with explanation:           │
 │    "Entity X was found as type Y. Action Z expects type W." │
+│                                                             │
+│  Several drugs: every drug must be found and have an        │
+│  allowed type, otherwise clarification names the drug.      │
 │                                                             │
 │  This is the key safety layer that catches:                 │
 │  • "diagnosis hemodialysis" → hemodialysis is a procedure,  │
@@ -228,46 +240,33 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 ┌─────────────────────────────────────────────────────────────┐
 │  STAGE 7: User Confirmation                [implemented]    │
 │                                                             │
-│  Glasses display a human-friendly interpretation, built     │
-│  from the Stage 6 payload (accepted slots or the             │
-│  clarification_message):                                    │
-│    "Diagnosis: Pneumonia. Correct?"                         │
+│  Only a Stage 6 result with status "accepted" is confirmed. │
+│  The glasses show a summary built from the slots:           │
+│    "Diagnosis: pneumonia. Correct?"                         │
+│  User answers (no trigger needed):                          │
+│    "correct" / "yes" → CONFIRMED                            │
+│    "wrong" / "no"    → REJECTED → repeat the command        │
+│    anything else     → UNCLEAR  → repeat the command        │
+│    no answer         → per-action confirmation_timeout_sec  │
+│                        in domain_config.yaml: null = wait,  │
+│                        N = auto-confirm after N s,          │
+│                        0 = confirm at once (emergency)      │
+│  Nothing is executed: no clinical application is connected. │
 │                                                             │
-│  Design decision: rejected + invalid_structure's             │
-│  clarification_message (above) does NOT go through this      │
-│  stage's confirm/reject dialogue, even though it's shown     │
-│  right alongside it. Confirm/reject only makes sense when    │
-│  the system proposes a specific resolved interpretation to   │
-│  accept or deny — a structural failure means nothing         │
-│  concrete was resolved (e.g. no dose was ever extracted),    │
-│  so there's nothing to confirm or deny, just a specific      │
-│  "repeat with X" instruction. The pipeline still prompts     │
-│  the user to repeat the command in --interactive/--voice     │
-│  mode either way.                                            │
+│  Other statuses never enter the confirmation:               │
+│  • needs_clarification → the message is shown and the       │
+│    system waits for a corrected command (with the trigger); │
+│    "yes" does not confirm it                                │
+│  • accepted_partial → the note or message stays open        │
+│    (src/interaction.py): more text is added, "finish"       │
+│    completes it, "cancel" discards it; a reminder after     │
+│    5 s and a discard after 60 s more without an answer      │
+│  • rejected, inactive → nothing to confirm                  │
 │                                                             │
-│  User responds:                                             │
-│  "ok glasses, correct" → CONFIRMED (not carried out)        │
-│    "ok glasses, wrong"   → REJECTED  → user prompted to     │
-│                            repeat the command               │
-│    [timeout after N sec] → auto-confirm for low-risk        │
-│                            actions (per-action                │
-│                            confirmation_timeout_sec in       │
-│                            domain_config.yaml; 0 = confirm   │
-│                            instantly, e.g. emergency;        │
-│                            null = always block for an        │
-│                            explicit response, e.g.           │
-│                            diagnosis/set_medication)          │
-│                                                             │
-│  Creates a dialogue feedback loop. Directly addresses the   │
-│  hemodialysis use case: even if Stage 5 issues              │
-│  a clarification, Stage 7 gives the user a final            │
-│  yes/no checkpoint before any action is executed.           │
-│                                                             │
-│  Response classification (src/stage7_confirmation.py) is a  │
-│  small deterministic keyword match, not an LLM call — the   │
-│  confirmation vocabulary is intentionally narrow and fixed. │
-│  Run it: `python src/run_pipeline.py --text "..."` (single  │
-│  command) or `--interactive` (REPL with repeat-on-reject).  │
+│  Answers are classified by a fixed keyword list, not by an  │
+│  LLM (src/stage7_confirmation.py). Run it with              │
+│  `python src/run_pipeline.py --text "..."`, `--interactive`, │
+│  or `--voice`.                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -438,342 +437,7 @@ Synonyms are indexed as separate keys pointing to the same concept. Every Stage 
 
 ---
 
-## Example 1: `"ok glasses Begin the IV infusion"`
-*Fails in Ludyga's grammar because "begin" is not a lexer token and IV infusion is not a grammar keyword. Shows abbreviation expansion, LLM synonym handling, and NCIt lookup.*
-
----
-
-**Stage 1: Preprocessing**
-```
-Input:   "ok glasses Begin the IV infusion"
-Lower:   "ok glasses begin the iv infusion"
-Abbrevs: IV -> intravenous
-Trigger: found and stripped
-Result:  "begin the intravenous infusion"
-Urgency: none
-```
-
-**Stage 2: LLM Structured Extraction**
-```
-Input to LLM: "begin the intravenous infusion"
-
-LLM reasoning (internal):
-  "begin" -> closest action = "start" (initiate something)
-  Entity = "intravenous infusion" (clinical content, filler "the" stripped)
-  No end signal.
-
-LLM output:
-{
-  "action":     "start",
-  "entity":     "intravenous infusion",
-  "end_signal": false,
-  "confidence": 0.98
-}
-
-Ludyga's grammar: FAILS ("begin" is not a lexer token; treatment type did not exist)
-LLM: SUCCEEDS; maps action synonym, entity extracted as spoken
-```
-
-**Stage 3: ANTLR Frame Validation**
-```
-Reconstruct canonical: "ok glasses start treatment intravenous infusion"
-Rule matched: treatment -> u22: START TREATMENT any_text
-entity "intravenous infusion" is non-empty
-command_type = "treatment"
-Frame: VALID
-```
-
-**Stage 4: Ontology / Canonical Lookup**
-```
-entity          = "intravenous infusion"
-action          = "start"
-ontology_index  = "procedure"  (from domain_config)
-entity_extractor = "default"
-
-Step 1: Exact match in NCIt Thesaurus: not found for "intravenous infusion"
-Step 2: Synonym match in NCIt: not found
-Step 3: Fuzzy match in NCIt:
-  "Parenteral Infusion Procedure" (NCIt:C21088) -> score 0.90  [match]
-
-Result:
-  raw_entity    = "intravenous infusion"
-  canonical     = "Parenteral Infusion Procedure"
-  semantic_type = "procedure"
-  ontology_id   = "NCIt:C21088"
-  match_method  = "synonym"
-  score         = 0.90
-  source        = "ncit"
-```
-
-**Stage 5: Semantic Validation**
-```
-action="start" + semantic_type="procedure"
-domain_config: start allows [treatment, procedure, medication, shared_session, emergency]
-"procedure" in allowed -> YES
-Result: ACCEPTED
-```
-
-**Stage 6: Intent JSON**
-```json
-{
-  "status": "accepted",
-  "action": "start",
-  "original_command": "ok glasses Begin the IV infusion",
-  "slots": {
-    "procedure": {
-      "raw_entity":    "intravenous infusion",
-      "canonical":     "Parenteral Infusion Procedure",
-      "semantic_type": "procedure",
-      "ontology_id":   "NCIt:C21088",
-      "match_method":  "synonym",
-      "score":         0.90,
-      "source":        "ncit"
-    }
-  },
-  "explanation": {
-    "llm_extraction":      "'Begin' mapped to action 'start'. 'IV' expanded to 'intravenous' by Stage 1. Entity extracted as spoken.",
-    "grammar_validation":  "Frame valid. command_type=treatment.",
-    "ontology_evidence":   "'intravenous infusion' matched NCIt C21088 via synonym at score 0.90.",
-    "semantic_validation": "Action 'start' permits slot type 'procedure'. Accepted."
-  }
-}
-```
-
-**Stage 7: User Confirmation**
-```
-Glasses display: "Start treatment: Parenteral Infusion Procedure (NCIt:C21088). Correct?"
-
-User says:  "ok glasses, correct"
--> CONFIRMED
--> Infusion initiated
-```
-
----
-
-## Example 2: `"ok glasses Note: Upon examination, there was tenderness in the lower abdomen and a palpable mass"`
-*From u15 set note commands. No explicit terminator; note is still open. Shows LLM handling notes without end signal.*
-
----
-
-**Stage 1: Preprocessing**
-```
-Input:   "ok glasses Note: Upon examination, there was tenderness in the
-          lower abdomen and a palpable mass"
-Lower:   "ok glasses note upon examination there was tenderness in the
-          lower abdomen and a palpable mass"
-Strip:   punctuation removed (colon, comma)
-Trigger: found and stripped
-Result:  "note upon examination there was tenderness in the lower
-          abdomen and a palpable mass"
-```
-
-**Stage 2: LLM Structured Extraction**
-```
-Input to LLM: "note upon examination there was tenderness in the lower
-               abdomen and a palpable mass"
-
-LLM reasoning:
-  "note" → action = "set_note"
-  Entity = everything after "note" (the clinical content)
-  No end-of-dictation signal detected.
-
-LLM output:
-{
-  "action":     "set_note",
-  "entity":     "upon examination there was tenderness in the lower abdomen and a palpable mass",
-  "end_signal": false,
-  "confidence": 0.98
-}
-
-Note: end_signal=false means the note is still being dictated.
-The system will wait for a follow-up command with end_signal=true.
-```
-
-**Stage 3: ANTLR Frame Validation**
-```
-Canonical: "ok glasses set note upon examination there was tenderness..."
-Rule: SET_NOTE entity → ✓
-Entity non-empty ✓
-end_signal=false → note session open, more input expected
-Frame: VALID (partial; awaiting close)
-```
-
-**Stage 4: Ontology Lookup**
-```
-action = "set_note" → free_text slot type
-→ Skip ontology entirely
-Entity stored as raw clinical text
-```
-
-**Stage 5: Semantic Validation**
-```
-set_note + free_text → ✓ allowed
-```
-
-**Stage 6: Intent JSON**
-```json
-{
-  "status": "accepted_partial",
-  "intent": "SET_NOTE_OPEN",
-  "action": "set_note",
-  "slots": {
-    "free_text": {
-      "content":    "upon examination there was tenderness in the lower abdomen and a palpable mass",
-      "end_signal": false,
-      "note_state": "open -- awaiting end-of-dictation signal"
-    }
-  },
-  "explanation": {
-    "llm_extraction":      "Action 'set_note' identified. No end-of-dictation signal detected. Note remains open.",
-    "grammar_validation":  "SET_NOTE entity frame valid.",
-    "ontology_evidence":   "Free-text slot; no ontology lookup.",
-    "semantic_validation": "set_note allows free_text. Accepted as partial (open note)."
-  }
-}
-```
-
-**Stage 7: User Confirmation**
-```
-Glasses display: "Recording note -- still open. Waiting for end signal."
-
-→ No confirmation prompt issued while note session is open.
-  User confirmation will be triggered once end_signal=true is received
-  and the full note content is ready for commit.
-```
-
----
-
-## Example 3: `"ok glasses Set medication aspirin 100 milligrams and clopidogrel 75 milligrams, finish medication"`
-*From u16–u17 medication commands. Shows LLM terminator detection ("finish medication") and structured medication parsing.*
-
----
-
-**Stage 1: Preprocessing**
-```
-Input:   "ok glasses Set medication aspirin 100 milligrams and clopidogrel
-          75 milligrams, finish medication"
-Lower:   "ok glasses set medication aspirin 100 milligrams and clopidogrel
-          75 milligrams finish medication"
-Strip:   comma removed
-Trigger: stripped
-Result:  "set medication aspirin 100 milligrams and clopidogrel 75 milligrams
-          finish medication"
-```
-
-**Stage 2: LLM Structured Extraction**
-```
-Input to LLM: "set medication aspirin 100 milligrams and clopidogrel 75
-               milligrams finish medication"
-
-LLM reasoning:
-  "set medication" → action = "set_medication"
-  Entity = drug prescription content
-  "finish medication" → end_signal = true
-  Entity content EXCLUDES "finish medication"
-
-LLM output:
-{
-  "action":     "set_medication",
-  "entity":     "aspirin 100 milligrams and clopidogrel 75 milligrams",
-  "end_signal": true,
-  "confidence": 0.99
-}
-
-→ Ludyga's grammar: PARTIAL (handles "finish medication" but only via
-  exact FINISH MEDICATION token sequence)
-→ LLM: "finish medication" correctly identified as end signal regardless
-  of exact wording (would also handle "I'm done", "okay complete", etc.)
-```
-
-**Stage 3: ANTLR Frame Validation**
-```
-Canonical: "ok glasses set medication aspirin 100 milligrams and
-            clopidogrel 75 milligrams"
-Rule: SET_MED entity ✓
-Entity non-empty ✓
-end_signal=true → prescription closed ✓
-Frame: VALID
-```
-
-**Stage 4: Ontology Lookup (RxNorm)**
-```
-raw_entity = "aspirin 100 milligrams and clopidogrel 75 milligrams"
-action     = "set_medication"
-
-Parse medication list: ["aspirin 100 milligrams", "clopidogrel 75 milligrams"]
-
-Drug 1: "aspirin"
-  RxNorm lookup: exact match → RxCUI:1191, "Aspirin", medication ✓
-  Dose: 100 milligrams
-
-Drug 2: "clopidogrel"
-  RxNorm lookup: exact match → RxCUI:41493, "Clopidogrel", medication ✓
-  Dose: 75 milligrams
-
-semantic_type: medication (both drugs confirmed)
-```
-
-**Stage 5: Semantic Validation**
-```
-set_medication + medication → ✓ allowed
-```
-
-**Stage 6: Intent JSON**
-```json
-{
-  "status": "accepted",
-  "intent": "SET_MEDICATION",
-  "action": "set_medication",
-  "slots": {
-    "medication": [
-      {
-        "raw":           "aspirin 100 milligrams",
-        "drug_label":    "Aspirin",
-        "rxcui":         "RxCUI:1191",
-        "dose":          "100",
-        "dose_unit":     "milligrams",
-        "semantic_type": "medication",
-        "match_type":    "exact"
-      },
-      {
-        "raw":           "clopidogrel 75 milligrams",
-        "drug_label":    "Clopidogrel",
-        "rxcui":         "RxCUI:41493",
-        "dose":          "75",
-        "dose_unit":     "milligrams",
-        "semantic_type": "medication",
-        "match_type":    "exact"
-      }
-    ]
-  },
-  "explanation": {
-    "llm_extraction":      "'Set medication' mapped to action 'set_medication'. End signal 'finish medication' detected; excluded from entity.",
-    "grammar_validation":  "SET_MED entity frame valid. Prescription closed (end_signal=true).",
-    "ontology_evidence":   "Aspirin (RxCUI:1191) and Clopidogrel (RxCUI:41493) confirmed as medications via RxNorm.",
-    "semantic_validation": "set_medication allows slot type 'medication'. Both drugs confirmed. Accepted."
-  }
-}
-```
-
-**Stage 7: User Confirmation**
-```
-Glasses display:
-  "Set medication:
-     Aspirin 100 mg
-     Clopidogrel 75 mg
-   Correct?"
-
-User says: "ok glasses, correct"
-→ CONFIRMED
-→ Prescription committed to patient record
-
-Note: Medication commands are high-criticality; auto-timeout confirmation
-is disabled by default. Explicit verbal confirmation is always required.
-```
-
----
-
-## Example 4: `"set medication paracetamol"`
+## Example: `"set medication paracetamol"`
 *No dose or unit given. Shows that a Stage 3 structural rejection isn't a dead end — Stage 6 explains specifically what's missing, built from config, not a raw parser error.*
 
 ---
@@ -810,7 +474,7 @@ Frame: INVALID
   "status": "rejected",
   "reason": "invalid_structure",
   "action": "set_medication",
-  "original_command": "set medication paracetamol",
+  "original_command": "ok glasses set medication paracetamol",
   "explanation": {
     "llm_extraction":     "Action 'set_medication' extracted with confidence 0.9.",
     "grammar_validation":  "Frame invalid: PARSE_ERROR: col 55: no viable alternative at input 'setmedicationparacetamolfinishmedication'."
@@ -831,11 +495,8 @@ a numeric dose and unit, e.g. 'paracetamol 100 mg'. Please repeat with the
 missing detail.
 
 No confirm/reject prompt is issued -- there is nothing resolved to confirm
-or deny (no dose was ever extracted). The pipeline (--interactive/--voice)
-still prompts: "Please repeat the command."
-
-Doctor says: "ok glasses set medication paracetamol 100 mg"
--> Pipeline re-runs -> Stage 3 passes -> proceeds to Stage 4/5/6/7 normally
+or deny (no dose was ever extracted). The user says the corrected command
+again, with the trigger phrase, and it runs through the whole pipeline.
 ```
 
 **Why this is better than the previous behaviour:** before this, any Stage 3
@@ -851,7 +512,7 @@ clarification from.
 
 ## Supervisor's Test Cases: Hemodialysis
 
-These are the two use cases of the supervisor. The outputs below are real: they come from a stored run of the final evaluation (DeepSeek-V4.1-Flash, first run), command by command, stage by stage. The same two commands are the worked example of the thesis (Section 5.7).
+These are the two use cases of the supervisor. The outputs below are real: they come from the final evaluation run of 8 November 2026 (DeepSeek-V4.1-Flash, 500 tokens, repetition 1, `evaluation/final_run/runs/`), stage by stage. The same two commands are the worked examples of the thesis (Section 5.4.2 and Appendix B.1). The evaluation adds the trigger phrase, so the recorded original command starts with "ok glasses".
 
 ---
 
@@ -865,12 +526,13 @@ Input:   start HD
 Stage 1: start hemodialysis
          (abbreviation expanded: HD -> hemodialysis)
 Stage 2: {"action": "start", "entity": "hemodialysis",
-          "end_signal": false, "confidence": 0.97}
+          "end_signal": false, "confidence": 0.98}
 Stage 3: ok glasses start treatment hemodialysis -> valid (command_type treatment)
 Stage 4: Hemodialysis, NCIt:C15248, procedure, exact match, score 1.0
 Stage 5: accepted ('procedure' is allowed for 'start')
 Stage 6: intent START_PROCEDURE (full output below)
-Stage 7: "Start: Hemodialysis. Correct?"   -> "ok glasses, correct" -> confirmed
+Stage 7: "Start: Hemodialysis. Correct?"   -> "correct" -> confirmed (explicit answer required for start;
+         nothing is executed, no clinical application is connected)
 ```
 
 Stage 6 output:
@@ -879,7 +541,7 @@ Stage 6 output:
   "status": "accepted",
   "intent": "START_PROCEDURE",
   "action": "start",
-  "original_command": "start HD",
+  "original_command": "ok glasses start HD",
   "urgency": [],
   "slots": {
     "procedure": {
@@ -893,7 +555,7 @@ Stage 6 output:
     }
   },
   "explanation": {
-    "llm_extraction": "Action 'start' extracted with confidence 0.97. Abbreviations expanded: {'HD': 'hemodialysis'}.",
+    "llm_extraction": "Action 'start' extracted with confidence 0.98. Abbreviations expanded: {'HD': 'hemodialysis'}.",
     "grammar_validation": "Frame valid. command_type=treatment.",
     "ontology_evidence": "'hemodialysis' matched ncit concept NCIt:C15248 via exact at score 1.00.",
     "semantic_validation": "'procedure' \u2208 allowed_slot_types for 'start'"
@@ -919,9 +581,12 @@ Stage 4: not found in DOID and HPO (the indexes of a diagnosis);
 Stage 5: type_mismatch ('procedure'; a diagnosis expects disease,
          symptom, condition, or finding)
 Stage 6: status needs_clarification (full output below)
-Stage 7: "I heard 'hemodialysis' and recognised it as a procedure,
+Stage 7: clarification_requested, no yes/no question:
+         "I heard 'hemodialysis' and recognised it as a procedure,
           not a disease/symptom/condition/finding.
-          Did you mean something else? Please repeat or confirm."
+          Please say the corrected command."
+         Saying "yes" does not confirm it; the corrected command needs
+         the trigger phrase and runs through the whole pipeline again.
 ```
 
 Stage 6 output:
@@ -931,7 +596,7 @@ Stage 6 output:
   "reason": "type_mismatch",
   "intent_attempted": "DIAGNOSIS_DISEASE",
   "action": "diagnosis",
-  "original_command": "diagnosis hemodialysis",
+  "original_command": "ok glasses diagnosis hemodialysis",
   "raw_entity": "hemodialysis",
   "expected_semantic_types": [
     "disease",
@@ -946,7 +611,7 @@ Stage 6 output:
     "ontology_evidence": "'hemodialysis' was found as a 'procedure' ('Hemodialysis') in a different ontology index, not in the index searched for this action.",
     "semantic_validation": "'Hemodialysis' is a 'procedure' \u2014 'diagnosis' expects one of ['disease', 'symptom', 'condition', 'finding']"
   },
-  "clarification_message": "I heard 'hemodialysis' and recognised it as a procedure, not a disease/symptom/condition/finding. Did you mean something else? Please repeat or confirm.",
+  "clarification_message": "I heard 'hemodialysis' and recognised it as a procedure, not a disease/symptom/condition/finding. Please say the corrected command.",
   "resolved_entity": {
     "matched_label": "Hemodialysis",
     "concept_id": null,
@@ -966,20 +631,20 @@ Stage 6 output:
 
 ## Evaluation Results
 
-Evaluated on 243 commands (130 valid, 113 invalid) with six systems (four language models; DeepSeek and gpt-oss with 500 and with 4000 tokens), three repetitions each, and the baseline B0 (Ludyga's grammar). The evaluation was made twice. The numbers are from the first run. The full results are in the thesis (Chapter 7), in `evaluation/reports/final/`, and in `evaluation/reports/tables/results_summary.md`.
+Final run of 8 November 2026: 243 commands (130 valid, 113 invalid), six systems (four language models; DeepSeek and gpt-oss with 500 and with 4000 tokens), three repetitions each, and the baseline B0 (Ludyga's grammar). The full results are in the thesis (Chapter 7) and in `evaluation/final_run/reports/final/`.
 
 | Metric | B0 (Ludyga's grammar) | Pipeline (six systems) |
 |---|---|---|
-| Accuracy | 70.8 % | 90.1 to 95.9 % |
-| Valid commands accepted | 46.2 % | 83.1 to 96.9 % |
-| Invalid commands wrongly accepted | 0.9 % | 1.8 to 7.1 % |
-| Median response time | 0.1 ms | 0.37 to 1.55 s |
+| Accuracy | 70.8 % | 91.1 to 95.8 % |
+| Valid commands accepted | 46.2 % | 84.9 to 96.7 % |
+| Invalid commands wrongly accepted | 0.9 % | 1.8 to 6.2 % |
+| Median response time | about 16 ms | 0.42 to 1.08 s |
 
-The best system is Gemma 4 (accuracy 95.9 %, median 0.37 s). The rise in wrongly accepted invalid commands is the price of the flexibility: Ludyga's grammar rejects almost everything it does not know, including valid commands. The second run gives the same decisions, and the response times depend on the load of the model service.
+The best system is Gemma 4 (accuracy 95.8 %, median 0.42 s). The rise in wrongly accepted invalid commands is the price of the flexibility: Ludyga's grammar rejects almost everything it does not know, including valid commands. Two earlier runs (3 to 5 November, `evaluation/old_runs/`) give accuracies within about one percentage point; the response times depend on the load of the model service.
 
 **Where commands stop** (Gemma 4, first repetition): of the 113 invalid commands, the language model stops 100, Stage 1 stops 5 (not speech), Stage 3 stops 2, and Stage 5 stops 4 (type mismatch). Two are accepted. Of the 130 valid commands, 122 are accepted, 6 are sent to clarification by Stage 5 (entity not found), and 2 are rejected by the language model.
 
-**Remaining false accepts:** two type-mismatch commands are accepted by all systems, because their entity is also the name of a laboratory procedure in the NCI Thesaurus (a name collision, see `docs/findings.md`, Finding 2). Llama 3.3 accepts six more, which are ambiguous or out-of-domain requests that it maps to an action.
+**Remaining false accepts** (first repetition): two type-mismatch commands, "start hemolysis" and "stop hemolysis", are accepted by all systems, because "hemolysis" is also a synonym of the laboratory term "Hemolytic Index" in the NCI Thesaurus (a name collision). Llama 3.3 accepts five more, which are ambiguous or out-of-domain requests that it maps to an action; gpt-oss accepts one or two such requests.
 
 ---
 
@@ -1011,6 +676,6 @@ Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md), as 
 4. **Stage 4 patterns**: two UML class diagrams (entity strategies and ontology loaders; `_STRATEGIES` and `_FORMAT_LOADERS` act as registries)
 
 ---
-*Document version 3.0, November 2026*
+*Document version 3.1, 22 November 2026 (final run of 8 November 2026)*
 *Master Thesis: Improving Intent Recognition in Grammar-Based Voice Interfaces*
 *Anushka Joshi, TU Dresden, Chair of Software Technology*

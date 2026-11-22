@@ -14,12 +14,15 @@ How it works:
   2. Feed to ANTLR lexer → parser.
   3. If parse errors → invalid. Otherwise return command_type from parse tree.
 """
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src" / "grammar"))
+
+from domain_loader import load as _get_domain_cfg
 
 from antlr4 import CommonTokenStream, InputStream
 from antlr4.error.ErrorListener import ErrorListener
@@ -38,7 +41,6 @@ def _sanitize(entity: str) -> str:
     (e.g. 'Dr.', '160/90', '37.2') and cause lexer errors.
     For structure checking we only care about words/numbers, not punctuation.
     """
-    import re
     # Decimals ('2.5 mg') would otherwise split into two INT tokens
     entity = re.sub(r"(?<=\d)[.,](?=\d)", "", entity)
     # Replace chars outside [a-zA-Z0-9 ] with a space (hyphens/apostrophes handled by Stage 1)
@@ -59,7 +61,6 @@ def _medication_core(entity: str) -> str:
     ('2 puffs every 4 hours as needed', 'once daily'), which the grammar
     cannot express. An optional 'at <time>' suffix is kept (rule u17).
     A missing dose or unit is left untouched so the parser still rejects it."""
-    import re
     tail = ""
     m = re.search(r"\s+at\s+\d+\s*(oclock|pm|am)\s*$", entity, flags=re.IGNORECASE)
     if m:
@@ -107,7 +108,7 @@ class _ErrorCollector(ErrorListener):
 
 # ── Command-type extraction from parse tree ───────────────────────────────────
 
-def _command_type(tree, parser) -> str:
+def _command_type(tree) -> str:
     """Walk one level below 'command' to extract the command type name."""
     if tree.getChildCount() < 2:
         return "unknown"
@@ -123,20 +124,9 @@ def _command_type(tree, parser) -> str:
 @dataclass
 class FrameResult:
     valid:          bool
-    reason:         str   # "OK" | "INVALID_ACTION" | "PARSE_ERROR" | "MISSING_ENTITY"
+    reason:         str   # "OK" | "INVALID_ACTION" | "UNEXPECTED_ENTITY" | "PARSE_ERROR: <details>"
     canonical_form: str
     command_type:   str   # e.g. "request_data", "set_medication", "diagnosis"
-
-
-_domain_cfg: dict | None = None
-
-
-def _get_domain_cfg() -> dict:
-    global _domain_cfg
-    if _domain_cfg is None:
-        from domain_loader import load as _domain_load
-        _domain_cfg = _domain_load()
-    return _domain_cfg
 
 
 def _valid_actions() -> set[str]:
@@ -152,7 +142,8 @@ def validate(action: str, entity: str, recipient: str = "") -> FrameResult:
     entity = entity.strip()
 
     if action not in _valid_actions():
-        return FrameResult(False, "INVALID_ACTION", f"ok glasses {action} {entity}".strip(), "unknown")
+        trigger = _get_domain_cfg()["trigger_phrase"]
+        return FrameResult(False, "INVALID_ACTION", f"{trigger} {action} {entity}".strip(), "unknown")
 
     # Quick pre-check: entity-forbidden actions
     if action in _entity_forbidden() and entity:
@@ -180,7 +171,7 @@ def validate(action: str, entity: str, recipient: str = "") -> FrameResult:
         reason = "PARSE_ERROR: " + "; ".join(listener.errors)
         return FrameResult(False, reason, canonical, "unknown")
 
-    cmd_type = _command_type(tree, parser)
+    cmd_type = _command_type(tree)
     return FrameResult(True, "OK", canonical, cmd_type)
 
 
@@ -205,8 +196,7 @@ if __name__ == "__main__":
         ("stop",             "hemodialysis"),
         ("stop",             ""),
         ("change_patient",   "John Smith"),
-        ("send_message",     "patient is ready"),        # FAIL — no recipient
-        ("send_message",     "patient is ready|Dr Smith"), # note: pass recipient separately
+        ("send_message",     "patient is ready"),   # FAIL — no recipient
         ("not_an_action",    ""),                   # FAIL
     ]
     for action, entity in cases:

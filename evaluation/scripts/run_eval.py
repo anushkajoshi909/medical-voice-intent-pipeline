@@ -37,13 +37,11 @@ Usage
 """
 import argparse
 import csv
-import dataclasses
 import hashlib
 import json
 import logging
 import platform
 import random
-import re
 import statistics
 import subprocess
 import sys
@@ -58,6 +56,7 @@ sys.path.insert(0, str(ROOT / "baseline_ludyga"))
 logging.disable(logging.CRITICAL)  # silence Ludyga's internal logging
 
 import run_pipeline as rp  # noqa: E402
+from common import json_default, norm_entity, pct  # noqa: E402
 from stage2_llm_extract import get_client  # noqa: E402
 
 DEFAULT_MODELS = [
@@ -100,16 +99,6 @@ def git(*args) -> str:
         return "unavailable"
 
 
-def json_default(o):
-    if dataclasses.is_dataclass(o) and not isinstance(o, type):
-        return dataclasses.asdict(o)
-    return str(o)
-
-
-def pct(x, n):
-    return round(100 * x / n, 1) if n else None
-
-
 def percentile(values, q):
     if not values:
         return None
@@ -120,6 +109,10 @@ def percentile(values, q):
 
 
 # ── timing wrappers around the existing stage functions ──────────────────────
+# install_timers() replaces the six stage functions inside run_pipeline with
+# wrapped versions that store their duration in CUR (one dict per command, cleared
+# in run_hybrid). The pipeline code itself stays free of timing code. The replay
+# replaces rp.extract in the same way with a stand-in that returns the stored answer.
 
 CUR: dict = {}
 
@@ -222,12 +215,6 @@ def metrics_from(c):
 
 def norm(s):
     return " ".join(str(s or "").lower().split())
-
-
-def norm_entity(s):
-    """Entity comparison ignores punctuation: Stage 1 removes it from the input, but the LLM
-    sometimes writes it back into its output (o'clock, a comma between two drugs)."""
-    return " ".join(re.sub(r"[^\w\s/]", " ", str(s or "").lower()).split())
 
 
 def explanation_metrics(rows, action_cfg):
@@ -358,7 +345,6 @@ def write_meta(run_dir, meta):
 
 
 def run_hybrid(client, model, items, rep, run_dir, meta, replay=False):
-    cfg = rp._action_cfg()
     order = list(range(len(items)))
     random.Random(rep).shuffle(order)          # order differs per repetition, reproducible
     meta["shuffle_seed"] = rep

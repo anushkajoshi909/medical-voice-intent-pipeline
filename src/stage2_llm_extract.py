@@ -15,16 +15,12 @@ failure kinds: "api" (call failed, or content is null), "syntax" (empty or
 non-JSON text), and
 "schema" (JSON that breaks the schema).
 
-LLM selection rationale (SCADS.AI, tested 2026-07):
-  alias-ha  = Llama 3.3 70B Instruct — chosen for production.
-              Best speed/quality tradeoff; 70B models are well-established
-              for reliable structured JSON output and medical NL understanding.
-  alias-reasoning = thinking model (slower, ~10x latency).
-              Used only for thesis evaluation comparison, not real-time pipeline.
-  Llama-3.1-8B = too small; inconsistent JSON formatting on edge cases.
+Model: any chat model of the ScaDS.AI service. The model is taken from
+.selected_model (written by the --select picker), otherwise "alias-ha". The
+evaluation passes the model explicitly (run_eval.py --models): Llama 3.3 70B,
+Gemma 4 26B, gpt-oss-120b and DeepSeek V4.1 Flash (evaluation/evaluation.md).
 """
 import json
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -166,7 +162,7 @@ def parse_extraction(raw: str, model: str) -> LLMResult:
     )
 
 
-def _select_model_interactive(client: OpenAI) -> str:
+def select_model_interactive(client: OpenAI) -> str:
     """List available chat models and let user pick by number."""
     SKIP = ["embedding", "reranker", "stable-diffusion", "flux", "kokoro", "tts", "whisper", "stt"]
     models = [m.id for m in client.models.list().data
@@ -191,7 +187,7 @@ def _select_model_interactive(client: OpenAI) -> str:
 
 if __name__ == "__main__":
     client = get_client()
-    model = _select_model_interactive(client)
+    model = select_model_interactive(client)
     test_cases = [
         "illustrate the patients medical history",
         "halt animation",

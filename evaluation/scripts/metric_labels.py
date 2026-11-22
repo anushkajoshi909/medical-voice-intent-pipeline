@@ -1,4 +1,4 @@
-"""Display names of the extraction metrics and the label counts behind them (Finding 12).
+"""Display names of the extraction metrics and the label counts behind them.
 
 Only the names shown in reports and figures are defined here. The JSON keys of the
 run folders and reports (action_accuracy_pct, entity_accuracy_pct, ...) and the

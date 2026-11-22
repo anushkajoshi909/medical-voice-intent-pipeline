@@ -27,7 +27,7 @@ The enhanced pipeline keeps ANTLR for the structure and splits the work of the o
 
 ![Design alternatives: A is Ludyga's grammar, E is this thesis](figures/flow_alternatives.png)
 
-![The seven stages and the three possible outcomes](figures/pipeline_architecture.png)
+![The seven stages and the four Stage 6 result statuses](figures/pipeline_architecture.png)
 
 ## Comparison: Ludyga's Baseline and This Thesis
 
@@ -41,15 +41,15 @@ The enhanced pipeline keeps ANTLR for the structure and splits the work of the o
 | Result | A JSON object with the type and the content, or an empty result without a reason. | A structured intent with a reason and an explanation for each stage (Stage 6). |
 | Confirmation | None. | The interpretation is shown to the user before it is acted on (Stage 7). |
 | Definition of the domain | The grammar and the code that builds the JSON. | A configuration file, the grammar, the ontology files, and the abbreviation list. The stages are the same for every domain. |
-| Response time | 195 ms on average (Ludyga); about 0.1 ms in our measurement. | A median of 0.4 to 1.6 s. The call to the language model takes almost all of it. |
+| Response time | 195 ms on average (Ludyga); a median of about 16 ms in the final run of this thesis. | A median of 0.42 to 1.08 s in the final run. The call to the language model takes almost all of it. |
 
 ## Result
 
-On 243 commands (130 valid, 113 invalid), with three repetitions for each model (first run):
+On 243 commands (130 valid, 113 invalid), with three repetitions for each model (final run of 8 November 2026):
 
 | System | Accuracy | Valid accepted | Invalid wrongly accepted |
 |---|---|---|---|
 | B0, Ludyga's grammar | 70.8 % | 46.2 % | 0.9 % |
-| Pipeline, six systems (four models, two token budgets) | 90.1 to 95.9 % | 83.1 to 96.9 % | 1.8 to 7.1 % |
+| Pipeline, six systems (four models, two token budgets) | 91.1 to 95.8 % | 84.9 to 96.7 % | 1.8 to 6.2 % |
 
-Gemma 4 has the highest accuracy, 95.9 %, and the lowest median response time, 0.37 s in the first run and 0.77 s in a second run (the time depends on the load of the model service). The full results, the response times, and the analysis are in Chapter 7 of the thesis and in `evaluation/reports/final/`.
+Gemma 4 has the highest accuracy, 95.8 %, and the lowest median response time, 0.42 s (the time depends on the load of the model service). The full results, the response times, and the analysis are in Chapter 7 of the thesis and in `evaluation/final_run/reports/final/`.

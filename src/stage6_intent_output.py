@@ -14,7 +14,7 @@ Statuses produced:
                            structure_hint in domain_config.yaml — but this
                            does NOT go through Stage 7's confirm/reject
                            dialogue, since nothing concrete was resolved to
-                           confirm or deny (see docs/findings.md Finding 3).
+                           confirm or deny.
   accepted              — Stage 5 status "accepted" or "skipped", end_signal
                            true (or action has no end-of-dictation concept)
   accepted_partial      — free-text action (set_note, send_message) still
@@ -32,11 +32,6 @@ driven by domain_config.yaml.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
-import sys
-
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
 
 _FREE_TEXT_TYPES = {"free_text"}
 
@@ -114,6 +109,17 @@ def _ontology_explanation(stage4, action_info: dict) -> str:
     return f"{stage4.raw_entity!r} was not found in any configured ontology index."
 
 
+def _explanation(stage1, stage2, stage3, stage4, stage5, action_info: dict,
+                 ontology_evidence: str | None = None) -> dict:
+    """The explanation block of a payload: one sentence per stage (Stages 2-5)."""
+    return {
+        "llm_extraction":      _llm_explanation(stage1, stage2),
+        "grammar_validation":  _grammar_explanation(stage3),
+        "ontology_evidence":   ontology_evidence or _ontology_explanation(stage4, action_info),
+        "semantic_validation": stage5.reason,
+    }
+
+
 def _structure_clarification(stage2, stage3, action_info: dict) -> str | None:
     """Turn a Stage 3 structural failure into an actionable message, when
     there's enough known (action + entity) to say something specific.
@@ -181,12 +187,7 @@ def _compound_clarification(original_text, stage1, stage2, stage3, stage4, stage
         "urgency": urgency,
         "drugs": _drug_slot_list(stage4.drug_list),
         "unresolved_segments": missing + wrong,
-        "explanation": {
-            "llm_extraction":      _llm_explanation(stage1, stage2),
-            "grammar_validation":  _grammar_explanation(stage3),
-            "ontology_evidence":   _ontology_explanation(stage4, action_info),
-            "semantic_validation": stage5.reason,
-        },
+        "explanation": _explanation(stage1, stage2, stage3, stage4, stage5, action_info),
         "clarification_message": f"{problem}{known} Please say the corrected command.",
     }
     return IntentResult("needs_clarification", payload)
@@ -272,12 +273,7 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
             "raw_entity": stage4.raw_entity,
             "expected_semantic_types": stage5.allowed_types,
             "urgency": urgency,
-            "explanation": {
-                "llm_extraction":      _llm_explanation(stage1, stage2),
-                "grammar_validation":  _grammar_explanation(stage3),
-                "ontology_evidence":   _ontology_explanation(stage4, action_info),
-                "semantic_validation": stage5.reason,
-            },
+            "explanation": _explanation(stage1, stage2, stage3, stage4, stage5, action_info),
             "clarification_message": clarification_message,
         }
         if resolved_entity is not None:
@@ -302,12 +298,8 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
                     "note_state": "open -- awaiting end-of-dictation signal",
                 }
             },
-            "explanation": {
-                "llm_extraction":      _llm_explanation(stage1, stage2),
-                "grammar_validation":  _grammar_explanation(stage3),
-                "ontology_evidence":   "Free-text slot; no ontology lookup.",
-                "semantic_validation": stage5.reason,
-            },
+            "explanation": _explanation(stage1, stage2, stage3, stage4, stage5, action_info,
+                                        ontology_evidence="Free-text slot; no ontology lookup."),
         }
         return IntentResult("accepted_partial", payload)
 
@@ -329,11 +321,6 @@ def assemble(original_text: str, stage1, stage2, stage3, stage4, stage5, action_
         "original_command": original_text,
         "urgency": urgency,
         "slots": slots,
-        "explanation": {
-            "llm_extraction":      _llm_explanation(stage1, stage2),
-            "grammar_validation":  _grammar_explanation(stage3),
-            "ontology_evidence":   _ontology_explanation(stage4, action_info),
-            "semantic_validation": stage5.reason,
-        },
+        "explanation": _explanation(stage1, stage2, stage3, stage4, stage5, action_info),
     }
     return IntentResult("accepted", payload)

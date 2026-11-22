@@ -12,11 +12,8 @@ Possible statuses:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
-import sys
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
+from domain_loader import load as _domain
 
 
 @dataclass
@@ -27,21 +24,6 @@ class Stage5Result:
     reason: str = ""
 
 
-# ── config cache ─────────────────────────────────────────────────────────────
-
-_cfg: dict = {}
-_cfg_loaded = False
-
-
-def _action_config() -> dict:
-    global _cfg, _cfg_loaded
-    if not _cfg_loaded:
-        from domain_loader import load as _load
-        _cfg = _load()["action_config"]
-        _cfg_loaded = True
-    return _cfg
-
-
 # ── main entry point ─────────────────────────────────────────────────────────
 
 def validate(action: str, stage4) -> Stage5Result:
@@ -49,8 +31,7 @@ def validate(action: str, stage4) -> Stage5Result:
     action  — Stage 2 action name (e.g. 'diagnosis')
     stage4  — OntologyResult from stage4_ontology_lookup.lookup()
     """
-    cfg         = _action_config()
-    action_info = cfg.get(action, {})
+    action_info = _domain()["action_config"].get(action, {})
     allowed     = action_info.get("allowed_slot_types", [])
     ont_index   = action_info.get("ontology_index")
     pass_type   = action_info.get("passthrough_type")

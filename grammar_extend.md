@@ -15,7 +15,7 @@ Ludyga's grammar covers the use cases documented in the original system. It does
 
 **2. `start treatment` -- does not exist**
 
-In Ludyga's grammar, `START` appears only in two places:
+In Ludyga's grammar, `START` begins four commands, each recognised by its second keyword: start emergency, start documentation, start message, and start medication, for example:
 ```antlr
 u09: START EMERGENCY;                          // emergency launch
 trig_medication: (SET | START);                // medication trigger
@@ -94,7 +94,7 @@ DIAGNOSIS : 'diagnosis' ;
 
 ### 2. `treatment` command type: new (u22)
 
-**Ludyga had:** `START` appeared only in:
+**Ludyga had:** `START` only in commands with a fixed second keyword (emergency, documentation, message, medication), for example:
 - `u09: START EMERGENCY` (emergency launch)
 - `trig_medication: SET | START` (medication trigger)
 

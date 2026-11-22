@@ -14,7 +14,6 @@ OBO (Open Biomedical Ontologies) and OWL (Web Ontology Language) are two formats
 | Format | Plain text, human-readable | XML/RDF |
 | Parser | Standard Python string parsing | Requires `owlready2` + Java reasoner |
 | Semantic reasoning | No — lookup only | Yes — can infer new relationships |
-| File size (DOID) | ~55 MB | ~90 MB |
 | Use case | Term lookup, synonym matching | Formal inference, consistency checking |
 
 **We do not need OWL because we do not reason — we look up.**
@@ -31,11 +30,11 @@ OWL reasoning would be needed if we wanted to ask questions like: *"All subclass
 - **File:** `ontologies/doid.obo`
 - **Source:** OBO Foundry / disease-ontology.org
 - **License:** CC0 1.0 (public domain)
-- **Provides semantic types:** `disease`, `condition`, `finding`
+- **Semantic type assigned:** `disease` (set in `domain_config.yaml`, not read from the ontology)
 - **Why chosen:**
   - Open OBO format — no registration or license required
   - Covers the full spectrum of human diseases with rich synonym sets
-  - Directly relevant to the central thesis use case: `diagnosis hemolysis` (DOID:3680) vs `diagnosis hemodialysis` (procedure — not in DOID)
+  - Directly relevant to the central thesis use case: `diagnosis hemolysis` (a condition) vs `diagnosis hemodialysis` (a procedure, not in DOID)
   - Standard ontology used in biomedical NLP research
 
 ---
@@ -44,7 +43,7 @@ OWL reasoning would be needed if we wanted to ask questions like: *"All subclass
 - **File:** `ontologies/hp.obo`
 - **Source:** hpo.jax.org / OBO Foundry
 - **License:** Free for academic and research use
-- **Provides semantic types:** `symptom`, `clinical_finding`
+- **Semantic type assigned:** `symptom` (set in `domain_config.yaml`)
 - **Why chosen:**
   - Complements DOID: DOID covers disease entities, HPO covers observable symptoms
   - Clinicians often speak in symptom terms ("shortness of breath", "chest pain")
@@ -56,7 +55,7 @@ OWL reasoning would be needed if we wanted to ask questions like: *"All subclass
 - **File:** `ontologies/RXNCONSO.RRF`
 - **Source:** U.S. National Library of Medicine (NLM)
 - **License:** Public domain — no license required for Prescribable Content subset
-- **Provides semantic types:** `medication`
+- **Semantic type assigned:** `medication`; term types IN, BN, PIN, MIN
 - **Why chosen:**
   - Gold standard for drug name normalisation in clinical informatics
   - Prescribable Content contains all currently prescribable drugs — exactly the scope needed
@@ -71,12 +70,12 @@ OWL reasoning would be needed if we wanted to ask questions like: *"All subclass
 - **Source:** NCI Enterprise Vocabulary Services (EVS) — evs.nci.nih.gov
 - **License:** NCI Thesaurus Terms of Use — free for research and educational use
 - **Format:** Tab-delimited flat file (9 columns: code, IRI, parents, synonyms, definition, display_name, concept_status, semantic_type, concept_in_subset)
-- **Provides semantic types:** `treatment`, `procedure`
+- **Semantic type assigned:** `procedure`
 - **Why chosen:**
   - NCIt is the NCI's reference terminology covering 120,000+ biomedical concepts
   - Includes full procedure/intervention hierarchy with concept codes and synonyms
   - Free download, no registration required
-  - We filter at load time to rows where `semantic_type` = "Therapeutic or Preventive Procedure" or "Intervention or Procedure" — extracting only the ~5,000 procedure concepts we need
+  - We filter at load time to rows whose semantic type is "Therapeutic or Preventive Procedure", "Laboratory Procedure", or "Diagnostic Procedure" (`filter_semantic_types` in `domain_config.yaml`), about 16,000 concepts. Because laboratory procedures are included, some drug names collide with laboratory terms (e.g. "Heparin Measurement"); see Chapter 7 of the thesis
   - Provides citable concept IDs (NCIt codes) for procedures — replaces the need for SNOMED CT
 - **Note:** Only the FLAT format is used (not OWL) — see "Why OBO and Not OWL" above
 
@@ -88,9 +87,9 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
 
 ### 5. `vital_signs.json`
 - **Provides semantic types:** `vital_sign`, `lab_result`
-- **Entries:** 44 terms (12 vital signs, 32 lab results)
+- **Entries:** 43 terms (11 vital signs, 32 lab results)
 - **Structure:** `{label, synonyms[], semantic_type}`
-- **Why curated:** NCIt was investigated but does not provide a usable `vital_sign` semantic type — blood pressure is classified as `Finding`, not as a vital sign measurement. LOINC covers this domain but requires registration (rejected). A curated vocabulary of 44 entries covers all vital sign and lab result entities in the evaluation set.
+- **Why curated:** NCIt was investigated but does not provide a usable `vital_sign` semantic type — blood pressure is classified as `Finding`, not as a vital sign measurement. LOINC covers this domain but requires registration (rejected). A curated vocabulary of 43 entries covers all vital sign and lab result entities in the evaluation set.
 - **Example resolutions:**
   - `"show blood pressure"` → entity=`"blood pressure"` → exact match → `semantic_type=vital_sign` → `show` allows `vital_sign` → **ACCEPTED**
   - `"show BP"` → Stage 1 expands BP → `"blood pressure"` → exact match → `semantic_type=vital_sign` → **ACCEPTED**
@@ -122,11 +121,11 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
 - Download requires mandatory user registration at loinc.org — not freely downloadable without an account, making automated or reproducible pipeline setup impractical.
 - 95,000+ observation codes — far larger than needed for this use case.
 - LOINC names are observation-centric and verbose ("2160-0: Creatinine [Mass/volume] in Serum or Plasma") — not matchable against short speech entities like "creatinine" or "INR".
-- **What we use instead:** Curated `vital_signs.json` — 44 entries covering all vital sign and lab result entities in the evaluation set. NCIt was also investigated but does not provide a usable vital_sign semantic type (blood pressure appears as "Finding" in NCIt, not as a vital sign measurement).
+- **What we use instead:** Curated `vital_signs.json` — 43 entries covering all vital sign and lab result entities in the evaluation set. NCIt was also investigated but does not provide a usable vital_sign semantic type (blood pressure appears as "Finding" in NCIt, not as a vital sign measurement).
 
 ### Full RxNorm Monthly Release
 - **Not used — license and size**
-- Requires UMLS license. ~500MB vs ~50MB for Prescribable Content.
+- Requires UMLS license and is much larger than the Prescribable Content file used here (about 31 MB).
 - Prescribable Content covers all currently prescribable drugs — full release adds retired and non-prescribable substances not relevant to this use case.
 
 ---
@@ -135,10 +134,11 @@ These are not ontologies. They are **controlled vocabularies** — flat lookup t
 
 | `allowed_slot_types` in domain_config | Ontology source |
 |---|---|
-| `disease`, `condition`, `finding` | DOID (`doid.obo`) |
+| `disease` | DOID (`doid.obo`) |
 | `symptom` | HPO (`hp.obo`) |
+| `condition`, `finding`, `treatment` | Allowed for `diagnosis` (condition, finding) and `start`/`stop` (treatment), but no index assigns them in the current configuration |
 | `medication` | RxNorm Prescribable (`RXNCONSO.RRF`) |
-| `treatment`, `procedure` | NCI Thesaurus (`Thesaurus.txt`) |
+| `procedure` | NCI Thesaurus (`Thesaurus.txt`) |
 | `vital_sign`, `lab_result` | Curated `vital_signs.json` |
 | `ehr_record` | No lookup — passthrough fallback for `show` entities not matched in `vital_signs.json` |
 | `free_text` | No lookup — raw text stored as-is |

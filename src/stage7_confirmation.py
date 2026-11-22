@@ -42,6 +42,7 @@ from typing import Callable, Optional
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from domain_loader import load as _domain
 from stage1_preprocess import strip_trigger
 
 _CONFIRM_WORDS = {"correct", "yes", "yeah", "yep", "confirm", "confirmed",
@@ -62,19 +63,11 @@ class Stage7Result:
     final_message: str
 
 
-# ── config cache ─────────────────────────────────────────────────────────────
-
-_cfg: dict = {}
-_cfg_loaded = False
-
+# ── configuration ────────────────────────────────────────────────────────────
 
 def _action_cfg() -> dict:
-    global _cfg, _cfg_loaded
-    if not _cfg_loaded:
-        from domain_loader import load as _load
-        _cfg = _load()["action_config"]
-        _cfg_loaded = True
-    return _cfg
+    """Per-action settings from domain_config.yaml (confirmation_timeout_sec)."""
+    return _domain()["action_config"]
 
 
 # ── prompt construction ──────────────────────────────────────────────────────
