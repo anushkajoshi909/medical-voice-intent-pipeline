@@ -20,14 +20,19 @@ Adding a new action or new entity format:
 
 Matching order: exact → synonym → fuzzy (difflib, per-index cutoff) → none
 Indices are built lazily on the first lookup call and cached for the session.
+
+Two parts are specific to this domain: the "domain_config_canonical" loader reads
+the record types of the "show" action, and the "medication" extractor splits
+compound prescriptions on " and " (see _lookup_medication).
 """
 import json
 import re
 import sys
-import yaml
 from dataclasses import dataclass
-from difflib import get_close_matches
+from difflib import SequenceMatcher, get_close_matches
 from pathlib import Path
+
+from domain_loader import load as _domain
 
 ROOT = Path(__file__).resolve().parent.parent
 ONTO = ROOT / "ontologies"
@@ -61,6 +66,12 @@ class OntologyResult:
     clarification_type: str | None = None      # set when entity found in a DIFFERENT index
     clarification_canonical: str | None = None # canonical label from that global match
     drug_list: list | None = None              # list[DrugResult] for compound set_medication
+
+
+def not_found(raw_entity: str, **extra) -> OntologyResult:
+    """Result for an entity that was not resolved (extra: clarification or drug_list fields)."""
+    return OntologyResult(found=False, raw_entity=raw_entity, canonical=None, semantic_type=None,
+                          ontology_id=None, match_method="none", score=0.0, source=None, **extra)
 
 
 # ── Internal entry type ────────────────────────────────────────────────────────
@@ -125,10 +136,9 @@ def _load_json_labels(src: dict) -> list[tuple]:
 
 
 def _load_domain_config_show(src: dict) -> list[tuple]:
-    """Read closed-set EHR record types from actions.show.canonical_entities.
-    Uses the already-loaded _action_cfg — no second file read."""
+    """Read closed-set EHR record types from actions.show.canonical_entities."""
     rows = []
-    canon = _action_cfg.get("show", {}).get("canonical_entities", {})
+    canon = _domain()["action_config"].get("show", {}).get("canonical_entities", {})
     for stype, labels in canon.items():
         for label in labels:
             rows.append((label, stype, None, "domain_config", []))
@@ -283,7 +293,7 @@ def _ensure_loaded(verbose: bool = False) -> None:
 
     _msg("Loading ontologies …")
 
-    ont_cfg = yaml.safe_load((ROOT / "domain_config.yaml").read_text()).get("ontology_sources", {})
+    ont_cfg = _domain()["ontology_sources"]
 
     for index_name, index_info in ont_cfg.items():
         _msg(f"Building '{index_name}' index …")
@@ -354,8 +364,7 @@ def _match(query_norm: str, index_name: str) -> OntologyResult | None:
         best_nc = matches[0]
         entry = next((e for nc, e in fuzzy_list if nc == best_nc), None)
         if entry:
-            import difflib
-            score = difflib.SequenceMatcher(None, query_norm, best_nc).ratio()
+            score = SequenceMatcher(None, query_norm, best_nc).ratio()
             return OntologyResult(True, "", entry[0], entry[1], entry[2], "fuzzy", score, entry[3])
 
     return None
@@ -371,7 +380,7 @@ def _strategy_default(raw_entity: str, index_name: str) -> "OntologyResult | Non
 
 
 def _strategy_medication(raw_entity: str, index_name: str) -> "OntologyResult | None":
-    return _lookup_medication(raw_entity)
+    return _lookup_medication(raw_entity, index_name)
 
 
 _STRATEGIES: dict = {
@@ -380,24 +389,9 @@ _STRATEGIES: dict = {
 }
 
 
-# ── Action config (loaded lazily from domain_config.yaml) ─────────────────────
-
-_action_cfg: dict = {}
-_action_cfg_loaded = False
-
-
-def _ensure_action_config_loaded() -> None:
-    global _action_cfg, _action_cfg_loaded
-    if _action_cfg_loaded:
-        return
-    from domain_loader import load as _domain_load
-    _action_cfg = _domain_load()["action_config"]
-    _action_cfg_loaded = True
-
-
 # ── Medication helper (used by _strategy_medication) ──────────────────────────
 
-def _lookup_medication(raw_entity: str) -> OntologyResult | None:
+def _lookup_medication(raw_entity: str, index_name: str = "medication") -> OntologyResult | None:
     """Medication lookup for single and compound prescriptions.
 
     Splits on " and " and looks up every drug segment independently.
@@ -420,8 +414,8 @@ def _lookup_medication(raw_entity: str) -> OntologyResult | None:
         dose_part = seg[len(medicine):].strip() if seg.lower().startswith(medicine.lower()) else ""
 
         # Try exact segment first, then extracted medicine name
-        match = _match(_norm(seg), "medication") or (
-            _match(_norm(medicine), "medication") if medicine.lower() != seg.lower() else None
+        match = _match(_norm(seg), index_name) or (
+            _match(_norm(medicine), index_name) if medicine.lower() != seg.lower() else None
         )
 
         drug_results.append(DrugResult(
@@ -441,8 +435,7 @@ def _lookup_medication(raw_entity: str) -> OntologyResult | None:
 
     if len(drug_results) > 1 and not all(d.found for d in drug_results):
         # compound with at least one unresolved segment: keep every per-drug result
-        return OntologyResult(False, raw_entity, None, None, None, "none", 0.0, None,
-                              drug_list=drug_results)
+        return not_found(raw_entity, drug_list=drug_results)
 
     if first_match is None:
         return None
@@ -493,9 +486,7 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
     Call this only when Stage 3 passed (frame_valid=True) and action != "UNKNOWN".
     """
     raw_entity = raw_entity.strip()
-    _ensure_action_config_loaded()
-
-    action_info      = _action_cfg.get(action, {})
+    action_info      = _domain()["action_config"].get(action, {})
     ont_index        = action_info.get("ontology_index")    # None, str, or list[str]
     passthrough_type = action_info.get("passthrough_type")  # semantic type for passthrough
 
@@ -508,7 +499,7 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
                               None, "passthrough", 1.0, None)
 
     if not raw_entity:
-        return OntologyResult(False, raw_entity, None, None, None, "none", 0.0, None)
+        return not_found(raw_entity)
 
     _ensure_loaded(verbose=verbose)
 
@@ -555,13 +546,10 @@ def lookup(action: str, raw_entity: str, verbose: bool = False) -> OntologyResul
     searched = set(indexes) | ({fallback} if fallback else set())
     clarification = _global_clarification_search(_norm(raw_entity), searched)
     if clarification:
-        return OntologyResult(
-            False, raw_entity, None, None, None, "none", 0.0, None,
-            clarification_type=clarification.semantic_type,
-            clarification_canonical=clarification.canonical,
-        )
+        return not_found(raw_entity, clarification_type=clarification.semantic_type,
+                          clarification_canonical=clarification.canonical)
 
-    return OntologyResult(False, raw_entity, None, None, None, "none", 0.0, None)
+    return not_found(raw_entity)
 
 
 # ── Smoke test ────────────────────────────────────────────────────────────────

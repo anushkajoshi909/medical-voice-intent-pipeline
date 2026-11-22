@@ -1,4 +1,4 @@
-"""Finding 9: strict schema for the Stage 2 answer."""
+"""Strict schema for the Stage 2 answer."""
 import json
 import math
 import unittest

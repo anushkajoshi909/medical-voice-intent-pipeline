@@ -287,7 +287,8 @@ class TerminalModeKeepsWaitingInput(unittest.TestCase):
              mock.patch("termios.tcsetattr") as restore, \
              mock.patch("tty.setcbreak") as setcbreak, \
              mock.patch.object(rp.sys.stdin, "fileno", return_value=0):
-            with rp._cbreak_terminal():
+            import terminal_input
+            with terminal_input._cbreak_terminal():
                 pass
         setcbreak.assert_called_once_with(0, termios.TCSANOW)
         restore.assert_called_once_with(0, termios.TCSADRAIN, ["old"])   # restoring does not flush either

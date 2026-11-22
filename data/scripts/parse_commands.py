@@ -6,8 +6,8 @@ import json
 import re
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parent.parent / "baseline_ludyga_wiki" / "Language-samples.md"
-OUT = Path(__file__).resolve().parent.parent / "data" / "commands_200.json"
+SRC = Path(__file__).resolve().parents[2] / "baseline_ludyga_wiki" / "Language-samples.md"
+OUT = Path(__file__).resolve().parents[2] / "data" / "commands_200.json"
 
 CATEGORY_MAP = {
     "40 clearly invalid strings": ("invalid_garbage", False),

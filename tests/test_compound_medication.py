@@ -1,4 +1,4 @@
-"""Finding 11: every segment of a compound medication must resolve with an allowed type.
+"""Every segment of a compound medication must resolve with an allowed type.
 
 Uses the local ontology index (no remote calls) and a controlled Stage 2 result."""
 import unittest

@@ -309,7 +309,7 @@ ontology_sources:
 # data/annotated_commands.json — these teach the model a pattern to
 # generalise from, not the exact eval-set answer. Reword rather than reuse
 # eval-set phrasing if you add new examples (checked via a substring scan
-# against the eval set; see docs/findings.md Finding 6).
+# against the eval set).
 few_shot_examples:
   - input: "kick off the emergency protocol right away"
     output: '{"action":"emergency","entity":"","end_signal":false,"confidence":0.99}'

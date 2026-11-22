@@ -1,4 +1,4 @@
-"""Finding 7: clarification is separate from confirmation (and the trigger is not a 'yes')."""
+"""Clarification is separate from confirmation (and the trigger is not a 'yes')."""
 import unittest
 from unittest import mock
 

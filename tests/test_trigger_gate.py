@@ -1,4 +1,4 @@
-"""Finding 8: a new command needs the trigger phrase before any processing."""
+"""A new command needs the trigger phrase before any processing."""
 import unittest
 from unittest import mock
 
@@ -46,7 +46,7 @@ class Gate(unittest.TestCase):
             spy.assert_not_called()
         self.assertEqual(r["s6_status"], "inactive")
         self.assertEqual(r["s6_payload"]["reason"], "trigger_not_found")
-        self.assertFalse(r["binary_correct"])
+        self.assertFalse(r["action_correct"])       # scored as IGNORED: test_run_eval_scoring
 
     def test_inactive_result_has_the_normal_keys(self):
         client = FakeClient(answer("show", "heart rate"))

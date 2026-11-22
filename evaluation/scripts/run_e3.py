@@ -28,7 +28,6 @@ Usage: python evaluation/scripts/run_e3.py [--runs-dir DIR] [--tag TAG]
           folder instead of reusing (skipping to) an older one; run_all.py passes its 500-token tag
 """
 import argparse
-import collections
 import csv
 import json
 import logging
@@ -43,6 +42,7 @@ logging.disable(logging.CRITICAL)
 
 import stage4_ontology_lookup as s4  # noqa: E402
 import stage5_type_validate as s5    # noqa: E402
+from common import pct  # noqa: E402
 
 SET = ROOT / "data" / "labels" / "entity_resolution_gold.csv"
 
@@ -55,10 +55,6 @@ def resolved_ids(res):
     if getattr(res, "drug_list", None):
         return sorted(d.ontology_id for d in res.drug_list if d.ontology_id)
     return [res.ontology_id] if res.ontology_id else []
-
-
-def pct(a, b):
-    return round(100 * a / b, 1) if b else None
 
 
 def e3_folder_name(tag=None, day=None):

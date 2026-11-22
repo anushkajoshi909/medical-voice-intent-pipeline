@@ -1,0 +1,131 @@
+% Standalone review draft. Not included in the thesis.
+% Logical components summarise responsibilities implemented by Python modules;
+% they are not separate processes or deployed services.
+\documentclass[border=7mm]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{opensans}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,backgrounds}
+\begin{document}
+\fontfamily{opensans-TLF}\fontseries{l}\selectfont
+\begin{tikzpicture}[x=1cm,y=1cm,
+  component/.style={draw,rectangle,fill=white,line width=.65pt,
+    minimum width=3.8cm,minimum height=1.25cm,text width=3.15cm,
+    align=center,inner xsep=4pt,inner ysep=3pt,
+    font=\fontsize{9}{11}\fontseries{l}\selectfont},
+  uses/.style={dashed,-{Straight Barb[length=2.2mm,width=1.6mm]},line width=.6pt},
+  annotation/.style={font=\fontsize{9}{11}\fontseries{l}\selectfont,
+    align=center,fill=white,inner sep=2pt}]
+\newcommand{\usemark}{\guillemotleft use\guillemotright}
+\newcommand{\artifactmark}{\guillemotleft artifact\guillemotright}
+\newcommand{\componenticon}[1]{%
+  \draw[fill=white,line width=.45pt]
+    ($(#1.north east)+(-.48,-.12)$) rectangle
+    ($(#1.north east)+(-.13,-.38)$);
+  \draw[fill=white,line width=.45pt]
+    ($(#1.north east)+(-.55,-.17)$) rectangle
+    ($(#1.north east)+(-.42,-.23)$);
+  \draw[fill=white,line width=.45pt]
+    ($(#1.north east)+(-.55,-.28)$) rectangle
+    ($(#1.north east)+(-.42,-.34)$);}
+\newcommand{\component}[4]{%
+  \node[component] (#1) at (#2,#3)
+    {\begin{minipage}{3.15cm}\centering\vspace*{2.5mm}#4\end{minipage}};
+  \componenticon{#1}}
+
+% Package boundary: processing responsibilities, not an execution sequence.
+\begin{scope}[on background layer]
+  \filldraw[fill=black!2,draw=black!55,line width=.65pt]
+    (3.55,-2.65) rectangle (13.05,8.0);
+  \filldraw[fill=white,draw=black!55,line width=.65pt]
+    (3.55,8.0) rectangle (10.8,8.52);
+\end{scope}
+\node[anchor=west,font=\fontsize{10}{12}\fontseries{sb}\selectfont]
+  at (3.75,8.26) {Command interpretation: Stages 1 to 6};
+
+\component{application}{-.65}{6.5}{Application interface\\Voice / text}
+\component{interaction}{-.65}{3.3}{User interaction\\\mbox{Stage 7 confirmation}\\Additional scope}
+\component{domain}{-.65}{.1}{Domain loader\\Config and prompt assembly}
+
+\component{coordinator}{5.75}{3.3}{Coordinator\\Stages 1 to 6}
+\component{stage1}{10.65}{6.5}{Preprocessing\\Stage 1}
+\component{stage2}{10.65}{4.9}{Structured extraction\\Stage 2}
+\component{stage3}{10.65}{3.3}{Structural validation\\Stage 3}
+\component{stage4}{10.65}{1.7}{Entity resolution\\Stage 4}
+\component{stage5}{10.65}{.1}{Type validation\\Stage 5}
+\component{stage6}{10.65}{-1.5}{Output assembly\\Stage 6}
+
+\component{model}{16.1}{4.9}{Language model\\External API}
+\component{parser}{16.1}{3.3}{ANTLR parser\\Generated}
+\component{sources}{16.1}{1.7}{Knowledge-source\\loader}
+
+% Usage dependencies point from consumer to supplier. No control-flow edges.
+\draw[uses] (application.east) -- (2.55,6.5) -- (2.55,3.3)
+  -- (coordinator.west);
+\node[annotation] at (2.55,5.0) {\usemark\\Interpret\\command};
+\draw[uses] (application.south) -- (interaction.north);
+\node[annotation] at (-.65,4.95) {\usemark\\Manage\\interaction};
+\draw[uses] (coordinator.south) -- (5.75,-1.05) -- (2.5,-1.05)
+  -- (2.5,.1) -- (domain.east);
+\node[annotation] at (2.5,-.45) {\usemark\\Domain\\definition};
+\draw[uses] (interaction.south) -- (domain.north);
+\node[annotation] at (-.65,1.55) {\usemark\\Interaction\\policies};
+\foreach \stage in {stage1,stage2,stage3,stage4,stage5,stage6}
+  \draw[uses] (coordinator.east) -- (\stage.west)
+    node[annotation,midway,font=\fontsize{8}{10}\fontseries{l}\selectfont] {\usemark};
+\draw[uses] (stage2.east) -- (model.west)
+  node[annotation,midway,above=2pt] {\usemark\\API call};
+\draw[uses] (stage3.east) -- (parser.west)
+  node[annotation,midway,above=2pt] {\usemark};
+\draw[uses] (stage4.east) -- (sources.west)
+  node[annotation,midway,above=2pt] {\usemark};
+
+% Resource artifacts inside a UML package: files are not software components.
+\draw[fill=black!2,draw=black!55,line width=.65pt]
+  (-2.65,-6.5) rectangle (18.25,-3.55);
+\draw[fill=white,draw=black!55,line width=.65pt]
+  (-2.65,-3.55) rectangle (4.8,-3.03);
+\node[anchor=west,font=\fontsize{10}{12}\fontseries{sb}\selectfont]
+  at (-2.45,-3.29) {Replaceable domain resources};
+\tikzset{resourceartifact/.style={draw,rectangle,fill=white,line width=.6pt,
+  minimum width=3.65cm,minimum height=1.5cm,text width=3.15cm,
+  align=center,inner sep=3pt,font=\fontsize{9}{11}\fontseries{l}\selectfont}}
+\node[resourceartifact] (configfile) at (-.35,-4.9)
+  {\artifactmark\\[3pt]Domain configuration};
+\node[resourceartifact] (grammarfile) at (3.65,-4.9)
+  {\artifactmark\\[3pt]Grammar definitions};
+\node[resourceartifact] (knowledgefiles) at (7.65,-4.9)
+  {\artifactmark\\[3pt]Knowledge-source files};
+\node[resourceartifact] (promptfile) at (11.65,-4.9)
+  {\artifactmark\\[3pt]Prompt template};
+\node[resourceartifact] (abbreviationfile) at (15.65,-4.9)
+  {\artifactmark\\[3pt]Abbreviation mappings};
+\draw[uses] (domain.south) -- (-.65,-3.03)
+  node[annotation,midway,right=2pt] {\usemark};
+% This generic dependency concerns generation, not runtime grammar access.
+\draw[uses] (parser.east) -- (18.8,3.3) -- (18.8,-6.05)
+  -- (3.65,-6.05) -- (grammarfile.south);
+\node[annotation] at (11.1,-6.05) {Generated from grammar (build time)};
+\draw[uses] (sources.south) -- (16.1,-3.85)
+  -- (7.65,-3.85) -- (knowledgefiles.north);
+\node[annotation] at (16.1,-1.7) {\usemark};
+
+\node[anchor=west,font=\fontsize{14}{17}\fontseries{sb}\selectfont]
+  at (-2.65,9.7) {Software architecture: draft component view};
+\node[anchor=west,font=\fontsize{10}{12}\fontseries{l}\selectfont]
+  at (-2.65,9.0)
+  {Domain-independent responsibilities and their principal dependencies};
+
+\draw[uses] (-2.45,-7.15) -- (-.65,-7.15);
+\node[annotation,anchor=west] at (-.35,-7.15)
+  {Dependency: client points to supplier. \usemark\ marks a usage dependency.};
+\node[anchor=north west,align=left,text width=20.8cm,
+  font=\fontsize{9}{11}\fontseries{l}\selectfont]
+  at (-2.65,-7.65)
+  {This is a logical component view, not a processing sequence or deployment diagram.
+   Components may be implemented by functions in the same process.
+   Interaction management also handles clarification and unfinished dictation.
+   Shared configuration dependencies and speech-recognition internals are omitted.};
+\end{tikzpicture}
+\end{document}

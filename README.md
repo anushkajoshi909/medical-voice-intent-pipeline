@@ -18,14 +18,19 @@ A 7-stage NLP pipeline that processes voice commands spoken by doctors wearing s
 ```
 Speech input (ASR / typed)
     │
+    ▼  Activation check
+    │  A new command must contain the trigger ("ok glasses"); otherwise it
+    │  is ignored (status "inactive") and nothing else runs
+    │
     ▼  Stage 1 — Preprocessing
     │  Normalise text, expand abbreviations (BP→blood pressure),
-    │  detect trigger ("ok glasses"), extract urgency flags,
+    │  remove the trigger, extract urgency flags,
     │  reject non-speech input (JSON, code)
     │
     ▼  Stage 2 — LLM Structured Extraction
-    │  LLM maps natural speech to constrained JSON:
-    │  {action, entity, end_signal, confidence}
+    │  LLM maps natural speech to JSON:
+    │  {action, entity, end_signal, confidence} (+ recipient for messages),
+    │  checked against a strict schema; a failed check gives UNKNOWN
     │  Handles synonyms, fillers, informal phrasing
     │
     ▼  Stage 3 — ANTLR Frame Validation
@@ -50,24 +55,27 @@ Speech input (ASR / typed)
     │  status ∈ {accepted, accepted_partial, needs_clarification, rejected}
     │
     ▼  Stage 7 — User Confirmation      [implemented]
-       Glasses display a human-friendly summary; user says
-       "ok glasses, correct/wrong". Per-action confirmation_timeout_sec
-       in domain_config.yaml: null=always block, N=auto-confirm after
-       N idle seconds, 0=confirm instantly (e.g. emergency).
+       Only an accepted result is confirmed: the glasses show a summary and
+       the user says "correct" or "wrong". Per-action confirmation_timeout_sec
+       in domain_config.yaml: null=always wait for an answer, N=auto-confirm
+       after N seconds without an answer, 0=confirm instantly (e.g. emergency).
+       A clarification shows its message and waits for a corrected command;
+       an open note or message stays open until it is finished.
 ```
 
 ---
 
-## Results (Stages 1–5)
+## Results (Stages 1–6, final run of 8 November 2026)
 
-Evaluated on 243 annotated commands (130 valid, 113 invalid).
+243 commands (130 valid, 113 invalid), every model three times; mean over the repetitions. Full results: `evaluation/final_run/reports/final/main_results_2026-11-08.md`.
 
-| Metric | Ludyga Baseline | Our Pipeline (Llama 3.3 70B) |
-|---|---|---|
-| Binary accuracy | 75.3% | **95.9%** |
-| Valid recall | 50.0% | **98.5%** |
-| Invalid precision | 100% | **92.9%** |
-| Action accuracy | — | **96.3%** |
+| System | Accuracy | Valid accepted | Invalid wrongly accepted | Median time |
+|---|---|---|---|---|
+| Ludyga's grammar (B0) | 70.8 % | 46.2 % | 0.9 % | — |
+| Gemma 4 26B-A4B | **95.8 %** | 93.6 % | 1.8 % | 0.42 s |
+| Llama 3.3 70B | 95.4 % | **96.7 %** | 6.2 % | 0.64 s |
+| gpt-oss-120b (500 / 4000 tokens) | 93.8 / 94.8 % | 91.0 / 93.3 % | 3.0 / 3.5 % | 1.06 / 1.08 s |
+| DeepSeek V4.1 Flash (500 / 4000 tokens) | 91.1 / 93.0 % | 84.9 / 88.5 % | 1.8 / 1.8 % | 1.02 / 0.92 s |
 
 ---
 
@@ -89,18 +97,14 @@ python3 -m unittest discover -s tests -v
 
 ### 2. Set API key
 
-The pipeline uses an OpenAI-compatible API endpoint (tested with Llama 3.3 70B via Groq and GPT-4o via OpenAI).
+The language models and Whisper are called through the OpenAI-compatible interface of the ScaDS.AI service (`https://llm.scads.ai/v1`). The key is read from the first line of `~/.scadsai-api-key` (outside the repository, never committed):
 
 ```bash
-export OPENAI_API_KEY=your_key_here
-export OPENAI_BASE_URL=https://api.groq.com/openai/v1   # if using Groq
+echo "your_key_here" > ~/.scadsai-api-key
+chmod 600 ~/.scadsai-api-key
 ```
 
-Or create a `.env` file (never committed):
-```
-OPENAI_API_KEY=your_key_here
-OPENAI_BASE_URL=https://api.groq.com/openai/v1
-```
+The model is taken from `.selected_model` (written by `--select`), otherwise `alias-ha`.
 
 ### 3. Download ontology files
 
@@ -119,30 +123,7 @@ See `ontologies/ONTOLOGY_SOURCES.md` for full rationale on each choice and what 
 
 ## Running the Pipeline
 
-### Full run (all 243 commands)
-```bash
-python src/run_pipeline.py
-```
-
-### Extended test cases only
-```bash
-python src/run_pipeline.py --extended
-```
-
-### Random sample of N commands
-```bash
-python src/run_pipeline.py --sample 20
-```
-
-### Verbose output (step-by-step output per command across all stages)
-```bash
-python src/run_pipeline.py --verbose
-```
-
-### Pick model interactively
-```bash
-python src/run_pipeline.py --select
-```
+The evaluation on the 243 commands is run with `evaluation/scripts/run_eval.py` and `run_all.py` (see `evaluation/evaluation.md`). `src/run_pipeline.py` runs single commands and sessions. Add `--select` to any of the commands below to pick the model first.
 
 ### Run a single command verbosely
 ```bash
@@ -156,10 +137,11 @@ python src/run_pipeline.py --interactive
 ```
 Type a command starting with "ok glasses" and see it run through all 7 stages. A command without the trigger phrase is ignored (status `inactive`) and the session keeps listening. Only an accepted command is confirmed; a command that needs clarification shows its message and the session waits for the corrected command (again with "ok glasses"). A note or message without an end phrase stays open: further lines are added to it without a trigger, "finish", "continue", and "cancel" control it, after 5 s without input the glasses say that no end phrase was heard and ask whether the note is finished, and if that question gets no answer for 60 s the open note is discarded (`src/interaction.py`, settings under `interaction` in `domain_config.yaml`). Type `exit` to quit.
 
-### Save results to `results/`
+### Voice session (push-to-talk, Whisper)
 ```bash
-python src/run_pipeline.py --save
+python src/run_pipeline.py --voice
 ```
+Press Enter, speak, press Enter again. The transcript goes through the same session as `--interactive`. A confirmation question with a time limit is confirmed automatically if Enter is not pressed in time.
 
 ---
 
@@ -174,21 +156,24 @@ python src/run_pipeline.py --save
 │   ├── stage4_ontology_lookup.py   # Ontology lookup: Registry + Strategy patterns
 │   ├── stage5_type_validate.py     # Semantic type validation against domain_config rules
 │   ├── stage6_intent_output.py     # Assembles final intent JSON from Stages 1-5 results
-│   ├── stage7_confirmation.py      # User confirmation dialogue (--text/--interactive)
+│   ├── stage7_confirmation.py      # User confirmation dialogue
 │   ├── interaction.py              # Session state across turns: open dictation, reminder, finish/continue/cancel
+│   ├── terminal_input.py           # Key-by-key keyboard input with deadlines (sessions)
+│   ├── voice.py                    # Push-to-talk recording + voice confirmation answer
+│   ├── whisper_asr.py              # Whisper transcription via the ScaDS.AI service
 │   ├── domain_loader.py            # Wires grammar + config + prompt at startup
 │   ├── grammar/                    # Generated Python parser (from .g4 files, committed)
 │   │   ├── MedicalSmartGlassesLexer.py
 │   │   ├── MedicalSmartGlassesParser.py
 │   │   └── MedicalSmartGlassesParserListener.py
-│   ├── run_pipeline.py             # Full pipeline runner + evaluation (--text for single command)
-│   ├── build_annotated_dataset.py  # Rebuilds data/annotated_commands.json
-│   └── run_baseline.py             # Ludyga baseline evaluation
+│   └── run_pipeline.py             # Stages 1-6 for one command; --text, --interactive, --voice
 │
 ├── data/                           # The dataset: commands and labels
 │   ├── commands_200.json           # 200 base evaluation commands
 │   ├── extended_test_cases.json    # Extended commands (abbreviations, type mismatches)
 │   ├── annotated_commands.json     # Combined + annotated (auto-generated), 243 commands
+│   ├── scripts/                    # How the dataset was built: parse_commands.py (Ludyga's 200
+│   │                               #   commands), build_annotated_dataset.py (adds labels + extended)
 │   └── labels/                     # Labels for the evaluation
 │       ├── gold_labels.json            # Expected entity and end signal (by command id)
 │       ├── gold_labels_worksheet.csv   # Worksheet from which the gold labels were made
@@ -197,8 +182,7 @@ python src/run_pipeline.py --save
 ├── docs/
 │   ├── uml_diagrams.md            # Current architecture diagrams (UML component, sequence and
 │   │                              #   class diagrams, data-flow figures), images in docs/figures/
-│   ├── pipeline_evolution.md      # Ludyga baseline vs enhanced pipeline
-│   └── findings.md                # Development log of false accepts, with a status table
+│   └── pipeline_evolution.md      # Ludyga baseline vs enhanced pipeline
 │
 ├── ontologies/
 │   ├── vital_signs.json            # 43 vital sign + lab result terms (curated)
@@ -232,7 +216,7 @@ The baseline system (`baseline_ludyga/`) uses an ANTLR grammar with fixed token 
 - Medical abbreviations: *"show BP"*
 - Free-form notes and messages
 
-The baseline folder is excluded from this repository (not our contribution). Evaluation data from the baseline is in `results/baseline_results.json`.
+The baseline folder is excluded from this repository (not our contribution). The evaluation runs the baseline as system B0 (`evaluation/scripts/run_eval.py`); its results are in the run folders `evaluation/final_run/runs/*_B0-ludyga_*`.
 
 ---
 

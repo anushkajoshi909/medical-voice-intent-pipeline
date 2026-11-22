@@ -10,7 +10,7 @@ Sources for expected_action:
 import json, re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 
 # ── 1. Grammar type → our action taxonomy ────────────────────────────────────
 GRAMMAR_TYPE_MAP = {

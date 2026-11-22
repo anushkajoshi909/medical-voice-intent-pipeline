@@ -1,4 +1,4 @@
-"""Finding 12: new display names, same scores, historical files still readable."""
+"""Metric display names, same scores, historical files still readable."""
 import json
 import subprocess
 import sys

@@ -17,7 +17,11 @@ Validation enforced at startup:
   Every action in domain_config.yaml must declare a grammar_command_type that
   exists as a rule in MedicalSmartGlassesParser.g4.
   → If grammar changes, domain_config MUST be updated. If it is not, startup fails.
+
+load() reads the files once per process and returns the same (cached) dict on
+every later call. Callers must not change it.
 """
+import functools
 import re
 import yaml
 from pathlib import Path
@@ -75,12 +79,13 @@ def _build_few_shot_examples(cfg: dict) -> str:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+@functools.lru_cache(maxsize=None)
 def load() -> dict:
-    """Load and validate domain configuration.
+    """Load and validate domain configuration (once per process, then cached).
 
     Returns a dict with keys:
       system_prompt, action_config, trigger_phrase, valid_actions,
-      grammar_command_types, interaction
+      grammar_command_types, interaction, ontology_sources
     """
     parser_path = ROOT / "MedicalSmartGlassesParser.g4"
     config_path = ROOT / "domain_config.yaml"
@@ -128,6 +133,7 @@ def load() -> dict:
         "valid_actions":       set(cfg["actions"].keys()),
         "grammar_command_types": grammar_types,
         "interaction":         cfg.get("interaction") or {},
+        "ontology_sources":    cfg.get("ontology_sources") or {},
     }
 
 

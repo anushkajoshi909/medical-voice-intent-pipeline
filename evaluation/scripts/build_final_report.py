@@ -29,7 +29,6 @@ import argparse
 import collections
 import csv
 import json
-import re
 import statistics as st
 from datetime import date as _date
 from pathlib import Path
@@ -37,13 +36,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 from metric_labels import ACTION_LABEL, ENTITY_LABEL, END_SIGNAL_LABEL, label_counts  # noqa: E402
 from paths import RUNS, REPORTS  # noqa: E402  (evaluation/final_run/ by default)
+from common import norm_entity, pct  # noqa: E402
 OUT = REPORTS / "final"
 STAGES = ["stage1", "stage2", "stage3", "stage4", "stage5", "stage6"]
-
-
-def norm_entity(s):
-    """Same comparison as run_eval.py: lowercase, punctuation ignored."""
-    return " ".join(re.sub(r"[^\w\s/]", " ", str(s or "").lower()).split())
 
 
 def agg(values):
@@ -52,10 +47,6 @@ def agg(values):
         return None
     return {"mean": round(st.mean(vals), 2), "sd": round(st.stdev(vals), 2) if len(vals) > 1 else 0.0,
             "values": vals}
-
-
-def pct(a, b):
-    return round(100 * a / b, 1) if b else None
 
 
 GOLD_FILE = ROOT / "data" / "labels" / "gold_labels.json"
@@ -166,7 +157,6 @@ def main():
         all_rows += rows
         runs_used += [d.name for d, _ in runs]
         e2e = [r["end_to_end_s"] for r in rows if r["end_to_end_s"] is not None]
-        ent = [r for r in rows if r["entity_ok"] is not None]
         h = lambda k: agg([s["hybrid"][k] for s in sums])
         lat = lambda stg, k: agg([s["latency"][stg][k] for s in sums if stg in s["latency"]])
         slow = agg([round(1000 * max(s["latency"][g]["max_s"] for g in STAGES if g != "stage2" and g in s["latency"]), 1) for s in sums])

@@ -1,4 +1,4 @@
-"""Finding 10 (open dictation across turns) and the session side of Findings 7 and 8.
+"""Open dictation across turns, and the session side of clarification and the trigger gate.
 
 Fake model answers, scripted replies, and a fake clock: no remote calls, no
 microphone, no real waiting."""

@@ -6,7 +6,7 @@ This folder holds everything for the evaluation of the pipeline: the scripts, th
 
 - **The dataset:** 243 commands, 130 valid and 113 invalid (`data/annotated_commands.json`).
 - **The systems:** the baseline **B0** (Ludyga's grammar) and the pipeline with four language models: Llama 3.3 70B, Gemma 4 26B-A4B, gpt-oss-120b, and DeepSeek V4.1 Flash. gpt-oss-120b and DeepSeek run with 500 and with 4000 completion tokens, Llama and Gemma with 500.
-- **The runs:** every model runs all 243 commands three times at temperature 0. B0 is deterministic and runs once. The whole evaluation was made twice, as a **first run** and a **second run**.
+- **The runs:** every model runs all 243 commands three times at temperature 0. B0 is deterministic and runs once. The reported evaluation is the **final run** of 8 November 2026 (`final_run/`). Two earlier runs (3 to 5 November, before the fixes of section 7) are kept in `old_runs/` for comparison.
 - **Not evaluated:** Stage 7 (confirmation), the speech recognition (all input is typed), and domain independence (no second domain was built).
 
 ## 2. Dataset and labels
@@ -82,7 +82,7 @@ The scripts read the API key from `~/.scadsai-api-key`, and they run from the pr
 
 ```bash
 # the whole batch: 500-token runs, 4000-token runs, B0, E3, and the report (about 2 to 4 hours, resumable on the same day)
-python evaluation/scripts/run_all.py
+python evaluation/scripts/run_all.py --tag500 fixes500 --tag4000 fixes4000   # the command of the final run (without --tag500/--tag4000 the tags are final500/final4000)
 python evaluation/scripts/run_all.py --skip-llm        # only E3 and the report, from existing runs
 
 # single steps
@@ -114,12 +114,14 @@ python evaluation/scripts/check_entity_resolution_set.py # check E3 against the 
 
 - One dataset of 243 commands, written for the system and not taken from real use, with typed input.
 - The gold labels were made by one person. A second person should check a sample.
-- The model service is shared and remote. The answers can differ between two runs even at temperature 0, and the response times depend on its load. This is why the evaluation was made twice.
+- The model service is shared and remote. The answers can differ between two runs even at temperature 0, and the response times depend on its load. The two earlier runs give accuracies within about one percentage point of the final run.
 - Domain independence is argued from the design and is not measured.
 
 ## 7. Rerun after the fixes of November 2026
 
-The fixes of Findings 7 to 12 (`docs/findings.md`) change the code of Stages 1, 2, 4, 5, 6 and 7, the scoring of ignored input, and the metric names. A fresh full run with the fixed code was made on 8 November 2026 (`final_run/`). It is the reported evaluation. The runs of 3 to 5 November, made before the fixes, are kept in `old_runs/`. The final run agrees with them: the accuracy of every system differs by at most about one percentage point, and the response times differ with the load of the model service. The B0 time stored in this run (median 0.016 s) is a measurement effect of that batch. The grammar code is unchanged, and timing it again on the 243 commands gives a median of about 0.1 ms, as in the earlier runs.
+The fixes of November 2026 change the code of Stages 1, 2, 4, 5, 6 and 7, the scoring of ignored input, and the metric names: a new command needs the trigger phrase, Stage 2 checks the answer against a strict schema, a clarification is never confirmable, an open dictation stays open across turns, a compound medication is accepted only if every drug is found, and the metric names are clearer. A fresh full run with the fixed code was made on 8 November 2026 (`final_run/`). It is the reported evaluation. The runs of 3 to 5 November, made before the fixes, are kept in `old_runs/`. The final run agrees with them: the accuracy of every system differs by at most about one percentage point, and the response times differ with the load of the model service. The B0 time stored in this run (median 0.016 s) is a measurement effect of that batch. The grammar code is unchanged, and timing it again on the 243 commands gives a median of about 0.1 ms, as in the earlier runs.
+
+**Changes after the final run (no change in behaviour).** Two code changes came after the run of 8 November: the confirmation deadline in voice mode (Stage 7, not part of the benchmark) and a code clean-up (22 November 2026: shared configuration cache, `run_pipeline.py` split into `terminal_input.py` and `voice.py`, old batch mode and its separate scoring removed, unused scripts removed, shared helpers in `evaluation/scripts/common.py`). Checked before and after the clean-up, without model calls: identical Stage 1 text for all 243 commands, identical Stage 2 result for all 13,122 stored model answers, an identical model request, 0 differing result rows in a replay of the 18 final-run folders and a B0 run (4,617 rows, all stage fields compared), identical E3 results, and a byte-identical rebuild of the 8 November report. The final run therefore stands for the current code. A comment line in `domain_config.yaml` was also changed (22 November 2026); YAML comments are not read by the code, so the prompt and every setting are unchanged, but the file checksum in the `meta.json` of the final run differs from the current file.
 
 **Trigger preparation (same for the pipeline and B0).** The dataset commands contain no trigger phrase, because they test command recognition, not activation. The pipeline now ignores a new command without a trigger, so the benchmark gives every command the prefix "ok glasses " (`run_pipeline.with_trigger`), as the B0 runner has always done for Ludyga's grammar. The dataset files and the ids stay unchanged, the result rows keep the original text, and Stage 1 removes the trigger again, so the model sees the same text as before. Commands that already contain a trigger get no second one.
 
@@ -145,4 +147,4 @@ No prompt, threshold, grammar, or ontology was changed or tuned against the eval
 
 ## 8. History
 
-The earlier plan of this file (experiments E1 to E6, work order, checklists) is no longer needed and was removed. The development notes about false accepts are in `docs/findings.md`, with a status table of what is still true. The earlier version of this file is in the git history.
+The earlier plan of this file (experiments E1 to E6, work order, checklists) is no longer needed and was removed. The earlier version of this file and the former development log (`docs/findings.md`) are in the git history.
