@@ -58,20 +58,20 @@ Together, these two patterns mean that **adding a new action or a new ontology s
 | `src/domain_loader.py` | Wires grammar + config + template at startup; validates consistency; builds LLM prompt |
 | `src/stage4_ontology_lookup.py` | Ontology lookup; Registry + Strategy patterns; routing, loaders, and cutoffs all read from `domain_config.yaml` |
 | `abbreviations.json` | Abbreviation expansion (Stage 1); sourced from Wikipedia, not manually extended |
-| `docs/uml_diagrams.md` | Current architecture diagrams of the thesis (UML component, sequence and class diagrams, data-flow figures), images in `docs/figures/` |
+| `docs/uml_diagrams.md` | Current architecture diagrams of the thesis (UML component, sequence and class diagrams, system context and flow figures), images in `docs/figures/` |
 
 ---
 
 ## Full Pipeline
 
 ```
-Speech text (from ASR, e.g. Whisper / VOSK)
+Speech text (from ASR, e.g. Whisper)
     │
     │ no trigger phrase ("ok glasses") ──────→ INACTIVE (input ignored,
     │                                           nothing else runs)
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 1: Preprocessing                    [implemented]    │
+│  STAGE 1: Preprocessing                                     │
 │  • Reject input that is clearly not speech (braces, brackets)│
 │  • Strip punctuation; hyphens become spaces                 │
 │  • Expand abbreviations (abbreviations.json, 183 entries)   │
@@ -89,7 +89,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 2: LLM Structured Extraction        [implemented]    │
+│  STAGE 2: LLM Structured Extraction                         │
 │                                                             │
 │  Input:  preprocessed command text                          │
 │          + action list from domain_config (short form)      │
@@ -123,7 +123,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 3: ANTLR Frame Validation           [implemented]    │
+│  STAGE 3: ANTLR Frame Validation                            │
 │                                                             │
 │  Rebuilds a command of fixed form from {action, entity}, with│
 │  the template of the action (stage3_template in the config):│
@@ -153,7 +153,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 4: Ontology / Canonical Lookup      [implemented]    │
+│  STAGE 4: Ontology / Canonical Lookup                       │
 │                                                             │
 │  Routing is fully config-driven from domain_config.yaml:    │
 │    • action → ontology_index, fallback_index, extractor     │
@@ -188,7 +188,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 5: Semantic Validation              [implemented]    │
+│  STAGE 5: Semantic Validation                               │
 │                                                             │
 │  Lookup: action → allowed_slot_types (from domain_config)   │
 │  Check:  resolved semantic_type ∈ allowed_slot_types?       │
@@ -207,7 +207,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 6: Intent JSON + Explanation        [implemented]    │
+│  STAGE 6: Intent JSON + Explanation                         │
 │  Assemble final structured payload for backend:             │
 │    action, canonical entity, semantic type, ontology ID,    │
 │    urgency flag (from Stage 1), clarification message       │
@@ -218,27 +218,20 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 │  action metadata (passthrough_type, allowed_slot_types);    │
 │  no action names hardcoded in src/stage6_intent_output.py   │
 │                                                             │
-│  rejected + reason=invalid_structure gets its own          │
-│  actionable clarification_message when the action/entity    │
-│  WERE understood but the grammar rejected it as             │
-│  structurally incomplete (e.g. "set medication              │
-│  paracetamol" — missing dose/unit). Built from the action's │
-│  structure_hint in domain_config.yaml, not hardcoded per     │
-│  action — e.g. "I understood you want to set medication     │
-│  'paracetamol', but the command is structurally incomplete: │
-│  needs a drug name followed by a numeric dose and unit,     │
-│  e.g. 'paracetamol 100 mg'. Please repeat with the missing   │
-│  detail." This replaces the raw, unreadable ANTLR parser     │
-│  error that used to be the only explanation (still shown     │
-│  underneath, for debugging). Other rejected reasons          │
-│  (non_speech_input, unrecognized_command) get no such        │
-│  message — there's no partial understanding to build one     │
-│  from when the system has no idea what action was meant.     │
+│  rejected + reason=invalid_structure: if the action and     │
+│  entity were understood but the grammar found the command   │
+│  incomplete (e.g. "set medication paracetamol", no dose),   │
+│  clarification_message says what is missing. It is built    │
+│  from the action's structure_hint in domain_config.yaml,    │
+│  not written per action in code. The ANTLR parser error is  │
+│  kept in the explanation for debugging. Other rejections    │
+│  (non_speech_input, unrecognized_command) have no such      │
+│  message, because no action was understood.                 │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  STAGE 7: User Confirmation                [implemented]    │
+│  STAGE 7: User Confirmation                                 │
 │                                                             │
 │  Only a Stage 6 result with status "accepted" is confirmed. │
 │  The glasses show a summary built from the slots:           │
@@ -276,25 +269,7 @@ Speech text (from ASR, e.g. Whisper / VOSK)
 
 ### `domain_config.yaml`
 
-The **single source of truth** for the semantic layer and Stage 4 ontology routing. Key fields per action:
-
-- `grammar_command_type`: links this action to a parser rule. Validated at startup.
-- `description`: injected into the LLM prompt.
-- `allowed_slot_types`: checked in Stage 5 semantic validation.
-- `ontology_index`: which index Stage 4 searches (`null` = skip lookup).
-- `entity_extractor`: extraction strategy before lookup (`default` uses entity as-is; `medication` strips dose/unit).
-- `fallback_index`: secondary index tried if primary yields no match.
-- `passthrough_type`: for actions with `ontology_index: null` that carry meaningful entities; assigned as `semantic_type` without lookup.
-- `passthrough_fallback_type`: for show only; entity not matched in vital signs gets this type (`ehr_record`).
-- `entity_slot: false`: structural flag for actions where grammar forbids an entity; pipeline strips any LLM extraction before Stage 3.
-- `fallback_extractor`: extraction strategy for the fallback index (`medication` strips dose and unit)
-- `stage3_template`: the text that Stage 3 builds for the grammar, with `{trigger}`, `{entity}`, `{recipient}` (required for every action)
-- `stage3_entity_view`: which copy of the entity the grammar check sees (`medication_core` keeps drug, dose, and unit and drops frequency words)
-- `entity_optional`: `true` if the action is valid without an entity (a bare "stop")
-- `confirmation_timeout_sec`: Stage 7 time limit (`null` waits for an answer, `0` confirms at once)
-- `structure_hint`: the sentence for the message when the structure is incomplete (set_medication, send_message)
-
-The same file also contains `ontology_sources`, which declares which data files feed each Stage 4 index, their format types, filter parameters, and fuzzy cutoffs. No separate `ontology_sources.yaml` file exists.
+The **single source of truth** for the semantic layer and Stage 4 ontology routing. Its fields per action and the `ontology_sources` block are listed in the Architecture section above.
 
 Full content: [`domain_config.yaml`](domain_config.yaml)
 
@@ -312,7 +287,7 @@ Full content: [`llm_system_prompt.txt`](llm_system_prompt.txt)
 
 Runs once at startup. Parses `MedicalSmartGlassesParser.g4` to extract all command type rule names, loads `domain_config.yaml`, and for each action checks that `grammar_command_type` matches a rule in the grammar — raising a `ValueError` with the offending action name if not. It then fills the `llm_system_prompt.txt` template with the action list, domain rules, and few-shot examples from config, and returns `system_prompt`, `action_config`, `valid_actions`, and `trigger_phrase` for the rest of the pipeline to use.
 
-This is the enforced single-file change contract: add a new action to the grammar and config, loader validates both and builds the prompt; Stage 2 and Stage 3 pick it up automatically.
+This check enforces the two-file rule above: a new action is added to the grammar and to the config, the loader checks both and builds the prompt, and Stage 2 and Stage 3 use it without code changes.
 
 Full content: [`src/domain_loader.py`](src/domain_loader.py)
 
@@ -369,7 +344,7 @@ A Python dictionary lookup (`if entity: valid`) would pass this. ANTLR does not.
 
 **Why the grammar is the single source of truth for structure:**
 
-Previously, grammar rules were duplicated in a Python dict inside `stage3_frame_validate.py`. Any change to the grammar required changing both files, with no enforcement that they stayed in sync. The current design:
+The structural rules exist only in the grammar; there is no second copy of them in Python:
 
 - Stage 3 (`stage3_antlr_validate.py`) runs the real ANTLR4 Python runtime on the generated parser
 - `src/domain_loader.py` validates at startup that `domain_config.yaml` actions map to grammar rules
@@ -381,32 +356,27 @@ ANTLR does not see raw speech. By the time ANTLR runs, the LLM has already norma
 
 **Grammar extension from Ludyga baseline:**
 
-The grammar extends Ludyga's original (`baseline_ludyga/`). Changes are documented in `grammar_extend.md`. The command type hierarchy (glasses_command, request_data, protocol, set_medication, request_patient, message) is preserved; `diagnosis` is added as a new type.
+The grammar extends Ludyga's original (`baseline_ludyga/`). Changes are documented in `grammar_extend.md`. The command type hierarchy (glasses_command, request_data, protocol, set_medication, request_patient, message) is preserved; `diagnosis` and `treatment` are added as new types.
 
 ---
 
 ### Ontology Sources (declared in `domain_config.yaml`)
 
-There is no separate `ontology_sources.yaml`. All ontology source declarations live in the `ontology_sources` block of `domain_config.yaml` (shown above), so the pipeline has a single configuration file to update when adapting to a new domain.
+All ontology source declarations live in the `ontology_sources` block of `domain_config.yaml`, so the pipeline has a single configuration file to update when adapting to a new domain.
 
 | Index | Source file(s) | Format | Semantic type | Notes |
 |---|---|---|---|---|
-| `show` | `vital_signs.json` | `json_labels` | `vital_sign` | 25 vital sign labels; unmatched entities fall through as `ehr_record` |
+| `show` | `vital_signs.json` | `json_labels` | `vital_sign` | 43 curated vital sign and laboratory labels; unmatched entities fall through as `ehr_record` |
 | `diagnosis` | `doid.obo` | `obo` | `disease` | Human Disease Ontology (CC0) |
 | `diagnosis` | `hp.obo` | `obo` | `symptom` | Human Phenotype Ontology (free academic use) |
 | `procedure` | `Thesaurus.txt` | `ncit` | `procedure` | NCI Thesaurus; rows filtered by `filter_semantic_types` in config |
 | `medication` | `RXNCONSO.RRF` | `rxnorm` | `medication` | NLM RxNorm prescribable content; no UMLS license required |
 
-**Design notes:**
-- SNOMED CT was rejected (requires license); replaced by DOID + HPO + NCIt
-- NCIt vital signs were rejected (blood pressure appears as `Finding`, not `vital_sign`); `vital_signs.json` was built manually for the 25 core vital signs
-- `patient_info_terms.json` was dropped. The LLM now extracts the entity as spoken; Stage 4 matches against vital_signs.json and passes through unmatched entities as ehr_record.
-
 ---
 
 ### Ontology Parsing and Semantic Type Assignment
 
-OBO files (DOID, HPO) do **not** contain a semantic type field. The type is assigned based on which file the term comes from: every term in DOID is a disease by definition, every term in HPO is a symptom. NCIt is the exception: it covers all concept types in one file, so we use its `semantic_type` column to filter only procedure/vital sign rows at load time.
+OBO files (DOID, HPO) do **not** contain a semantic type field. The type is assigned based on which file the term comes from: every term in DOID is a disease by definition, every term in HPO is a symptom. NCIt is the exception: it covers all concept types in one file, so its semantic type column is used to keep only procedure rows at load time (`filter_semantic_types` in the config).
 
 **Parsing happens once at startup.** `_ensure_loaded()` iterates the `ontology_sources` block in `domain_config.yaml`, dispatches each source to its loader via `_FORMAT_LOADERS`, and builds a separate named in-memory index per ontology group:
 
@@ -427,8 +397,7 @@ Index "show":
   # anything not matched → passthrough_fallback_type = "ehr_record" (no lookup entry needed)
 ```
 
-Synonyms are indexed as separate keys pointing to the same concept. Every Stage 4 query is then an O(1) dict lookup for exact and synonym matches, with a linear fuzzy scan as fallback; no file I/O at query time. This keeps per-command latency at < 1ms for the ontology step, acceptable for real-time AR glasses use.
-
+Synonyms are indexed as separate keys pointing to the same concept. Every Stage 4 query is then an O(1) dict lookup for exact and synonym matches, with a linear fuzzy scan as fallback; no file I/O at query time.
 
 ---
 ---
@@ -438,7 +407,7 @@ Synonyms are indexed as separate keys pointing to the same concept. Every Stage 
 ---
 
 ## Example: `"set medication paracetamol"`
-*No dose or unit given. Shows that a Stage 3 structural rejection isn't a dead end — Stage 6 explains specifically what's missing, built from config, not a raw parser error.*
+*No dose or unit given. Stage 3 rejects the structure, and Stage 6 says what is missing, using the hint from the config.*
 
 ---
 
@@ -455,9 +424,8 @@ Result: "set medication paracetamol"
   "end_signal": false,
   "confidence": 0.9
 }
-Action and drug name correctly identified. The LLM has no way to know a
-dose is required — that's Stage 3's job, not Stage 2's (per the generic
-rule: don't judge entity type or completeness, just extract what was said).
+Action and drug name are identified correctly. The language model only
+extracts what was said; whether a dose is required is checked by Stage 3.
 ```
 
 **Stage 3: ANTLR Frame Validation**
@@ -498,15 +466,6 @@ No confirm/reject prompt is issued -- there is nothing resolved to confirm
 or deny (no dose was ever extracted). The user says the corrected command
 again, with the trigger phrase, and it runs through the whole pipeline.
 ```
-
-**Why this is better than the previous behaviour:** before this, any Stage 3
-failure surfaced only the raw ANTLR diagnostic (e.g. `"no viable alternative
-at input 'setmedicationparacetamolfinishmedication'"`) with no indication of
-*why* or *what to do about it*. That's distinct from `unrecognized_command`
-rejections (Stage 2 returned `UNKNOWN`) and `non_speech_input` rejections
-(Stage 1), which get no such message — there, the system has no partial
-understanding of the command at all, so there's nothing specific to build a
-clarification from.
 
 ---
 
@@ -670,12 +629,12 @@ Examples from the evaluation dataset. All six systems give the same outcome on t
 
 Architecture diagrams are in [`docs/uml_diagrams.md`](docs/uml_diagrams.md), as images exported from the thesis figures:
 
-1. **Data flow and the seven stages** (informal figures)
+1. **System context and the seven stages** (informal figures)
 2. **Domain independence**: UML component diagram of the pipeline and the domain package
 3. **Worked example**: UML sequence diagram of "start HD"
 4. **Stage 4 patterns**: two UML class diagrams (entity strategies and ontology loaders; `_STRATEGIES` and `_FORMAT_LOADERS` act as registries)
 
 ---
-*Document version 3.1, 22 November 2026 (final run of 8 November 2026)*
+*Document version 3.2, 25 November 2026 (final run of 8 November 2026)*
 *Master Thesis: Improving Intent Recognition in Grammar-Based Voice Interfaces*
 *Anushka Joshi, TU Dresden, Chair of Software Technology*

@@ -39,22 +39,22 @@ Speech input (ASR / typed)
     │  Catches structural errors: missing dose/unit for set_medication,
     │  entity present where forbidden, etc. Returns command_type.
     │
-    ▼  Stage 4 — Ontology Lookup        [implemented]
+    ▼  Stage 4 — Ontology Lookup
     │  Resolves entity to a known medical concept + semantic type.
     │  Sources: DOID, HPO, RxNorm, NCIt, vital_signs.json.
     │  Compound prescriptions (e.g. "aspirin and clopidogrel") look up
     │  each drug independently. Registry + Strategy design patterns.
     │
-    ▼  Stage 5 — Semantic Validation    [implemented]
+    ▼  Stage 5 — Semantic Validation
     │  Checks: does this action allow this semantic type?
     │  Catches "diagnosis hemodialysis" → procedure ≠ disease
     │
-    ▼  Stage 6 — Intent JSON Output     [implemented]
+    ▼  Stage 6 — Intent JSON Output
     │  Assembles final structured payload: action, canonical entity,
     │  semantic type, ontology ID, urgency flag from Stage 1
     │  status ∈ {accepted, accepted_partial, needs_clarification, rejected}
     │
-    ▼  Stage 7 — User Confirmation      [implemented]
+    ▼  Stage 7 — User Confirmation
        Only an accepted result is confirmed: the glasses show a summary and
        the user says "correct" or "wrong". Per-action confirmation_timeout_sec
        in domain_config.yaml: null=always wait for an answer, N=auto-confirm
@@ -181,7 +181,7 @@ Press Enter, speak, press Enter again. The transcript goes through the same sess
 │
 ├── docs/
 │   ├── uml_diagrams.md            # Current architecture diagrams (UML component, sequence and
-│   │                              #   class diagrams, data-flow figures), images in docs/figures/
+│   │                              #   class diagrams, system context and flow figures), images in docs/figures/
 │   └── pipeline_evolution.md      # Ludyga baseline vs enhanced pipeline
 │
 ├── ontologies/
