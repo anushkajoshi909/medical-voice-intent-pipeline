@@ -89,12 +89,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Offline tests (no model calls, no microphone, no real waiting):
-
-```bash
-python3 -m unittest discover -s tests -v
-```
-
 ### 2. Set API key
 
 The language models and Whisper are called through the OpenAI-compatible interface of the ScaDS.AI service (`https://llm.scads.ai/v1`). The key is read from the first line of `~/.scadsai-api-key` (outside the repository, never committed):
@@ -118,6 +112,14 @@ These files are too large for the repository. Place them in `ontologies/`:
 | `Thesaurus.txt` | [NCI Thesaurus FLAT](https://evs.nci.nih.gov/ftp1/NCI_Thesaurus/) — unzip `Thesaurus.FLAT.zip` | Procedure lookup |
 
 See `ontologies/ONTOLOGY_SOURCES.md` for full rationale on each choice and what was rejected (SNOMED CT, LOINC, OPS).
+
+### 4. Run the tests
+
+Offline tests (no model calls, no microphone, no real waiting). They need the ontology files of step 3:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
 
 ---
 
